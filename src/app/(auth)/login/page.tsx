@@ -1,20 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { loginUser } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Supabase auth will be connected in Phase 2
-    alert("Funcionalidad de login disponible proximamente. Registrate para ser notificado.");
+    setError("");
+    setLoading(true);
+    const result = loginUser(email, password);
+    setLoading(false);
+    if (result.success) {
+      router.push("/mi-cuenta");
+    } else {
+      setError(result.error || "Error al iniciar sesion.");
+    }
   };
 
   return (
@@ -56,11 +68,13 @@ export default function LoginPage() {
               required
             />
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <Button
             type="submit"
-            className="w-full bg-hopper-red hover:bg-hopper-red-dark text-white"
+            disabled={loading}
+            className="w-full bg-hopper-red hover:bg-hopper-red-dark text-white disabled:opacity-60"
           >
-            Iniciar sesion
+            {loading ? "Iniciando..." : "Iniciar sesion"}
           </Button>
         </form>
         <div className="mt-6 text-center">

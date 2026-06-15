@@ -1,11 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Users, Globe } from "lucide-react";
+import { ArrowRight, TrendingUp, Users, Globe, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { downloadMarketReportPDF } from "@/lib/pdf";
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-hopper-black">
-      {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
         <div
           className="absolute inset-0"
@@ -18,7 +20,6 @@ export default function Hero() {
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
         <div className="max-w-3xl">
-          {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-hopper-murray/30 bg-hopper-murray/10 px-4 py-1.5 mb-8">
             <span className="h-2 w-2 rounded-full bg-hopper-red animate-pulse-subtle" />
             <span className="text-xs font-medium text-hopper-beige tracking-wide uppercase">
@@ -26,20 +27,17 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* Heading */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.1] tracking-tight">
             No necesitas un ascenso,
             <br />
             <span className="text-hopper-red">necesitas un upgrade.</span>
           </h1>
 
-          {/* Subtitle */}
           <p className="mt-6 text-lg sm:text-xl text-white/60 leading-relaxed max-w-2xl">
             Descubre tu posicion en el mercado SAP. Salarios reales, perfiles mas
             demandados y un camino claro hacia tu siguiente nivel profesional.
           </p>
 
-          {/* CTA */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link href="/salarios">
               <Button
@@ -61,8 +59,17 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* Quick stats */}
-          <div className="mt-16 grid grid-cols-3 gap-8 border-t border-white/10 pt-8">
+          <div className="mt-4">
+            <button
+              onClick={() => downloadMarketReportPDF()}
+              className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-hopper-beige transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Descargar Informe de Mercado SAP (PDF)
+            </button>
+          </div>
+
+          <div className="mt-12 grid grid-cols-3 gap-8 border-t border-white/10 pt-8">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-hopper-red" />

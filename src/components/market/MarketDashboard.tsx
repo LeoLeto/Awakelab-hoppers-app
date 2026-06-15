@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -388,6 +389,170 @@ export default function MarketDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Data Sources Panel */}
+      <Card className="border-hopper-beige/60">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-hopper-black">
+            Fuentes de datos monitorizadas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                region: "Europa",
+                flag: "🇪🇺",
+                sources: [
+                  { name: "LinkedIn Jobs", postings: "2.100+" },
+                  { name: "StepStone DE", postings: "890+" },
+                  { name: "InfoJobs ES", postings: "640+" },
+                  { name: "Indeed EU", postings: "580+" },
+                  { name: "Xing", postings: "320+" },
+                ],
+              },
+              {
+                region: "Latinoamerica",
+                flag: "🌎",
+                sources: [
+                  { name: "LinkedIn Jobs LATAM", postings: "480+" },
+                  { name: "Computrabajo", postings: "230+" },
+                  { name: "OCC Mundial (MX)", postings: "190+" },
+                  { name: "Bumeran", postings: "140+" },
+                  { name: "Indeed LATAM", postings: "120+" },
+                ],
+              },
+              {
+                region: "USA",
+                flag: "🇺🇸",
+                sources: [
+                  { name: "LinkedIn Jobs US", postings: "560+" },
+                  { name: "Indeed US", postings: "410+" },
+                  { name: "Dice", postings: "180+" },
+                  { name: "Glassdoor", postings: "150+" },
+                  { name: "ZipRecruiter", postings: "90+" },
+                ],
+              },
+            ].map((group) => (
+              <div key={group.region}>
+                <p className="text-sm font-bold text-hopper-black mb-3">
+                  {group.flag} {group.region}
+                </p>
+                <div className="space-y-2">
+                  {group.sources.map((s) => (
+                    <div key={s.name} className="flex justify-between items-center text-xs">
+                      <span className="text-hopper-black/60">{s.name}</span>
+                      <span className="font-semibold text-hopper-red">{s.postings}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-hopper-black/30 mt-4">
+            Datos actualizados automaticamente. Ultima sincronizacion: Abril 2026. Los datos son estimaciones basadas en scraping periodico.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Scraping Simulation Panel */}
+      <ScrapingSimulation />
     </div>
+  );
+}
+
+function ScrapingSimulation() {
+  const [running, setRunning] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const [progress, setProgress] = useState(0);
+
+  function startScraping() {
+    if (running) return;
+    setRunning(true);
+    setLog([]);
+    setProgress(0);
+
+    const steps = [
+      "[INFO] Iniciando recoleccion de datos SAP...",
+      "[OK] Conectando con LinkedIn Jobs API...",
+      "[OK] Conectando con StepStone DE...",
+      "[OK] Conectando con InfoJobs ES...",
+      "[SCAN] Analizando ofertas: S/4HANA Cloud Consultant... 847 resultados",
+      "[SCAN] Analizando ofertas: ABAP Developer... 623 resultados",
+      "[SCAN] Analizando ofertas: SAP Basis Administrator... 412 resultados",
+      "[SCAN] Analizando ofertas: SAP SuccessFactors... 389 resultados",
+      "[SCAN] Analizando ofertas: SAP BTP Developer... 298 resultados",
+      "[PROC] Normalizando salarios por pais y nivel...",
+      "[PROC] Detectando tendencias de demanda...",
+      "[PROC] Calculando indices de empleabilidad...",
+      "[OK] Base de datos actualizada. 14.200+ ofertas indexadas.",
+      "[DONE] Sincronizacion completada. Proxima actualizacion en 24h.",
+    ];
+
+    steps.forEach((msg, i) => {
+      setTimeout(() => {
+        setLog((prev) => [...prev, msg]);
+        setProgress(Math.round(((i + 1) / steps.length) * 100));
+        if (i === steps.length - 1) setRunning(false);
+      }, i * 400);
+    });
+  }
+
+  return (
+    <Card className="border-hopper-beige/60">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold text-hopper-black">
+            Simulacion de recoleccion de datos
+          </CardTitle>
+          <button
+            onClick={startScraping}
+            disabled={running}
+            className="text-xs bg-hopper-red text-white px-3 py-1.5 rounded-full font-semibold disabled:opacity-50 hover:bg-hopper-red/90 transition-colors"
+          >
+            {running ? "Ejecutando..." : "Iniciar simulacion"}
+          </button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {progress > 0 && (
+          <div className="mb-3">
+            <div className="flex justify-between text-xs text-hopper-black/40 mb-1">
+              <span>Progreso</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-1.5 bg-hopper-beige/30 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-hopper-red rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        <div className="bg-hopper-black rounded-lg p-4 min-h-[140px] font-mono text-xs">
+          {log.length === 0 ? (
+            <p className="text-white/20">Presiona &quot;Iniciar simulacion&quot; para ver el proceso de recoleccion de datos en tiempo real...</p>
+          ) : (
+            log.map((line, i) => (
+              <p
+                key={i}
+                className={
+                  line.startsWith("[OK]") || line.startsWith("[DONE]")
+                    ? "text-green-400"
+                    : line.startsWith("[SCAN]") || line.startsWith("[PROC]")
+                    ? "text-hopper-beige"
+                    : "text-white/60"
+                }
+              >
+                {line}
+              </p>
+            ))
+          )}
+        </div>
+        <p className="text-xs text-hopper-black/30 mt-2">
+          Esta es una simulacion educativa del proceso de recoleccion. Los datos reales se actualizan periodicamente.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

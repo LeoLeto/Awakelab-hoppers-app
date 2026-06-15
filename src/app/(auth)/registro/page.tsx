@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { countries } from "@/lib/data/countries";
 import { roleLabels } from "@/lib/data/sapProfiles";
+import { registerUser } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const sapModules = [
   "FI/CO",
@@ -42,6 +44,7 @@ const steps = [
 ];
 
 export default function RegistroPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -73,10 +76,20 @@ export default function RegistroPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Supabase integration coming in Phase 2
-    alert(
-      "Registro recibido. La funcionalidad completa estara disponible proximamente. Te notificaremos por email."
-    );
+    const result = registerUser({
+      name: formData.fullName,
+      email: formData.email,
+      country: formData.country,
+      currentRole: formData.currentRole,
+      yearsExperience: formData.yearsExperience,
+      sapModules: formData.sapModules,
+      certifications: formData.certifications,
+      linkedinUrl: formData.linkedinUrl,
+      targetRole: formData.targetRole,
+    });
+    if (result.success) {
+      router.push("/diagnostico");
+    }
   };
 
   return (

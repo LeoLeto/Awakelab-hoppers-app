@@ -1,4 +1,8 @@
+"use client";
+
+import { useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 const footerSections = [
@@ -29,11 +33,24 @@ const footerSections = [
 ];
 
 export default function Footer() {
+  const router = useRouter();
+  const clickCount = useRef(0);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleCopyrightClick() {
+    clickCount.current += 1;
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 2000);
+    if (clickCount.current >= 5) {
+      clickCount.current = 0;
+      router.push("/admin");
+    }
+  }
+
   return (
     <footer className="bg-hopper-black text-white/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-          {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-1.5 mb-4">
               <div className="h-8 w-8 rounded bg-hopper-red flex items-center justify-center">
@@ -52,7 +69,6 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Nav sections */}
           {footerSections.map((section) => (
             <div key={section.title}>
               <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
@@ -86,9 +102,11 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-white/30">
+          <p
+            className="text-xs text-white/30 cursor-default select-none"
+            onClick={handleCopyrightClick}
+          >
             &copy; {new Date().getFullYear()} Hoppers Academy. Todos los derechos
             reservados.
           </p>
