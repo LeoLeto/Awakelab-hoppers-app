@@ -6,14 +6,29 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSession, getUsers, logoutUser, updatePassword } from "@/lib/auth";
-import type { HoppersUser, HoppersSession } from "@/lib/auth";
+import { getSession, logoutUser, updatePassword } from "@/lib/auth";
+import type { HoppersSession } from "@/lib/auth";
 import { sapProfiles } from "@/lib/data/sapProfiles";
+
+interface MongoUser {
+  _id: string;
+  name: string;
+  email: string;
+  country: string;
+  currentRole: string;
+  yearsExperience: string;
+  sapModules: string[];
+  diagnosticDone: boolean;
+  diagnosticDate?: string;
+  empScore?: number;
+  topProfile?: string;
+  skills?: string[];
+}
 
 export default function MiCuentaPage() {
   const router = useRouter();
   const [session, setSession] = useState<HoppersSession | null>(null);
-  const [user, setUser] = useState<HoppersUser | null>(null);
+  const [user, setUser] = useState<MongoUser | null>(null);
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -22,19 +37,23 @@ export default function MiCuentaPage() {
     const s = getSession();
     if (!s) { router.replace("/login"); return; }
     setSession(s);
-    const users = getUsers();
-    setUser(users.find((u) => u.email === s.email) || null);
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.user) setUser(json.user);
+        else router.replace("/login");
+      })
+      .catch(() => router.replace("/login"));
   }, [router]);
 
-  function handleLogout() {
-    logoutUser();
+  async function handleLogout() {
+    await logoutUser();
     router.push("/");
   }
 
-  function handlePasswordChange() {
-    if (!user) return;
+  async function handlePasswordChange() {
     if (newPw !== confirmPw) { setPwMsg({ type: "err", text: "Las contraseñas no coinciden." }); return; }
-    const res = updatePassword(user.email, newPw);
+    const res = await updatePassword(newPw);
     if (res.success) {
       setPwMsg({ type: "ok", text: "Contraseña actualizada correctamente." });
       setNewPw(""); setConfirmPw("");

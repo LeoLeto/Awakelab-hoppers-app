@@ -5,23 +5,48 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getUsers, ADMIN_PASSWORD } from "@/lib/auth";
-import type { HoppersUser } from "@/lib/auth";
+import { ADMIN_PASSWORD } from "@/lib/auth";
+
+interface MongoUser {
+  _id: string;
+  name: string;
+  email: string;
+  country: string;
+  yearsExperience: string;
+  currentRole: string;
+  diagnosticDone: boolean;
+  empScore?: number;
+}
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [error, setError] = useState("");
-  const [users, setUsers] = useState<HoppersUser[]>([]);
+  const [users, setUsers] = useState<MongoUser[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
-    if (password === ADMIN_PASSWORD) {
+  async function handleLogin() {
+    if (password !== ADMIN_PASSWORD) {
+      setError("Contraseña incorrecta.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || "Error al cargar usuarios."); return; }
+      setUsers(json.users);
       setAuthed(true);
       setError("");
-      setUsers(getUsers());
-    } else {
-      setError("Contraseña incorrecta.");
+    } catch {
+      setError("Error de conexion.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -29,7 +54,7 @@ export default function AdminPage() {
     const header = "ID,Nombre,Email,Pais,Experiencia,Rol,Diagnostico,Score\n";
     const rows = users
       .map((u) =>
-        [u.id, u.name, u.email, u.country, u.yearsExperience, u.currentRole, u.diagnosticDone ? "Si" : "No", u.empScore ?? ""].join(",")
+        [u._id, u.name, u.email, u.country, u.yearsExperience, u.currentRole, u.diagnosticDone ? "Si" : "No", u.empScore ?? ""].join(",")
       )
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -68,8 +93,12 @@ export default function AdminPage() {
               placeholder="Introduce la contraseña"
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white" onClick={handleLogin}>
-              Acceder
+            <Button
+              className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-60"
+              onClick={handleLogin}
+              disabled={loading}
+            >
+              {loading ? "Cargando..." : "Acceder"}
             </Button>
           </div>
         </Card>
@@ -78,10 +107,10 @@ export default function AdminPage() {
   }
 
   const totalDiag = users.filter((u) => u.diagnosticDone).length;
-  const avgScore =
-    users.filter((u) => u.empScore != null).length > 0
-      ? Math.round(users.filter((u) => u.empScore != null).reduce((a, u) => a + (u.empScore ?? 0), 0) / users.filter((u) => u.empScore != null).length)
-      : 0;
+  const scored = users.filter((u) => u.empScore != null);
+  const avgScore = scored.length > 0
+    ? Math.round(scored.reduce((a, u) => a + (u.empScore ?? 0), 0) / scored.length)
+    : 0;
 
   return (
     <main className="min-h-screen bg-gray-50 py-10 px-4">
@@ -89,7 +118,7 @@ export default function AdminPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-hopper-black">Panel de Administracion</h1>
-            <p className="text-sm text-gray-500">Hoppers Academy</p>
+            <p className="text-sm text-gray-500">Hoppers Academy · MongoDB</p>
           </div>
           <Button variant="outline" onClick={() => setAuthed(false)}>Cerrar sesion</Button>
         </div>
@@ -142,7 +171,7 @@ export default function AdminPage() {
                   </tr>
                 )}
                 {filtered.map((u) => (
-                  <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={u._id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="py-2 pr-4 font-medium">{u.name}</td>
                     <td className="py-2 pr-4 text-gray-500">{u.email}</td>
                     <td className="py-2 pr-4">{u.country || "—"}</td>

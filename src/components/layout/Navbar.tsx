@@ -34,8 +34,8 @@ export default function Navbar() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  function handleLogout() {
-    logoutUser();
+  async function handleLogout() {
+    await logoutUser();
     setSession(null);
     router.push("/");
   }

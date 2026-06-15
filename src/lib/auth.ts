@@ -1,27 +1,7 @@
-export interface HoppersUser {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  country: string;
-  currentRole: string;
-  yearsExperience: string;
-  sapModules: string[];
-  certifications: string;
-  linkedinUrl: string;
-  targetRole: string;
-  createdAt: string;
-  updatedAt?: string;
-  diagnosticDone: boolean;
-  diagnosticDate?: string;
-  empScore?: number;
-  topProfile?: string;
-  skills?: string[];
-}
-
 export interface HoppersSession {
   email: string;
   name: string;
+  country: string;
   loggedAt: string;
 }
 
@@ -37,31 +17,10 @@ export interface RegisterData {
   targetRole: string;
 }
 
-const USERS_KEY = "hoppers_users";
 const SESSION_KEY = "hoppers_session";
 export const ADMIN_PASSWORD = "h0pp3rs_2026_adm!n";
 
-function hashPassword(pw: string): string {
-  let h = 0;
-  for (let i = 0; i < pw.length; i++) {
-    h = ((h << 5) - h) + pw.charCodeAt(i);
-    h |= 0;
-  }
-  return "h_" + Math.abs(h).toString(36);
-}
-
-export function getUsers(): HoppersUser[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-export function saveUsers(users: HoppersUser[]): void {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+// ─── Session cache (localStorage — UI only, not authoritative) ────────────────
 
 export function getSession(): HoppersSession | null {
   if (typeof window === "undefined") return null;
@@ -72,7 +31,7 @@ export function getSession(): HoppersSession | null {
   }
 }
 
-export function saveSession(session: HoppersSession | null): void {
+function saveSession(session: HoppersSession | null): void {
   if (session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } else {
@@ -80,64 +39,89 @@ export function saveSession(session: HoppersSession | null): void {
   }
 }
 
-export function registerUser(data: RegisterData): { success: boolean; error?: string } {
-  const users = getUsers();
-  const existing = users.find((u) => u.email === data.email);
+// ─── Auth API calls ───────────────────────────────────────────────────────────
 
-  if (existing) {
-    Object.assign(existing, { ...data, updatedAt: new Date().toISOString() });
-    saveUsers(users);
-  } else {
-    const tempPw = hashPassword(data.email + "hoppers");
-    users.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      ...data,
-      password: tempPw,
-      createdAt: new Date().toISOString(),
-      diagnosticDone: false,
+export async function registerUser(
+  data: RegisterData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
-    saveUsers(users);
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error };
+    saveSession({
+      email: json.user.email,
+      name: json.user.name,
+      country: json.user.country || "",
+      loggedAt: new Date().toISOString(),
+    });
+    return { success: true };
+  } catch {
+    return { success: false, error: "Error de conexion." };
   }
-
-  saveSession({ email: data.email, name: data.name, loggedAt: new Date().toISOString() });
-  return { success: true };
 }
 
-export function loginUser(email: string, password: string): { success: boolean; error?: string } {
-  const users = getUsers();
-  const user = users.find((u) => u.email === email);
-  if (!user) return { success: false, error: "No existe una cuenta con ese email." };
-  if (user.password !== hashPassword(password)) return { success: false, error: "Contraseña incorrecta." };
-  saveSession({ email: user.email, name: user.name, loggedAt: new Date().toISOString() });
-  return { success: true };
+export async function loginUser(
+  email: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error };
+    saveSession({
+      email: json.user.email,
+      name: json.user.name,
+      country: json.user.country || "",
+      loggedAt: new Date().toISOString(),
+    });
+    return { success: true };
+  } catch {
+    return { success: false, error: "Error de conexion." };
+  }
 }
 
-export function logoutUser(): void {
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {}
   saveSession(null);
 }
 
-export function updatePassword(email: string, newPassword: string): { success: boolean; error?: string } {
-  if (newPassword.length < 6) return { success: false, error: "La contraseña debe tener al menos 6 caracteres." };
-  const users = getUsers();
-  const user = users.find((u) => u.email === email);
-  if (!user) return { success: false, error: "Usuario no encontrado." };
-  user.password = hashPassword(newPassword);
-  saveUsers(users);
-  return { success: true };
+export async function updatePassword(
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch("/api/auth/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ newPassword }),
+    });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.error };
+    return { success: true };
+  } catch {
+    return { success: false, error: "Error de conexion." };
+  }
 }
 
-export function saveDiagnosticResult(
-  email: string,
-  result: { empScore: number; topProfile: string; skills: string[] }
-): void {
-  const users = getUsers();
-  const user = users.find((u) => u.email === email);
-  if (user) {
-    user.diagnosticDone = true;
-    user.diagnosticDate = new Date().toISOString();
-    user.empScore = result.empScore;
-    user.topProfile = result.topProfile;
-    user.skills = result.skills;
-    saveUsers(users);
-  }
+export async function saveDiagnosticResult(result: {
+  empScore: number;
+  topProfile: string;
+  skills: string[];
+}): Promise<void> {
+  try {
+    await fetch("/api/diagnostic/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(result),
+    });
+  } catch {}
 }

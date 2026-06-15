@@ -9,7 +9,7 @@ import { ConsentModal } from "./ConsentModal";
 import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult } from "@/lib/diagnostic";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
-import { getSession, saveDiagnosticResult, getUsers } from "@/lib/auth";
+import { getSession, saveDiagnosticResult } from "@/lib/auth";
 
 const GUIDED_QUESTIONS = [
   "Cuéntame sobre tu experiencia con SAP. ¿Con qué módulos has trabajado?",
@@ -64,7 +64,7 @@ export function DiagnosticTool() {
     if (!pendingResult) return;
     const session = getSession();
     if (session) {
-      saveDiagnosticResult(session.email, {
+      saveDiagnosticResult({
         empScore: pendingResult.empScore,
         topProfile: pendingResult.topSlug,
         skills: pendingResult.skills,
@@ -132,13 +132,7 @@ export function DiagnosticTool() {
     const session = getSession();
     let userName = session?.name;
     let userEmail = session?.email;
-    let userCountry: string | undefined;
-    if (session) {
-      const users = getUsers();
-      const u = users.find((u) => u.email === session.email);
-      userCountry = u?.country;
-    }
-    downloadDiagnosticPDF(result, userName, userEmail, userCountry);
+    downloadDiagnosticPDF(result, userName, userEmail, session?.country);
   }
 
   function handleEmailSend() {

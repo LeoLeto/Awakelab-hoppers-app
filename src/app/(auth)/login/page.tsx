@@ -20,7 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = loginUser(email, password);
+    const result = await loginUser(email, password);
     setLoading(false);
     if (result.success) {
       router.push("/mi-cuenta");
