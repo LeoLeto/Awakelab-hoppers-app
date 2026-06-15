@@ -1,0 +1,2505 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoppers | Comunidad SAP - Salarios, Perfiles y Mercado Laboral</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3/dist/htm.module.js" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{colors:{'hopper-red':'#FF1800','hopper-red-dark':'#CC1300','hopper-granate':'#3C0405','hopper-black':'#000A1A','hopper-beige':'#DDC9B3','hopper-beige-light':'#EDE3D6','hopper-murray':'#B79E80'},fontFamily:{sans:['Inter','system-ui','sans-serif']}}}}
+</script>
+<style>
+*{box-sizing:border-box}body{font-family:'Inter',system-ui,sans-serif;margin:0}
+@keyframes pulse-s{0%,100%{opacity:1}50%{opacity:.85}}.anim-pulse{animation:pulse-s 3s ease-in-out infinite}
+.page{display:none}.page.active{display:block}
+.filter-select{width:100%;border:1px solid #DDC9B360;border-radius:6px;padding:8px 12px;font-size:14px;background:#fff;outline:none}
+.filter-select:focus{border-color:#B79E80}
+.btn-red{background:#FF1800;color:#fff;border:none;padding:12px 32px;border-radius:6px;font-weight:600;cursor:pointer;font-size:15px;transition:background .2s}
+.btn-red:hover{background:#CC1300}
+.btn-outline{background:transparent;border:1px solid #B79E8066;color:#DDC9B3;padding:12px 32px;border-radius:6px;font-weight:500;cursor:pointer;font-size:15px;transition:all .2s}
+.btn-outline:hover{background:#B79E8020;color:#fff}
+.card{background:#fff;border:1px solid #DDC9B360;border-radius:12px;padding:20px;transition:all .2s}
+.card:hover{border-color:#B79E8060;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;font-weight:500}
+.badge-crítical{color:#dc2626;background:#fef2f2;border:1px solid #fecaca}
+.badge-high{color:#ea580c;background:#fff7ed;border:1px solid #fed7aa}
+.badge-medium{color:#ca8a04;background:#fefce8;border:1px solid #fef08a}
+.badge-cert{color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0}
+.tab-btn{padding:6px 16px;font-size:14px;border-radius:6px;cursor:pointer;border:none;font-weight:500;background:transparent;color:#000A1A80;transition:all .2s}
+.tab-btn.active{background:#fff;color:#000A1A;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.progress-bar{height:6px;background:#DDC9B330;border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(to right,#B79E80,#FF1800)}
+.nav-link{padding:8px 12px;font-size:14px;font-weight:500;border-radius:6px;cursor:pointer;border:none;background:transparent;transition:all .15s}
+.skill-tag{font-size:10px;padding:3px 8px;border-radius:999px;background:#DDC9B320;color:#000A1A99;border:1px solid #DDC9B340}
+/* Diagnostic / Chat */
+.chat-container{display:flex;flex-direction:column;height:420px;border:1px solid #DDC9B360;border-radius:12px;overflow:hidden;background:#FAFAF7}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;word-wrap:break-word}
+.chat-msg.bot{background:#fff;border:1px solid #DDC9B340;align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:#FF1800;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid #DDC9B340;background:#fff}
+.chat-input{flex:1;border:1px solid #DDC9B360;border-radius:8px;padding:10px 14px;font-size:14px;outline:none;font-family:inherit}
+.chat-input:focus{border-color:#FF1800}
+.chat-send{background:#FF1800;color:#fff;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600;font-size:14px;transition:background .2s}
+.chat-send:hover{background:#CC1300}
+.voice-btn{width:64px;height:64px;border-radius:50%;border:3px solid #FF1800;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:24px}
+.voice-btn.recording{background:#FF1800;border-color:#CC1300;animation:pulse-s 1s ease-in-out infinite}
+.voice-btn.recording span{filter:brightness(10)}
+.input-mode-tab{padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;color:#000A1A60;border-bottom:2px solid transparent;transition:all .15s}
+.input-mode-tab.active{color:#FF1800;border-bottom-color:#FF1800}
+.match-bar{height:8px;background:#DDC9B330;border-radius:999px;overflow:hidden}
+.match-fill{height:100%;border-radius:999px;transition:width .8s ease-out}
+.result-card{background:#fff;border:1px solid #DDC9B340;border-radius:12px;padding:24px;transition:all .3s}
+.result-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.08)}
+@keyframes typing{0%{opacity:.2}20%{opacity:1}100%{opacity:.2}}
+.typing-dots span{animation:typing 1.4s infinite;display:inline-block;margin:0 1px}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+.drop-zone{border:2px dashed #DDC9B380;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:#FF1800;background:#FF180008}
+/* Consent & Modal */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,10,26,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:32px;box-shadow:0 24px 48px rgba(0,0,0,.15)}
+.consent-check{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:#FAFAF7;border:1px solid #DDC9B340;cursor:pointer;transition:all .15s}
+.consent-check:hover{border-color:#FF1800}
+.consent-check input{margin-top:3px;accent-color:#FF1800;width:16px;height:16px;cursor:pointer}
+/* Infographic */
+.infographic-card{background:linear-gradient(135deg,#000A1A 0%,#3C0405 100%);border-radius:16px;padding:32px;color:#fff;position:relative;overflow:hidden}
+.infographic-card::before{content:'';position:absolute;top:-50%;right:-30%;width:60%;height:100%;background:radial-gradient(circle,#FF180015 0%,transparent 70%);pointer-events:none}
+.info-stat{text-align:center;padding:16px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}
+.info-stat .val{font-size:24px;font-weight:800;line-height:1.2}
+.info-stat .lbl{font-size:11px;opacity:.6;margin-top:4px}
+.lang-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15)}
+.scrape-log{font-family:monospace;font-size:11px;background:#0a0a0f;color:#4ade80;padding:16px;border-radius:8px;max-height:200px;overflow-y:auto;white-space:pre-wrap}
+</style>
+</head>
+<body class="min-h-screen bg-[#FAFAF7] text-[#000A1A]">
+
+<!-- CONSENT MODAL -->
+<div id="consent-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="h-8 w-8 rounded flex items-center justify-center" style="background:#FF1800"><span class="text-white font-bold text-sm">H</span></div>
+      <span class="text-lg font-bold" style="color:#000A1A">Consentimiento de datos</span>
+    </div>
+    <p class="text-sm mb-4" style="color:#000A1A80">Para generar tu informe de diagnóstico profesional, necesitamos tu consentimiento para el tratamiento de los datos que has compartido, de acuerdo con el Reglamento General de Protección de Datos (RGPD) y la Ley Organica de Protección de Datos (LOPD).</p>
+    <div class="space-y-3 mb-6">
+      <label class="consent-check"><input type="checkbox" id="consent-1"><div><p class="text-sm font-medium" style="color:#000A1A">Tratamiento de datos personales</p><p class="text-xs" style="color:#000A1A60">Autorizo a Hoppers Academy a tratar mis datos personales (nombre, email, país, experiencia profesional) con la finalidad de generar mi diagnóstico profesional SAP y orientación formativa.</p></div></label>
+      <label class="consent-check"><input type="checkbox" id="consent-2"><div><p class="text-sm font-medium" style="color:#000A1A">Comunicaciónes comerciales</p><p class="text-xs" style="color:#000A1A60">Acepto recibir comunicaciónes sobre programás formativos, eventos y novedades de Hoppers Academy relaciónadas con mi perfil profesional. Puedo darme de baja en cualquier momento.</p></div></label>
+      <label class="consent-check"><input type="checkbox" id="consent-3"><div><p class="text-sm font-medium" style="color:#000A1A">Cesión de datos a terceros</p><p class="text-xs" style="color:#000A1A60">Autorizo la cesión de mis datos anonimizados a partners formativos de Hoppers Academy (SAP, instituciones educativas asociadas) con fines de mejora de la oferta formativa. Mis datos personales identificativos no seran compartidos sin mi consentimiento explicito adicional.</p></div></label>
+    </div>
+    <div class="p-3 rounded-lg mb-4" style="background:#DDC9B315;border:1px solid #DDC9B330">
+      <p class="text-xs" style="color:#000A1A60"><strong>Responsable:</strong> Hoppers Academy | <strong>Finalidad:</strong> Diagnóstico profesional y orientación formativa | <strong>Base legal:</strong> Consentimiento del interesado | <strong>Derechos:</strong> Acceso, rectificación, supresión, portabilidad y oposición escribiendo a privacidad@hoppers.academy</p>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeConsent(false)" class="flex-1 py-2.5 border rounded-md font-medium text-sm" style="border-color:#DDC9B3">Cancelar</button>
+      <button onclick="closeConsent(true)" id="consent-accept-btn" disabled class="flex-1 py-2.5 rounded-md font-semibold text-sm transition-colors" style="background:#DDC9B3;color:#fff;cursor:not-allowed">Aceptar y generar informe</button>
+    </div>
+    <p class="text-[10px] text-center mt-3" style="color:#000A1A40">Al aceptar confirmás qué eres mayor de 16 años y has leido la politica de privacidad de Hoppers Academy.</p>
+  </div>
+</div>
+
+<!-- PROFILE INFOGRAPHIC MODAL -->
+<div id="infographic-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:700px;padding:0;overflow:hidden;position:relative">
+    <!-- Fixed close X button -->
+    <button onclick="closeInfographic()" style="position:sticky;top:0;right:0;z-index:10;float:right;margin:12px 12px 0 0;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)" title="Cerrar">&#10005;</button>
+    <div id="infographic-content" style="margin-top:-36px"></div>
+    <div class="p-4 flex gap-3 justify-end" style="border-top:1px solid #DDC9B330;background:#fff">
+      <button onclick="closeInfographic()" class="px-4 py-2 border rounded-md font-medium text-sm" style="border-color:#DDC9B3">Cerrar</button>
+      <button onclick="downloadInfographicPDF()" class="px-4 py-2 rounded-md font-semibold text-sm text-white" style="background:#FF1800;border:none;cursor:pointer">&#128196; Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<header id="navbar" class="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur" style="border-color:#DDC9B330">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <a href="#" onclick="go('home');return false" class="flex items-center gap-1.5 no-underline">
+      <div class="h-8 w-8 rounded flex items-center justify-center" style="background:#FF1800"><span class="text-white font-bold text-sm">H</span></div>
+      <span class="text-xl font-bold tracking-tight" style="color:#000A1A">HOPPERS</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-1" id="desktop-nav"></nav>
+    <div class="hidden md:flex items-center gap-3" id="nav-cta-area">
+      <button onclick="go('login')" class="nav-link" style="color:#000A1A99">Iniciar Sesión</button>
+      <button onclick="go('registro')" class="btn-red" style="padding:8px 16px;font-size:13px">Unirse Gratis</button>
+    </div>
+    <button class="md:hidden p-2" onclick="toggleMobile()" id="mobile-toggle">
+      <svg id="menu-icon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="md:hidden hidden border-t px-4 py-4 space-y-2 bg-white" style="border-color:#DDC9B330"></div>
+</header>
+
+<!-- ===== PAGES ===== -->
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <!-- Hero -->
+  <section class="relative overflow-hidden" style="background:#000A1A">
+    <div class="absolute inset-0 opacity-5" style="background:radial-gradient(circle at 25% 50%, #FF1800 0%, transparent 50%),radial-gradient(circle at 75% 50%, #B79E80 0%, transparent 50%)"></div>
+    <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8" style="border:1px solid #B79E8030;background:#B79E8010">
+          <span class="h-2 w-2 rounded-full anim-pulse" style="background:#FF1800"></span>
+          <span class="text-xs font-medium tracking-wide uppercase" style="color:#DDC9B3">Partner oficial SAP para Europa y LATAM</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">No necesitas un ascenso,<br><span style="color:#FF1800">necesitas un upgrade.</span></h1>
+        <p class="mt-6 text-lg sm:text-xl leading-relaxed max-w-2xl" style="color:#ffffff99">Descubre tu posición en el mercado SAP. Salarios reales, perfiles más demandados y un camino claro hacia tu siguiente nivel profesional.</p>
+        <div class="mt-10 flex flex-col sm:flex-row gap-4">
+          <button onclick="go('salarios')" class="btn-red inline-flex items-center justify-center gap-2">Explorar Salarios SAP <span>&#8594;</span></button>
+          <button onclick="go('perfiles')" class="btn-outline inline-flex items-center justify-center">Ver Perfiles Demandados</button>
+        </div>
+        <div class="mt-16 grid grid-cols-3 gap-8 border-t pt-8" style="border-color:#ffffff15">
+          <div><p class="text-2xl sm:text-3xl font-bold text-white">15</p><p class="text-sm" style="color:#ffffff66">Perfiles SAP analizados</p></div>
+          <div><p class="text-2xl sm:text-3xl font-bold text-white">14</p><p class="text-sm" style="color:#ffffff66">Países con datos</p></div>
+          <div><p class="text-2xl sm:text-3xl font-bold text-white">3.8k+</p><p class="text-sm" style="color:#ffffff66">Ofertas SAP activas</p></div>
+        </div>
+        <!-- Public report download -->
+        <div class="mt-8">
+          <button onclick="downloadMarketReport()" class="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg transition-colors" style="background:#ffffff10;color:#DDC9B3;border:1px solid #ffffff15" onmouseover="this.style.background='#ffffff20'" onmouseout="this.style.background='#ffffff10'">
+            &#128196; Descargar Informe de Mercado SAP (PDF)
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Logos -->
+  <section class="py-12 bg-white border-y" style="border-color:#DDC9B330">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-xs font-medium uppercase tracking-widest mb-8" style="color:#000A1A30">Datos respaldados por estudios de las principales consultoras</p>
+      <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-6" id="logos-row"></div>
+    </div>
+  </section>
+  <!-- Value Props -->
+  <section class="py-20 sm:py-28 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <p class="text-sm font-semibold tracking-wider uppercase mb-3" style="color:#FF1800">Propuesta de valor</p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color:#000A1A">Better. Smarter. Hoppers.</h2>
+        <p class="mt-4 text-lg" style="color:#000A1A80">Valoramos tu experiencia, conocimientos y logros. No somos un salto de fe, somos un salto en tu carrera.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12" id="value-props"></div>
+    </div>
+  </section>
+  <!-- Market Preview -->
+  <section class="py-20 sm:py-28" style="background:#EDE3D630">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12">
+        <div>
+          <p class="text-sm font-semibold tracking-wider uppercase mb-3" style="color:#FF1800">Mercado laboral SAP</p>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color:#000A1A">Perfiles más demandados</h2>
+          <p class="mt-3 max-w-lg" style="color:#000A1A80">Los roles con mayor número de ofertas activas en Europa y Latinoamerica.</p>
+        </div>
+        <button onclick="go('mercado')" class="text-sm font-medium inline-flex items-center gap-1" style="color:#FF1800">Ver analisis completo &#8594;</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="top-profiles"></div>
+      <!-- Migration banner -->
+      <div class="mt-12 rounded-xl p-8 sm:p-10" style="background:#000A1A">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div>
+            <p class="font-bold text-sm tracking-wider uppercase mb-2" style="color:#FF1800">Fecha límite de migración SAP</p>
+            <h3 class="text-2xl sm:text-3xl font-bold text-white">S/4HANA 2027 / 2030</h3>
+            <p class="mt-2 max-w-lg" style="color:#ffffff80">SAP ha establecido el fin de mantenimiento de ECC para 2027. Las empresas deben migrar a S/4HANA, generando una demanda sin precedentes de consultores.</p>
+          </div>
+          <button onclick="go('mercado')" class="btn-red whitespace-nowrap" style="padding:12px 24px;font-size:14px">Ver impacto en el mercado</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- CTA -->
+  <section class="py-20 sm:py-28 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="relative rounded-2xl overflow-hidden" style="background:#3C0405">
+        <div class="absolute inset-0 opacity-10" style="background:radial-gradient(circle at 80% 20%, #FF1800 0%, transparent 40%)"></div>
+        <div class="relative px-8 py-16 sm:px-16 sm:py-20 text-center">
+          <p class="font-bold text-sm tracking-wider uppercase mb-4" style="color:#FF1800">Próximamente</p>
+          <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight max-w-2xl mx-auto">Tu diagnóstico personalizado con inteligencia artificial</h2>
+          <p class="mt-4 text-lg max-w-xl mx-auto" style="color:#ffffff99">Regístrate y recibe un analisis completo de tu perfil SAP: match laboral, empleabilidad y una ruta de formación personalizada.</p>
+          <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
+            <div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ffffff15"><span style="color:#DDC9B3;font-size:20px">&#128172;</span></div><p class="text-sm" style="color:#ffffffb3">Agente conversacional IA</p></div>
+            <div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ffffff15"><span style="color:#DDC9B3;font-size:20px">&#128196;</span></div><p class="text-sm" style="color:#ffffffb3">Sube tu CV o LinkedIn</p></div>
+            <div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:#ffffff15"><span style="color:#DDC9B3;font-size:20px">&#128202;</span></div><p class="text-sm" style="color:#ffffffb3">Informe PDF descargable</p></div>
+          </div>
+          <div class="mt-10">
+            <button onclick="go('registro')" class="btn-red" style="padding:14px 40px;font-size:16px">Registrarme gratis &#8594;</button>
+            <p class="mt-3 text-xs" style="color:#ffffff30">Gratis. Sin compromiso. Sin tarjeta de crédito.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SALARIOS -->
+<div id="page-salarios" class="page">
+  <div class="min-h-screen" style="background:#EDE3D620">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div class="mb-10">
+        <p class="text-sm font-semibold tracking-wider uppercase mb-2" style="color:#FF1800">Benchmark salarial</p>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color:#000A1A">Salarios SAP por país y rol</h1>
+        <p class="mt-3 max-w-2xl" style="color:#000A1A80">Rangos salariales reales para consultores SAP en nómina y freelance. Filtra por region, país, perfil y experiencia.</p>
+      </div>
+      <!-- Filters -->
+      <div class="card mb-6">
+        <div class="flex items-center gap-2 mb-4"><span style="color:#FF1800">&#9660;</span><span class="text-sm font-semibold" style="color:#000A1A">Filtros</span></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div><label class="text-xs font-medium block mb-1.5" style="color:#000A1A80">Region</label><select id="f-region" class="filter-select" onchange="onRegionChange()"></select></div>
+          <div><label class="text-xs font-medium block mb-1.5" style="color:#000A1A80">Pais</label><select id="f-country" class="filter-select" onchange="renderSalaries()"></select></div>
+          <div><label class="text-xs font-medium block mb-1.5" style="color:#000A1A80">Perfil SAP</label><select id="f-role" class="filter-select" onchange="renderSalaries()"></select></div>
+          <div><label class="text-xs font-medium block mb-1.5" style="color:#000A1A80">Experiencia</label><select id="f-seniority" class="filter-select" onchange="renderSalaries()"></select></div>
+        </div>
+        <div class="mt-4 flex gap-1 p-1 rounded-lg w-fit" style="background:#DDC9B320">
+          <button class="tab-btn active" id="tab-permanent" onclick="setEmpType('permanent')">En nómina</button>
+          <button class="tab-btn" id="tab-freelance" onclick="setEmpType('freelance')">Freelance</button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mb-6">
+        <p class="text-sm" style="color:#000A1A80"><span class="font-semibold" style="color:#000A1A" id="result-count">0</span> resultados para <span class="font-medium" id="result-country"></span></p>
+        <span class="text-xs px-3 py-1 rounded-full border" style="border-color:#DDC9B360;color:#000A1A80">Datos actualizados: Abril 2026</span>
+      </div>
+      <!-- Chart -->
+      <div class="card mb-6"><h3 class="text-base font-semibold mb-4" style="color:#000A1A">Comparativa salarial <span class="text-xs font-normal" style="color:#000A1A60" id="chart-subtitle">(Bruto anual)</span></h3><div style="height:350px;position:relative"><canvas id="salary-chart"></canvas></div></div>
+      <!-- Results -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="salary-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MERCADO -->
+<div id="page-mercado" class="page">
+  <div class="min-h-screen" style="background:#EDE3D620">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div class="mb-10">
+        <p class="text-sm font-semibold tracking-wider uppercase mb-2" style="color:#FF1800">Inteligencia de mercado</p>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color:#000A1A">Mercado laboral SAP</h1>
+        <p class="mt-3 max-w-2xl" style="color:#000A1A80">Datos actualizados: demanda por perfil, tendencias y el impacto de la migración a S/4HANA.</p>
+      </div>
+      <!-- KPIs -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="market-kpis"></div>
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 card"><h3 class="text-base font-semibold mb-4" style="color:#000A1A">Evolución de ofertas SAP (12 semanas)</h3><div style="height:280px;position:relative"><canvas id="trend-chart"></canvas></div></div>
+        <div class="card"><h3 class="text-base font-semibold mb-4" style="color:#000A1A">Demanda por categoria</h3><div style="height:260px;position:relative"><canvas id="pie-chart"></canvas></div></div>
+      </div>
+      <!-- Ranking -->
+      <div class="card mb-8">
+        <h3 class="text-base font-semibold mb-4" style="color:#000A1A">Ranking de perfiles por demanda</h3>
+        <div class="space-y-3" id="profile-ranking"></div>
+      </div>
+      <!-- Region chart -->
+      <div class="card mb-8"><h3 class="text-base font-semibold mb-4" style="color:#000A1A">Ofertas SAP por region</h3><div style="height:300px;position:relative"><canvas id="region-chart"></canvas></div></div>
+      <!-- S/4HANA banner -->
+      <div class="rounded-xl p-8 sm:p-10" style="background:linear-gradient(to right,#000A1A,#3C0405)">
+        <h3 class="text-xl font-bold text-white mb-2">El efecto S/4HANA en el mercado laboral</h3>
+        <p class="leading-relaxed max-w-3xl" style="color:#ffffff99">Con la fecha límite de migración fijada para 2027 (extensión hasta 2030), las empresas aceleran sus conversiónes. Incremento del 35% en demanda de consultores S/4HANA Cloud. Certificados ven un bonus salarial de hasta un 12%.</p>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div><p class="text-2xl font-bold" style="color:#FF1800">+35%</p><p class="text-xs mt-1" style="color:#ffffff66">Incremento demanda S/4HANA</p></div>
+          <div><p class="text-2xl font-bold" style="color:#DDC9B3">2027</p><p class="text-xs mt-1" style="color:#ffffff66">Fin mantenimiento ECC</p></div>
+          <div><p class="text-2xl font-bold text-white">+12%</p><p class="text-xs mt-1" style="color:#ffffff66">Bonus por certificación</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Sources -->
+    <div class="card mt-8" style="border-color:#DDC9B340">
+      <h3 class="font-semibold mb-4" style="color:#000A1A">&#128218; Fuentes de datos</h3>
+      <p class="text-xs mb-4" style="color:#000A1A60">Los datos salariales y de demanda se recopilan de las principales plataformás de empleo por region. Actualización semanal.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="rounded-lg p-4" style="background:#DDC9B310">
+          <p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:#FF1800">Europa</p>
+          <ul class="space-y-1.5">
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>LinkedIn Jobs</strong> - DE, CH, ES, FR, IT</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>InfoJobs</strong> - España</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Jobted.es</strong> - España</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>StepStone / XING</strong> - Alemania</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Indeed</strong> - FR, IT, BE, PT</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Glassdoor</strong> - Europa</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>SAP Community / Partner reports</strong></li>
+          </ul>
+        </div>
+        <div class="rounded-lg p-4" style="background:#DDC9B310">
+          <p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:#FF1800">Latinoamerica</p>
+          <ul class="space-y-1.5">
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Get on Board</strong> - CL, MX, CO, AR, PE</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Computrabajo</strong> - MX, CO, PE, CL, AR</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>LinkedIn Jobs</strong> - Toda LATAM</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Indeed</strong> - MX, CO, CL, BR</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Trabajando.com</strong> - CL, CO, PE</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Laborum</strong> - CL, AR, PE</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Catho / Vagas.com</strong> - Brasíl</li>
+          </ul>
+        </div>
+        <div class="rounded-lg p-4" style="background:#DDC9B310">
+          <p class="text-xs font-bold uppercase tracking-wider mb-2" style="color:#FF1800">USA & Global</p>
+          <ul class="space-y-1.5">
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>LinkedIn Jobs</strong> - USA</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Indeed / Glassdoor</strong> - USA</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Dice</strong> - USA (tech)</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>ZipRecruiter</strong> - USA</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>SAP.com Careers</strong></li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>Accenture, NTT Data, KPMG</strong> - Reportes salariales</li>
+            <li class="text-xs" style="color:#000A1A80">&#8226; <strong>El Periodico del Consultor</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Web Scraping Panel -->
+    <div class="card mt-8" style="border-color:#000A1A20">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background:#000A1A;color:#4ade80;font-size:18px">&#9881;</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold" style="color:#000A1A">Motor de Investigación de Mercado</h3>
+            <span class="badge badge-cert" id="scrape-status-badge">Automatizado</span>
+          </div>
+          <p class="text-sm mb-4" style="color:#000A1A70">Recopilación semanal automática de ofertas SAP desde las principales plataformás de empleo.</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="scrape-sources"></div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-4">
+              <span class="text-xs" style="color:#000A1A60">Última ejecución: <strong id="last-scrape-date">1 Abr 2026</strong></span>
+              <span class="text-xs" style="color:#000A1A60">Próxima: <strong id="next-scrape-date">8 Abr 2026</strong></span>
+            </div>
+            <button onclick="runScrapeSimulation()" id="scrape-run-btn" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-white" style="background:#000A1A;border:none;cursor:pointer">&#9654; Ejecutar ahora</button>
+          </div>
+          <div id="scrape-log-container" class="hidden">
+            <div class="scrape-log" id="scrape-log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERFILES -->
+<div id="page-perfiles" class="page">
+  <div class="min-h-screen" style="background:#EDE3D620">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div class="mb-10">
+        <p class="text-sm font-semibold tracking-wider uppercase mb-2" style="color:#FF1800">Catálogo de perfiles</p>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight" style="color:#000A1A">Perfiles profesionales SAP</h1>
+        <p class="mt-3 max-w-2xl" style="color:#000A1A80">15 perfiles SAP con skills, certificaciónes, nivel de demanda y ruta profesional.</p>
+      </div>
+      <div class="flex gap-1 p-1 rounded-lg w-fit mb-8" style="background:#DDC9B320" id="profiles-tabs"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="profiles-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SOBRE -->
+<div id="page-sobre" class="page">
+  <section class="py-20 sm:py-28" style="background:#000A1A">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="max-w-3xl">
+      <p class="font-bold text-sm tracking-wider uppercase mb-4" style="color:#FF1800">Sobre Hoppers</p>
+      <h1 class="text-4xl sm:text-5xl font-bold text-white tracking-tight leading-tight">Esto no es un manual de otra marca sin más. Es el impulso definitivo para profesionales ambiciosos.</h1>
+      <p class="mt-6 text-lg leading-relaxed" style="color:#ffffff80">Hoppers es el puente que conecta tu experiencia con las oportunidades de alto valor.</p>
+    </div></div>
+  </section>
+  <section class="py-20 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <h2 class="text-3xl font-bold mb-6" style="color:#000A1A">Grace Hopper: nuestra inspiración</h2>
+          <p class="mb-4" style="color:#000A1A99">Nuestro nombre rinde homenaje a Grace Hopper, la madre de la computación. Su espiritu pionero, su autoridad y su vision transformadora son la base de todo lo qué hacemos.</p>
+          <p class="mb-4" style="color:#000A1A99">Hopper también suena a salto. A avance. A movimiento. Es la alusion directa a la evolución profesional qué ofrecemos.</p>
+          <p style="color:#000A1A99">Y sobre todo, a apellido. A clase. Hoppers confiere un apellido a quienes estudian aquí, un sello de pertenencia a una elite profesional.</p>
+        </div>
+        <div class="rounded-2xl p-10" style="background:#DDC9B320">
+          <blockquote class="text-2xl font-bold leading-snug" style="color:#000A1A">No te pedimos qué renazcas ni qué empieces de cero. Valoramos tu experiencia, conocimientos y logros.</blockquote>
+          <p class="mt-4 font-semibold" style="color:#FF1800">Hoppers Academy</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="py-20" style="background:#EDE3D630">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-bold mb-12 text-center" style="color:#000A1A">Nuestros valores</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="about-values"></div>
+    </div>
+  </section>
+  <section class="py-20 bg-white text-center">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-bold mb-4" style="color:#000A1A">Listo para dar el salto?</h2>
+      <p class="mb-8 max-w-lg mx-auto" style="color:#000A1A80">Únete a la comunidad Hoppers y descubre tu posición en el mercado SAP.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button onclick="go('registro')" class="btn-red">Unirme a la comunidad</button>
+        <a href="https://hoppers.academy" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 px-8 py-3 border rounded-md font-medium" style="border-color:#DDC9B3;color:#000A1A">Visitar Hoppers Academy &#8599;</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- REGISTRO -->
+<div id="page-registro" class="page">
+  <div class="min-h-[80vh] flex items-center justify-center py-12 px-4" style="background:#EDE3D620">
+    <div class="w-full max-w-lg card text-center">
+      <div class="mx-auto h-10 w-10 rounded flex items-center justify-center mb-4" style="background:#FF1800"><span class="text-white font-bold">H</span></div>
+      <h1 class="text-2xl font-bold mb-1" style="color:#000A1A">Únete a Hoppers</h1>
+      <p class="text-sm mb-6" style="color:#000A1A80">Crea tu perfil y accede a tu diagnóstico personalizado</p>
+      <div class="flex items-center justify-center gap-2 mb-6" id="reg-steps"></div>
+      <div id="reg-form"></div>
+      <p class="text-sm mt-6" style="color:#000A1A80">Ya tienes cuenta? <button onclick="go('login')" class="font-medium" style="color:#FF1800;border:none;background:none;cursor:pointer">Iniciar sesión</button></p>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="page-login" class="page">
+  <div class="min-h-[80vh] flex items-center justify-center py-12 px-4" style="background:#EDE3D620">
+    <div class="w-full max-w-md card text-center">
+      <div class="mx-auto h-10 w-10 rounded flex items-center justify-center mb-4" style="background:#FF1800"><span class="text-white font-bold">H</span></div>
+      <h1 class="text-2xl font-bold mb-1" style="color:#000A1A">Iniciar sesión</h1>
+      <p class="text-sm mb-6" style="color:#000A1A80">Accede a tu perfil y diagnóstico personalizado</p>
+      <div class="space-y-4 text-left">
+        <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Email</label><input type="email" id="login-email" class="filter-select" placeholder="tu@email.com"></div>
+        <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Contraseña</label><input type="password" id="login-password" class="filter-select" placeholder="Tu contraseña"></div>
+        <div id="login-error" class="hidden text-sm p-2 rounded-lg text-center" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca"></div>
+        <button onclick="handleLogin()" class="btn-red w-full">Iniciar sesión</button>
+      </div>
+      <p class="text-sm mt-6" style="color:#000A1A80">No tienes cuenta? <button onclick="go('registro')" class="font-medium" style="color:#FF1800;border:none;background:none;cursor:pointer">Regístrate gratis</button></p>
+    </div>
+  </div>
+</div>
+
+<!-- USER DASHBOARD -->
+<div id="page-mi-cuenta" class="page">
+  <div class="min-h-screen" style="background:#EDE3D620">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <p class="text-sm font-semibold tracking-wider uppercase mb-2" style="color:#FF1800">Mi cuenta</p>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight" style="color:#000A1A" id="dash-welcome">Bienvenido</h1>
+        </div>
+        <button onclick="handleLogout()" class="px-4 py-2 text-sm border rounded-md font-medium" style="border-color:#DDC9B3">Cerrar sesión</button>
+      </div>
+      <!-- Profile card -->
+      <div class="card mb-6">
+        <h3 class="font-semibold mb-4" style="color:#000A1A">&#128100; Mi perfil</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="dash-profile-info"></div>
+      </div>
+      <!-- Change password -->
+      <div class="card mb-6">
+        <h3 class="font-semibold mb-4" style="color:#000A1A">&#128274; Cambiar contraseña</h3>
+        <div class="space-y-3 max-w-sm">
+          <div><label class="text-xs font-medium block mb-1" style="color:#000A1A80">Nueva contraseña</label><input type="password" id="new-password" class="filter-select" placeholder="Mínimo 6 caracteres"></div>
+          <div><label class="text-xs font-medium block mb-1" style="color:#000A1A80">Confirmar contraseña</label><input type="password" id="confirm-password" class="filter-select" placeholder="Repite la contraseña"></div>
+          <button onclick="changePassword()" class="btn-red" style="padding:8px 20px;font-size:13px">Actualizar contraseña</button>
+          <div id="pass-status" class="hidden text-sm p-2 rounded-lg"></div>
+        </div>
+      </div>
+      <!-- Diagnostic history -->
+      <div class="card mb-6">
+        <h3 class="font-semibold mb-4" style="color:#000A1A">&#128202; Mi diagnóstico</h3>
+        <div id="dash-diagnostic"></div>
+      </div>
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button onclick="go('diagnóstico')" class="btn-red" style="padding:10px 20px;font-size:13px">Realizar diagnóstico</button>
+        <button onclick="go('salarios')" class="px-4 py-2 border rounded-md font-medium text-sm" style="border-color:#DDC9B3">Explorar salarios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL (hidden access: type "hoppers-admin" in footer copyright) -->
+<div id="page-admin" class="page">
+  <div class="min-h-screen" style="background:#000A1A">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+      <!-- Admin login gate -->
+      <div id="admin-gate" class="text-center py-20">
+        <div class="mx-auto h-12 w-12 rounded-lg flex items-center justify-center mb-4" style="background:#FF1800"><span class="text-white font-bold text-lg">H</span></div>
+        <h1 class="text-2xl font-bold text-white mb-2">Panel de Administración</h1>
+        <p class="text-sm mb-6" style="color:#ffffff60">Acceso restringido. Introduce las credenciales de administrador.</p>
+        <div class="max-w-xs mx-auto space-y-3">
+          <input type="password" id="admin-key" class="filter-select" placeholder="Clave de administrador" style="background:#ffffff10;color:#fff;border-color:#ffffff20">
+          <button onclick="adminLogin()" class="btn-red w-full" style="padding:10px;font-size:14px">Acceder</button>
+          <div id="admin-error" class="hidden text-xs p-2 rounded-lg" style="background:#FF180015;color:#FF1800">Clave incorrecta</div>
+        </div>
+      </div>
+      <!-- Admin dashboard (hidden until auth) -->
+      <div id="admin-dashboard" class="hidden">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-bold text-white">Panel de Administración Hoppers</h1>
+            <p class="text-sm" style="color:#ffffff60">Gestion de usuarios y datos de la comunidad</p>
+          </div>
+          <button onclick="adminLogout()" class="px-4 py-2 text-sm rounded-md font-medium" style="background:#ffffff10;color:#ffffff80;border:1px solid #ffffff20;cursor:pointer">Cerrar admin</button>
+        </div>
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8" id="admin-stats"></div>
+        <!-- Users table -->
+        <div class="rounded-xl overflow-hidden" style="background:#ffffff08;border:1px solid #ffffff10">
+          <div class="p-4 flex items-center justify-between" style="border-bottom:1px solid #ffffff10">
+            <h3 class="font-semibold text-white">Usuarios registrados</h3>
+            <div class="flex gap-2">
+              <input type="text" id="admin-search" class="filter-select" placeholder="Buscar por nombre o email..." style="background:#ffffff08;color:#fff;border-color:#ffffff15;width:250px;font-size:12px;padding:6px 12px" oninput="renderAdminUsers()">
+              <button onclick="exportUsersCSV()" class="px-3 py-1.5 rounded-md text-xs font-semibold" style="background:#FF1800;color:#fff;border:none;cursor:pointer">&#128196; Exportar CSV</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="color:#ffffffcc">
+              <thead><tr style="background:#ffffff08">
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Nombre</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Email</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Pais</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Rol actual</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Exp.</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Modulos</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Objetivo</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Registro</th>
+                <th class="text-left p-3 text-xs font-semibold" style="color:#ffffff60">Diagnóstico</th>
+              </tr></thead>
+              <tbody id="admin-users-table"></tbody>
+            </table>
+          </div>
+          <div class="p-3 text-xs text-center" style="color:#ffffff40;border-top:1px solid #ffffff10" id="admin-users-count"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIAGNOSTICO -->
+<div id="page-diagnóstico" class="page">
+  <div class="min-h-screen" style="background:#EDE3D620">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="mx-auto h-12 w-12 rounded-lg flex items-center justify-center mb-4" style="background:#FF1800"><span class="text-white font-bold text-lg">H</span></div>
+        <h1 class="text-2xl sm:text-3xl font-bold" style="color:#000A1A">Tu Diagnóstico Profesional SAP</h1>
+        <p class="mt-2 max-w-lg mx-auto" style="color:#000A1A80">Cuentaños sobre tu experiencia y te orientaremos hacia los perfiles SAP más adecuados para ti.</p>
+      </div>
+
+      <!-- Input mode selector -->
+      <div id="diag-input-section">
+        <div class="flex justify-center border-b mb-6" style="border-color:#DDC9B340">
+          <button class="input-mode-tab active" onclick="setInputMode('chat')">&#128172; Chat</button>
+          <button class="input-mode-tab" onclick="setInputMode('voice')">&#127908; Voz</button>
+          <button class="input-mode-tab" onclick="setInputMode('cv')">&#128196; Subir CV</button>
+          <button class="input-mode-tab" onclick="setInputMode('linkedin')">&#128101; LinkedIn</button>
+        </div>
+
+        <!-- CHAT MODE -->
+        <div id="mode-chat" class="input-mode">
+          <div class="chat-container" id="chat-box">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-row">
+              <input class="chat-input" id="chat-input" placeholder="Escribe tu experiencia, habilidades, certificaciónes..." onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="chat-send" onclick="sendChat()">Enviar</button>
+            </div>
+          </div>
+          <p class="text-xs mt-2 text-center" style="color:#000A1A50">Describe tu trayectoria: roles, tecnologias, años de experiencia, certificaciónes, sector...</p>
+        </div>
+
+        <!-- VOICE MODE -->
+        <div id="mode-voice" class="input-mode hidden">
+          <div class="card text-center py-10">
+            <button class="voice-btn mx-auto" id="voice-btn" onclick="toggleVoice()">
+              <span>&#127908;</span>
+            </button>
+            <p class="mt-4 font-semibold" style="color:#000A1A" id="voice-status">Pulsa para hablar</p>
+            <p class="text-sm mt-1" style="color:#000A1A60">Describe tu trayectoria profesional SAP por voz</p>
+            <div class="mt-6 mx-auto max-w-lg">
+              <textarea id="voice-transcript" class="filter-select" rows="6" placeholder="La transcripción aparecera aquí..."></textarea>
+            </div>
+            <button onclick="processVoiceInput()" class="btn-red mt-4" style="padding:10px 24px;font-size:14px">Analizar mi perfil &#8594;</button>
+          </div>
+        </div>
+
+        <!-- CV UPLOAD MODE -->
+        <div id="mode-cv" class="input-mode hidden">
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('cv-file').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleCVDrop(event)">
+            <input type="file" id="cv-file" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleCVFile(this.files[0])">
+            <div class="text-4xl mb-4">&#128196;</div>
+            <p class="font-semibold" style="color:#000A1A">Arrastra tu CV aquí o haz clic para seleccionar</p>
+            <p class="text-sm mt-2" style="color:#000A1A60">Formatos: PDF, DOC, DOCX, TXT</p>
+          </div>
+          <div id="cv-preview" class="hidden mt-4">
+            <div class="card">
+              <div class="flex items-center justify-between mb-3">
+                <span class="font-semibold text-sm" style="color:#000A1A" id="cv-filename"></span>
+                <span class="badge badge-cert">Archivo cargado</span>
+              </div>
+              <textarea id="cv-text" class="filter-select" rows="8" placeholder="Contenido del CV..."></textarea>
+              <button onclick="processCVInput()" class="btn-red mt-4 w-full" style="padding:10px 24px;font-size:14px">Analizar mi perfil &#8594;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LINKEDIN MODE -->
+        <div id="mode-linkedin" class="input-mode hidden">
+          <div class="card">
+            <h3 class="font-semibold mb-4" style="color:#000A1A">Comparte tu perfil de LinkedIn</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-medium block mb-1.5" style="color:#000A1A">URL de LinkedIn (opcional)</label>
+                <input id="linkedin-url" class="filter-select" placeholder="https://linkedin.com/in/tu-perfil">
+              </div>
+              <div class="text-center py-2"><span class="text-xs font-medium px-4 py-1 rounded-full" style="background:#DDC9B320;color:#000A1A60">o describe tu perfil manualmente</span></div>
+              <div>
+                <label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Titulo profesional / Headline</label>
+                <input id="linkedin-title" class="filter-select" placeholder="ej. Senior SAP FI/CO Consultant | S/4HANA">
+              </div>
+              <div>
+                <label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Resumen profesional y experiencia</label>
+                <textarea id="linkedin-summary" class="filter-select" rows="6" placeholder="Describe tu experiencia, roles, proyectos, tecnologias, certificaciónes..."></textarea>
+              </div>
+              <button onclick="processLinkedInInput()" class="btn-red w-full" style="padding:10px 24px;font-size:14px">Analizar mi perfil &#8594;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROCESSING STATE -->
+      <div id="diag-processing" class="hidden text-center py-20">
+        <div class="inline-block w-16 h-16 rounded-full border-4 border-hopper-beige mb-6" style="border-top-color:#FF1800;animation:spin 1s linear infinite"></div>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        <h2 class="text-xl font-bold mb-2" style="color:#000A1A">Analizando tu perfil...</h2>
+        <p class="text-sm" style="color:#000A1A80" id="processing-status">Extrayendo habilidades y experiencia...</p>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="diag-results" class="hidden">
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center gap-2 rounded-full px-4 py-2 mb-4" style="background:#16a34a15;border:1px solid #16a34a30">
+            <span style="color:#16a34a">&#10003;</span>
+            <span class="text-sm font-medium" style="color:#16a34a">Diagnóstico completado</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-bold" style="color:#000A1A">Tu Orientación Profesional SAP</h2>
+          <p class="mt-2" style="color:#000A1A80" id="result-user-name"></p>
+        </div>
+
+        <!-- Employability Score -->
+        <div class="card mb-6" style="background:linear-gradient(135deg,#000A1A,#3C0405);border:none">
+          <div class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+            <div class="w-24 h-24 rounded-full flex items-center justify-center" style="background:#FF180030;border:3px solid #FF1800">
+              <span class="text-3xl font-bold text-white" id="employability-score">0</span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white">Índice de Empleabilidad SAP</h3>
+              <p class="text-sm mt-1" style="color:#ffffff80" id="employability-desc">Calculando...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skills detected -->
+        <div class="card mb-6">
+          <h3 class="font-semibold mb-3" style="color:#000A1A">&#127919; Habilidades detectadas</h3>
+          <div class="flex flex-wrap gap-2" id="detected-skills"></div>
+        </div>
+
+        <!-- Profile Matches -->
+        <div class="mb-6">
+          <h3 class="font-semibold mb-4" style="color:#000A1A">&#127919; Perfiles SAP compatibles</h3>
+          <div class="space-y-4" id="profile-matches"></div>
+        </div>
+
+        <!-- Salary Expectations -->
+        <div class="card mb-6">
+          <h3 class="font-semibold mb-4" style="color:#000A1A">&#128176; Expectativa salarial estimada</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="salary-expectations"></div>
+        </div>
+
+        <!-- Recommended Certifications -->
+        <div class="card mb-6">
+          <h3 class="font-semibold mb-3" style="color:#000A1A">&#127891; Certificaciones recomendadas</h3>
+          <div class="space-y-2" id="recommended-certs"></div>
+        </div>
+
+        <!-- Training Path -->
+        <div class="card mb-6" style="border-color:#FF180040">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style="background:#FF180015">
+              <span style="color:#FF1800;font-size:20px">&#127891;</span>
+            </div>
+            <div>
+              <h3 class="font-bold" style="color:#000A1A">Ruta formativa recomendada por Hoppers Academy</h3>
+              <p class="text-sm mt-1 mb-4" style="color:#000A1A80">Basada en tus gaps y los perfiles con mayor empleabilidad.</p>
+              <div class="space-y-3" id="training-path"></div>
+              <a href="https://hoppers.academy" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-4 text-sm font-semibold" style="color:#FF1800">Hablar con un asesor de Hoppers Academy &#8594;</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="card mb-6" style="background:#FF180008;border-color:#FF180030">
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <div class="flex-1">
+              <h3 class="font-bold" style="color:#000A1A">&#128196; Tu informe personalizado</h3>
+              <p class="text-sm mt-1" style="color:#000A1A80">Descarga tu diagnóstico completo en PDF y recibelo en tu email.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button onclick="downloadDiagnosticPDF()" class="btn-red inline-flex items-center gap-2" style="padding:10px 20px;font-size:13px;white-space:nowrap">&#128196; Descargar PDF</button>
+              <button onclick="sendDiagnosticEmail()" id="btn-send-email" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-colors" style="background:#000A1A;color:#fff;border:none;cursor:pointer;white-space:nowrap">&#9993; Enviar a mi email</button>
+            </div>
+          </div>
+          <div id="email-status" class="hidden mt-3 text-sm text-center p-2 rounded-lg"></div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+          <button onclick="resetDiagnostic()" class="px-6 py-3 border rounded-md font-medium" style="border-color:#DDC9B3">Realizar otro diagnóstico</button>
+          <a href="https://hoppers.academy" target="_blank" rel="noopener noreferrer" class="btn-red inline-flex items-center justify-center gap-2">Contactar un asesor Hoppers &#8594;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer style="background:#000A1A" class="text-white/80">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div>
+        <div class="flex items-center gap-1.5 mb-4"><div class="h-8 w-8 rounded flex items-center justify-center" style="background:#FF1800"><span class="text-white font-bold text-sm">H</span></div><span class="text-xl font-bold tracking-tight text-white">HOPPERS</span></div>
+        <p class="text-sm" style="color:#ffffff80">Better. Smarter. Hoppers.</p>
+        <p class="text-xs mt-4 leading-relaxed" style="color:#ffffff4d">Partner oficial de SAP para Europa y Latinoamerica.</p>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Explora</h3>
+        <ul class="space-y-2.5"><li><button onclick="go('salarios')" class="text-sm" style="color:#ffffff80;background:none;border:none;cursor:pointer">Salarios SAP</button></li><li><button onclick="go('mercado')" class="text-sm" style="color:#ffffff80;background:none;border:none;cursor:pointer">Mercado Laboral</button></li><li><button onclick="go('perfiles')" class="text-sm" style="color:#ffffff80;background:none;border:none;cursor:pointer">Perfiles SAP</button></li></ul>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Hoppers</h3>
+        <ul class="space-y-2.5"><li><button onclick="go('sobre')" class="text-sm" style="color:#ffffff80;background:none;border:none;cursor:pointer">Sobre Nosotros</button></li><li><a href="https://hoppers.academy" target="_blank" rel="noopener noreferrer" class="text-sm" style="color:#ffffff80">Hoppers Academy &#8599;</a></li></ul>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Legal</h3>
+        <ul class="space-y-2.5"><li><span class="text-sm" style="color:#ffffff80">Politica de Privacidad</span></li><li><span class="text-sm" style="color:#ffffff80">Terminos de Uso</span></li></ul>
+      </div>
+    </div>
+    <div class="mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4" style="border-top:1px solid #ffffff15">
+      <p class="text-xs" style="color:#ffffff4d">&copy; 2026 Hoppers Academy. Todos los derechos reservados.</p>
+      <p class="text-xs" style="color:#ffffff4d">Inspirados por Grace Hopper, la madre de la computación.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ===== DATA =====
+const regions=[{id:'europe',name:'Europa'},{id:'latam',name:'Latinoamerica'},{id:'usa',name:'USA (Hispanohablante)'}];
+const countries=[
+  {code:'ES',name:'España',flag:'\u{1F1EA}\u{1F1F8}',region:'europe',cur:'EUR'},
+  {code:'DE',name:'Alemania',flag:'\u{1F1E9}\u{1F1EA}',region:'europe',cur:'EUR'},
+  {code:'CH',name:'Suiza',flag:'\u{1F1E8}\u{1F1ED}',region:'europe',cur:'CHF'},
+  {code:'FR',name:'Francia',flag:'\u{1F1EB}\u{1F1F7}',region:'europe',cur:'EUR'},
+  {code:'PT',name:'Portugal',flag:'\u{1F1F5}\u{1F1F9}',region:'europe',cur:'EUR'},
+  {code:'BE',name:'Bélgica',flag:'\u{1F1E7}\u{1F1EA}',region:'europe',cur:'EUR'},
+  {code:'IT',name:'Italia',flag:'\u{1F1EE}\u{1F1F9}',region:'europe',cur:'EUR'},
+  {code:'MX',name:'Mexico',flag:'\u{1F1F2}\u{1F1FD}',region:'latam',cur:'MXN'},
+  {code:'CO',name:'Colombia',flag:'\u{1F1E8}\u{1F1F4}',region:'latam',cur:'COP'},
+  {code:'CL',name:'Chile',flag:'\u{1F1E8}\u{1F1F1}',region:'latam',cur:'CLP'},
+  {code:'AR',name:'Argentina',flag:'\u{1F1E6}\u{1F1F7}',region:'latam',cur:'USD'},
+  {code:'BR',name:'Brasíl',flag:'\u{1F1E7}\u{1F1F7}',region:'latam',cur:'BRL'},
+  {code:'PE',name:'Peru',flag:'\u{1F1F5}\u{1F1EA}',region:'latam',cur:'PEN'},
+  {code:'US',name:'Estados Unidos',flag:'\u{1F1FA}\u{1F1F8}',region:'usa',cur:'USD'},
+];
+const roleLabels={consultant_fi_co:'Consultor FI/CO',consultant_sd:'Consultor SD',consultant_mm:'Consultor MM',consultant_pp:'Consultor PP',abap_developer:'Desarrollador ABAP',basís_admin:'Admin Basís',s4hana_cloud:'Consultor S/4HANA Cloud',s4hana_migration:'Consultor Migración S/4HANA',ewm_tm:'Consultor EWM/TM',successfactors:'Consultor SuccessFactors',btp_developer:'Desarrollador BTP',integration:'Consultor Integración',project_manager:'Project Manager SAP',solution_architect:'Solution Architect',security_grc:'Consultor Security/GRC'};
+const senLabels={junior:'Junior (0-3)',mid:'Intermedio (3-5)',senior:'Senior (5-7+)',architect:'Arquitecto (8+)'};
+const S=[ // salary data: [country, role, seniority, type, min, max, currency, certBonus, drMin, drMax]
+['ES','consultant_fi_co','junior','p',22000,28000,'EUR',5],['ES','consultant_fi_co','mid','p',40000,60000,'EUR',8],['ES','consultant_fi_co','senior','p',55000,70000,'EUR',12],['ES','consultant_fi_co','architect','p',60000,80000,'EUR',12],
+['ES','consultant_sd','junior','p',22000,28000,'EUR',5],['ES','consultant_sd','mid','p',38000,55000,'EUR',8],['ES','consultant_sd','senior','p',52000,68000,'EUR',10],
+['ES','consultant_mm','mid','p',38000,55000,'EUR',8],['ES','consultant_mm','senior','p',50000,65000,'EUR',10],
+['ES','consultant_pp','mid','p',38000,55000,'EUR',8],['ES','consultant_pp','senior','p',50000,65000,'EUR',10],
+['ES','abap_developer','junior','p',24000,30000,'EUR',7],['ES','abap_developer','mid','p',40000,58000,'EUR',10],['ES','abap_developer','senior','p',55000,70000,'EUR',12],['ES','abap_developer','architect','p',62000,85000,'EUR',12],
+['ES','basís_admin','mid','p',38000,52000,'EUR',8],['ES','basís_admin','senior','p',50000,65000,'EUR',10],
+['ES','s4hana_cloud','junior','p',26000,32000,'EUR',8],['ES','s4hana_cloud','mid','p',45000,65000,'EUR',10],['ES','s4hana_cloud','senior','p',60000,80000,'EUR',12],['ES','s4hana_cloud','architect','p',70000,95000,'EUR',12],
+['ES','s4hana_migration','mid','p',45000,62000,'EUR',10],['ES','s4hana_migration','senior','p',58000,78000,'EUR',12],
+['ES','ewm_tm','mid','p',42000,58000,'EUR',8],['ES','ewm_tm','senior','p',55000,72000,'EUR',10],
+['ES','successfactors','mid','p',40000,58000,'EUR',8],['ES','successfactors','senior','p',52000,68000,'EUR',10],
+['ES','btp_developer','mid','p',42000,60000,'EUR',10],['ES','btp_developer','senior','p',55000,75000,'EUR',12],
+['ES','integration','mid','p',40000,58000,'EUR',8],['ES','integration','senior','p',52000,70000,'EUR',10],
+['ES','project_manager','senior','p',58000,75000,'EUR',8],['ES','project_manager','architect','p',65000,90000,'EUR',10],
+['ES','solution_architect','senior','p',60000,80000,'EUR',10],['ES','solution_architect','architect','p',70000,95000,'EUR',12],
+['ES','security_grc','mid','p',40000,55000,'EUR',8],['ES','security_grc','senior','p',50000,68000,'EUR',10],
+['ES','consultant_fi_co','junior','f',0,0,'EUR',0,250,400],['ES','consultant_fi_co','mid','f',0,0,'EUR',0,400,600],['ES','consultant_fi_co','senior','f',0,0,'EUR',0,600,850],
+['ES','abap_developer','mid','f',0,0,'EUR',0,420,650],['ES','abap_developer','senior','f',0,0,'EUR',0,650,900],
+['ES','s4hana_cloud','senior','f',0,0,'EUR',0,700,1000],
+['DE','consultant_fi_co','junior','p',40000,52000,'EUR',8],['DE','consultant_fi_co','mid','p',58000,78000,'EUR',10],['DE','consultant_fi_co','senior','p',75000,95000,'EUR',12],['DE','consultant_fi_co','architect','p',90000,120000,'EUR',12],
+['DE','abap_developer','mid','p',60000,80000,'EUR',10],['DE','abap_developer','senior','p',78000,100000,'EUR',12],['DE','abap_developer','architect','p',95000,130000,'EUR',12],
+['DE','s4hana_cloud','mid','p',65000,85000,'EUR',10],['DE','s4hana_cloud','senior','p',85000,110000,'EUR',12],['DE','s4hana_cloud','architect','p',100000,140000,'EUR',12],
+['DE','project_manager','senior','p',80000,105000,'EUR',8],['DE','solution_architect','senior','p',90000,120000,'EUR',10],
+['DE','consultant_sd','mid','p',55000,75000,'EUR',10],['DE','consultant_sd','senior','p',72000,92000,'EUR',12],
+['DE','consultant_mm','mid','p',55000,73000,'EUR',10],['DE','security_grc','senior','p',72000,95000,'EUR',10],
+['CH','consultant_fi_co','mid','p',100000,130000,'CHF',10],['CH','consultant_fi_co','senior','p',125000,160000,'CHF',12],['CH','consultant_fi_co','architect','p',150000,200000,'CHF',12],
+['CH','abap_developer','senior','p',130000,170000,'CHF',12],['CH','s4hana_cloud','senior','p',140000,180000,'CHF',12],['CH','solution_architect','senior','p',145000,190000,'CHF',12],
+['FR','consultant_fi_co','junior','p',32000,40000,'EUR',5],['FR','consultant_fi_co','mid','p',45000,62000,'EUR',8],['FR','consultant_fi_co','senior','p',60000,80000,'EUR',10],['FR','abap_developer','senior','p',62000,85000,'EUR',12],
+['PT','consultant_fi_co','junior','p',18000,24000,'EUR',5],['PT','consultant_fi_co','mid','p',30000,45000,'EUR',8],['PT','consultant_fi_co','senior','p',42000,58000,'EUR',10],['PT','abap_developer','senior','p',45000,62000,'EUR',12],
+['BE','consultant_fi_co','mid','p',50000,68000,'EUR',8],['BE','consultant_fi_co','senior','p',65000,85000,'EUR',10],['BE','abap_developer','senior','p',68000,90000,'EUR',12],
+['IT','consultant_fi_co','junior','p',25000,32000,'EUR',5],['IT','consultant_fi_co','mid','p',38000,52000,'EUR',8],['IT','consultant_fi_co','senior','p',50000,68000,'EUR',10],['IT','abap_developer','senior','p',52000,72000,'EUR',12],
+// MEXICO (MXN anual) - Fuentes: Computrabajo, Indeed MX, LinkedIn, Get on Board, Glassdoor
+['MX','consultant_fi_co','junior','p',180000,300000,'MXN',8],['MX','consultant_fi_co','mid','p',420000,660000,'MXN',10],['MX','consultant_fi_co','senior','p',660000,960000,'MXN',12],['MX','consultant_fi_co','architect','p',900000,1320000,'MXN',12],
+['MX','consultant_sd','junior','p',180000,288000,'MXN',8],['MX','consultant_sd','mid','p',396000,624000,'MXN',10],['MX','consultant_sd','senior','p',624000,900000,'MXN',12],
+['MX','consultant_mm','mid','p',384000,600000,'MXN',10],['MX','consultant_mm','senior','p',600000,876000,'MXN',12],
+['MX','abap_developer','junior','p',216000,348000,'MXN',8],['MX','abap_developer','mid','p',480000,720000,'MXN',10],['MX','abap_developer','senior','p',720000,1080000,'MXN',12],['MX','abap_developer','architect','p',960000,1440000,'MXN',12],
+['MX','basís_admin','mid','p',360000,564000,'MXN',8],['MX','basís_admin','senior','p',564000,840000,'MXN',10],
+['MX','s4hana_cloud','junior','p',240000,360000,'MXN',8],['MX','s4hana_cloud','mid','p',540000,840000,'MXN',10],['MX','s4hana_cloud','senior','p',780000,1200000,'MXN',12],['MX','s4hana_cloud','architect','p',1080000,1620000,'MXN',12],
+['MX','s4hana_migration','mid','p',504000,780000,'MXN',10],['MX','s4hana_migration','senior','p',720000,1080000,'MXN',12],
+['MX','successfactors','mid','p',420000,660000,'MXN',8],['MX','successfactors','senior','p',624000,924000,'MXN',10],
+['MX','btp_developer','mid','p',480000,756000,'MXN',10],['MX','btp_developer','senior','p',720000,1080000,'MXN',12],
+['MX','integration','mid','p',432000,672000,'MXN',8],['MX','integration','senior','p',636000,960000,'MXN',10],
+['MX','project_manager','senior','p',780000,1140000,'MXN',8],['MX','project_manager','architect','p',1020000,1500000,'MXN',10],
+['MX','solution_architect','senior','p',900000,1320000,'MXN',10],['MX','security_grc','mid','p',420000,636000,'MXN',8],['MX','security_grc','senior','p',612000,924000,'MXN',10],
+['MX','ewm_tm','mid','p',444000,672000,'MXN',8],['MX','ewm_tm','senior','p',660000,960000,'MXN',10],
+['MX','consultant_fi_co','mid','f',0,0,'MXN',0,4500,7500],['MX','consultant_fi_co','senior','f',0,0,'MXN',0,7500,12000],['MX','abap_developer','senior','f',0,0,'MXN',0,8000,13000],
+// COLOMBIA (COP anual) - Fuentes: Computrabajo, Indeed CO, LinkedIn, El Empleo, Get on Board
+['CO','consultant_fi_co','junior','p',24000000,42000000,'COP',8],['CO','consultant_fi_co','mid','p',54000000,84000000,'COP',10],['CO','consultant_fi_co','senior','p',84000000,132000000,'COP',12],['CO','consultant_fi_co','architect','p',120000000,180000000,'COP',12],
+['CO','consultant_sd','mid','p',48000000,78000000,'COP',10],['CO','consultant_sd','senior','p',78000000,120000000,'COP',12],
+['CO','consultant_mm','mid','p',48000000,72000000,'COP',10],['CO','consultant_mm','senior','p',72000000,108000000,'COP',12],
+['CO','abap_developer','junior','p',30000000,48000000,'COP',8],['CO','abap_developer','mid','p',60000000,96000000,'COP',10],['CO','abap_developer','senior','p',96000000,144000000,'COP',12],['CO','abap_developer','architect','p',132000000,192000000,'COP',12],
+['CO','s4hana_cloud','mid','p',66000000,102000000,'COP',10],['CO','s4hana_cloud','senior','p',108000000,168000000,'COP',12],
+['CO','s4hana_migration','senior','p',96000000,156000000,'COP',12],
+['CO','successfactors','mid','p',54000000,84000000,'COP',8],['CO','successfactors','senior','p',78000000,120000000,'COP',10],
+['CO','btp_developer','mid','p',60000000,96000000,'COP',10],['CO','btp_developer','senior','p',96000000,150000000,'COP',12],
+['CO','project_manager','senior','p',108000000,168000000,'COP',8],['CO','solution_architect','senior','p',132000000,204000000,'COP',10],
+['CO','basís_admin','mid','p',48000000,72000000,'COP',8],['CO','integration','senior','p',84000000,132000000,'COP',10],
+// CHILE (CLP anual) - Fuentes: Get on Board, Trabajando.com, LinkedIn, Laborum, Computrabajo
+['CL','consultant_fi_co','junior','p',9600000,15600000,'CLP',8],['CL','consultant_fi_co','mid','p',19200000,31200000,'CLP',10],['CL','consultant_fi_co','senior','p',31200000,48000000,'CLP',12],['CL','consultant_fi_co','architect','p',43200000,64800000,'CLP',12],
+['CL','consultant_sd','mid','p',18000000,28800000,'CLP',10],['CL','consultant_sd','senior','p',28800000,44400000,'CLP',12],
+['CL','consultant_mm','mid','p',17400000,27600000,'CLP',10],['CL','consultant_mm','senior','p',27600000,42000000,'CLP',12],
+['CL','abap_developer','junior','p',12000000,18000000,'CLP',8],['CL','abap_developer','mid','p',21600000,33600000,'CLP',10],['CL','abap_developer','senior','p',33600000,52800000,'CLP',12],['CL','abap_developer','architect','p',48000000,72000000,'CLP',12],
+['CL','s4hana_cloud','mid','p',24000000,38400000,'CLP',10],['CL','s4hana_cloud','senior','p',36000000,57600000,'CLP',12],
+['CL','s4hana_migration','senior','p',33600000,52800000,'CLP',12],
+['CL','successfactors','mid','p',19200000,30000000,'CLP',8],['CL','successfactors','senior','p',28800000,44400000,'CLP',10],
+['CL','btp_developer','mid','p',22800000,36000000,'CLP',10],['CL','btp_developer','senior','p',33600000,54000000,'CLP',12],
+['CL','project_manager','senior','p',36000000,54000000,'CLP',8],['CL','solution_architect','senior','p',42000000,66000000,'CLP',10],
+['CL','basís_admin','mid','p',16800000,26400000,'CLP',8],['CL','integration','senior','p',30000000,46800000,'CLP',10],
+// ARGENTINA (USD anual - referencia dolarizada) - Fuentes: Get on Board, Computrabajo, LinkedIn, Glassdoor
+['AR','consultant_fi_co','junior','p',8000,14000,'USD',8],['AR','consultant_fi_co','mid','p',24000,42000,'USD',10],['AR','consultant_fi_co','senior','p',42000,60000,'USD',12],['AR','consultant_fi_co','architect','p',55000,78000,'USD',12],
+['AR','consultant_sd','mid','p',22000,38000,'USD',10],['AR','consultant_sd','senior','p',38000,55000,'USD',12],
+['AR','abap_developer','junior','p',10000,18000,'USD',8],['AR','abap_developer','mid','p',28000,45000,'USD',10],['AR','abap_developer','senior','p',45000,65000,'USD',12],['AR','abap_developer','architect','p',60000,85000,'USD',12],
+['AR','s4hana_cloud','mid','p',30000,48000,'USD',10],['AR','s4hana_cloud','senior','p',48000,72000,'USD',12],
+['AR','s4hana_migration','senior','p',42000,62000,'USD',12],
+['AR','btp_developer','mid','p',28000,46000,'USD',10],['AR','btp_developer','senior','p',45000,68000,'USD',12],
+['AR','project_manager','senior','p',48000,72000,'USD',8],['AR','solution_architect','senior','p',55000,82000,'USD',10],
+['AR','basís_admin','mid','p',20000,35000,'USD',8],['AR','successfactors','senior','p',38000,58000,'USD',10],
+// BRASIL (BRL anual) - Fuentes: Indeed BR, LinkedIn, Glassdoor, Catho, Vagas.com
+['BR','consultant_fi_co','junior','p',48000,78000,'BRL',8],['BR','consultant_fi_co','mid','p',96000,156000,'BRL',10],['BR','consultant_fi_co','senior','p',156000,240000,'BRL',12],['BR','consultant_fi_co','architect','p',216000,336000,'BRL',12],
+['BR','consultant_sd','mid','p',90000,144000,'BRL',10],['BR','consultant_sd','senior','p',144000,228000,'BRL',12],
+['BR','consultant_mm','mid','p',84000,138000,'BRL',10],['BR','consultant_mm','senior','p',138000,216000,'BRL',12],
+['BR','abap_developer','junior','p',54000,84000,'BRL',8],['BR','abap_developer','mid','p',108000,168000,'BRL',10],['BR','abap_developer','senior','p',168000,264000,'BRL',12],['BR','abap_developer','architect','p',240000,372000,'BRL',12],
+['BR','s4hana_cloud','mid','p',120000,192000,'BRL',10],['BR','s4hana_cloud','senior','p',192000,312000,'BRL',12],
+['BR','s4hana_migration','senior','p',168000,276000,'BRL',12],
+['BR','successfactors','mid','p',96000,156000,'BRL',8],['BR','successfactors','senior','p',144000,228000,'BRL',10],
+['BR','btp_developer','mid','p',108000,180000,'BRL',10],['BR','btp_developer','senior','p',168000,276000,'BRL',12],
+['BR','project_manager','senior','p',192000,300000,'BRL',8],['BR','solution_architect','senior','p',228000,360000,'BRL',10],
+['BR','basís_admin','mid','p',84000,132000,'BRL',8],['BR','integration','senior','p',156000,252000,'BRL',10],['BR','security_grc','senior','p',144000,228000,'BRL',10],
+['BR','ewm_tm','senior','p',156000,252000,'BRL',10],
+// PERU (PEN anual) - Fuentes: Computrabajo, Indeed PE, LinkedIn, Bumeran
+['PE','consultant_fi_co','junior','p',24000,42000,'PEN',8],['PE','consultant_fi_co','mid','p',60000,96000,'PEN',10],['PE','consultant_fi_co','senior','p',96000,156000,'PEN',12],['PE','consultant_fi_co','architect','p',144000,216000,'PEN',12],
+['PE','consultant_sd','mid','p',54000,90000,'PEN',10],['PE','consultant_sd','senior','p',90000,144000,'PEN',12],
+['PE','abap_developer','mid','p',66000,108000,'PEN',10],['PE','abap_developer','senior','p',108000,168000,'PEN',12],
+['PE','s4hana_cloud','mid','p',72000,114000,'PEN',10],['PE','s4hana_cloud','senior','p',114000,180000,'PEN',12],
+['PE','project_manager','senior','p',108000,168000,'PEN',8],['PE','basís_admin','mid','p',48000,78000,'PEN',8],
+['PE','btp_developer','senior','p',102000,162000,'PEN',12],['PE','successfactors','senior','p',90000,144000,'PEN',10],
+// USA (USD anual) - Fuentes: LinkedIn, Indeed, Glassdoor, Dice, ZipRecruiter
+['US','consultant_fi_co','junior','p',65000,85000,'USD',8],['US','consultant_fi_co','mid','p',95000,130000,'USD',10],['US','consultant_fi_co','senior','p',130000,175000,'USD',12],['US','consultant_fi_co','architect','p',160000,220000,'USD',12],
+['US','consultant_sd','mid','p',90000,125000,'USD',10],['US','consultant_sd','senior','p',125000,170000,'USD',12],
+['US','consultant_mm','mid','p',88000,120000,'USD',10],['US','consultant_mm','senior','p',120000,162000,'USD',12],
+['US','abap_developer','junior','p',70000,92000,'USD',8],['US','abap_developer','mid','p',100000,135000,'USD',10],['US','abap_developer','senior','p',135000,185000,'USD',12],['US','abap_developer','architect','p',170000,240000,'USD',12],
+['US','s4hana_cloud','mid','p',110000,145000,'USD',10],['US','s4hana_cloud','senior','p',145000,200000,'USD',12],['US','s4hana_cloud','architect','p',180000,260000,'USD',12],
+['US','s4hana_migration','mid','p',105000,140000,'USD',10],['US','s4hana_migration','senior','p',140000,195000,'USD',12],
+['US','successfactors','mid','p',95000,130000,'USD',8],['US','successfactors','senior','p',125000,170000,'USD',10],
+['US','btp_developer','mid','p',105000,142000,'USD',10],['US','btp_developer','senior','p',140000,195000,'USD',12],
+['US','integration','mid','p',95000,130000,'USD',8],['US','integration','senior','p',128000,175000,'USD',10],
+['US','project_manager','senior','p',130000,180000,'USD',8],['US','project_manager','architect','p',165000,230000,'USD',10],
+['US','solution_architect','senior','p',155000,220000,'USD',10],['US','solution_architect','architect','p',195000,280000,'USD',12],
+['US','security_grc','mid','p',95000,128000,'USD',8],['US','security_grc','senior','p',120000,165000,'USD',10],
+['US','basís_admin','mid','p',90000,122000,'USD',8],['US','basís_admin','senior','p',118000,160000,'USD',10],
+['US','ewm_tm','senior','p',130000,178000,'USD',10],
+];
+const salaryData = S.map(s=>({country:s[0],role:s[1],seniority:s[2],type:s[3]==='p'?'permanent':'freelance',min:s[4],max:s[5],cur:s[6],certBonus:s[7],drMin:s[8]||0,drMax:s[9]||0}));
+
+const sapProfiles=[
+  {slug:'s4hana_cloud',name:'Consultor S/4HANA Cloud',cat:'functional',module:'S/4HANA Cloud',desc:'Especialista en SAP S/4HANA Cloud (Public y Private). Habilidad más demandada por la fecha límite de migración 2027/2030.',skills:['S/4HANA Cloud Public Ed.','S/4HANA Cloud Private Ed.','Fit-to-Standard','Clean Core','SAP BTP Integration','Activate Methodology'],certs:['SAP Certified Associate - SAP S/4HANA Cloud Public Edition'],demand:'crítical',trend:'up',postings:520,path:['Consultor Cloud Jr','Consultor S/4HANA Cloud','Senior Cloud','Cloud Architect']},
+  {slug:'abap_developer',name:'Desarrollador ABAP (Classic + RAP/CDS)',cat:'technical',module:'ABAP',desc:'Desarrollador técnico en ABAP clasíco y nuevas tecnologias RAP y CDS Views para S/4HANA.',skills:['ABAP clasíco','ABAP OO','RAP','CDS Views','Fiori/UI5','AMDP','Debugging'],certs:['SAP Certified Associate - Back-End Developer - ABAP Cloud'],demand:'crítical',trend:'up',postings:420,path:['Junior ABAP','Developer ABAP','Senior ABAP','Arquitecto Técnico']},
+  {slug:'s4hana_migration',name:'Consultor Migración S/4HANA',cat:'technical',module:'S/4HANA Migration',desc:'Especialista en migración desde SAP ECC a S/4HANA. Estrategias Brownfield, Greenfield y Selective.',skills:['System Conversión','New Implementation','Selective Data Transition','SUM','DMLT','Custom Code Adaptation'],certs:['SAP Certified Associate - SAP S/4HANA System Administration'],demand:'crítical',trend:'up',postings:380,path:['Migration Jr','Consultor Migration','Senior Migration','Migration Architect']},
+  {slug:'consultant_fi_co',name:'Consultor Funcional FI/CO',cat:'functional',module:'FI/CO',desc:'Especialista en Finanzas (FI) y Controlling (CO). Procesos contables, gestión financiera y reporting.',skills:['Contabilidad financiera','Controlling','Gestion de activos','Cierres contables','S/4HANA Finance'],certs:['SAP Certified Associate - SAP S/4HANA Cloud Financial Accounting'],demand:'high',trend:'up',postings:340,path:['Junior FI/CO','Consultor FI/CO','Senior FI/CO','Lead Financiero']},
+  {slug:'btp_developer',name:'SAP BTP Developer',cat:'technical',module:'BTP',desc:'Desarrollador en SAP Business Technology Platform. Extensiónes, integraciónes y aplicaciónes con SAP CAP, Fiori, Build.',skills:['SAP CAP','SAP Fiori/UI5','SAP Build Apps','SAP Integration Suite','Cloud Foundry','SAP HANA Cloud'],certs:['SAP Certified Associate - SAP BTP Developer'],demand:'crítical',trend:'up',postings:310,path:['BTP Junior','BTP Developer','Senior BTP','BTP Architect']},
+  {slug:'consultant_sd',name:'Consultor Funcional SD',cat:'functional',module:'SD',desc:'Ventas y Distribución. Pedidos, facturación, precios y condiciones comerciales.',skills:['Gestion de pedidos','Facturación','Condiciones de precio','Entregas','S/4HANA Sales'],certs:['SAP Certified Associate - SAP S/4HANA Sales'],demand:'high',trend:'up',postings:280,path:['Junior SD','Consultor SD','Senior SD','Lead Comercial']},
+  {slug:'consultant_mm',name:'Consultor Funcional MM',cat:'functional',module:'MM',desc:'Gestion de Materiales: compras, inventarios, evaluación de proveedores y MRP.',skills:['Gestion de compras','Inventario','MRP','Evaluación de proveedores'],certs:['SAP Certified Associate - SAP S/4HANA Sourcing and Procurement'],demand:'high',trend:'stable',postings:260,path:['Junior MM','Consultor MM','Senior MM','Lead Supply Chain']},
+  {slug:'successfactors',name:'Consultor SuccessFactors',cat:'functional',module:'SuccessFactors',desc:'Gestion del capital humano: Employee Central, reclutamiento, desempeño y compensación.',skills:['Employee Central','Recruiting','Performance & Goals','Learning','Compensation'],certs:['SAP Certified Associate - SAP SuccessFactors Employee Central'],demand:'high',trend:'up',postings:250,path:['Junior SF','Consultor SF','Senior SF','Lead HCM']},
+  {slug:'integration',name:'Consultor Integración PI/PO/CPI',cat:'technical',module:'PI/PO/CPI',desc:'Integración de sistemás con SAP PI/PO y Cloud Platform Integration.',skills:['SAP PI/PO','SAP CPI','API Management','EDI/IDoc','SOAP/REST'],certs:['SAP Certified Associate - SAP Integration Suite'],demand:'high',trend:'up',postings:220,path:['Integration Jr','Consultor Integration','Senior Integration','Integration Architect']},
+  {slug:'ewm_tm',name:'Consultor EWM/TM (Logística)',cat:'functional',module:'EWM/TM',desc:'Gestion avanzada de almacenes (EWM) y transporte (TM) en el ecosistema SAP.',skills:['SAP EWM','SAP TM','Gestion de almacenes','Gestion de transporte'],certs:['SAP Certified Associate - SAP S/4HANA Extended Warehouse Management'],demand:'high',trend:'up',postings:200,path:['Junior Logistics','Consultor EWM/TM','Senior Logistics','Lead Supply Chain']},
+  {slug:'project_manager',name:'Project Manager SAP',cat:'management',module:'Cross-module',desc:'Líder de proyectos SAP con vision transversal. Equipos, plazos, presupuestos y stakeholders.',skills:['Gestion de proyectos','SAP Activate','Agile/Scrum','Risk Management'],certs:['SAP Activate Project Manager','PMP'],demand:'high',trend:'up',postings:190,path:['Team Lead','Project Manager','Senior PM','Program Director']},
+  {slug:'basís_admin',name:'Admin Basís / NetWeaver',cat:'technical',module:'Basís/NetWeaver',desc:'Administración de sistemás SAP: instalación, configuración, monitoreo y mantenimiento.',skills:['Admin SAP','Transportes','Monitoreo','SAP HANA DB','Solution Manager'],certs:['SAP Certified Technology Associate - SAP S/4HANA System Administration'],demand:'medium',trend:'stable',postings:180,path:['Junior Basís','Basís Admin','Senior Basís','Lead Infraestructura']},
+  {slug:'consultant_pp',name:'Consultor Funcional PP',cat:'functional',module:'PP',desc:'Planificación de Producción: fabricación, capacidades, ordenes de producción.',skills:['Planificación de producción','MRP','Gestion de capacidades','S/4HANA Manufacturing'],certs:['SAP Certified Associate - SAP S/4HANA Manufacturing'],demand:'medium',trend:'stable',postings:150,path:['Junior PP','Consultor PP','Senior PP','Lead Producción']},
+  {slug:'security_grc',name:'Consultor Security/GRC',cat:'technical',module:'Security/GRC',desc:'Seguridad SAP y GRC: roles, autorizaciónes, segregación de funciones y auditorías.',skills:['Roles y autorizaciónes','SAP GRC','SoD','Auditoría','SUIM/PFCG'],certs:['SAP Certified Associate - SAP Access Control'],demand:'medium',trend:'stable',postings:140,path:['Security Junior','Security Consultant','Senior Security','CISO']},
+  {slug:'solution_architect',name:'Solution Architect SAP',cat:'management',module:'Cross-module',desc:'Arquitecto de soluciones con vision integral del ecosistema SAP.',skills:['Arquitectura empresarial','S/4HANA Architecture','SAP BTP','Cloud strategy','Design Thinking'],certs:['SAP Certified Professional - Solution Architect'],demand:'high',trend:'up',postings:130,path:['Senior Consultant','Solution Architect','Enterprise Architect','CTO']},
+];
+
+const demandCfg={crítical:{label:'Crítica',cls:'badge-crítical'},high:{label:'Alta',cls:'badge-high'},medium:{label:'Media',cls:'badge-medium'}};
+
+// ===== UTILS =====
+const fmtC=(n,c)=>{const l=c==='USD'?'en-US':c==='BRL'?'pt-BR':'es-ES';return new Intl.NumberFormat(l,{style:'currency',currency:c,minimumFractionDigits:0,maximumFractionDigits:0}).format(n)};
+const fmtR=(a,b,c)=>`${fmtC(a,c)} - ${fmtC(b,c)}`;
+const fmtN=n=>new Intl.NumberFormat('es-ES').format(n);
+const abbr=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'k':n;
+const trendHtml=(d)=>d==='up'?'<span style="color:#16a34a">&#9650; En alza</span>':d==='down'?'<span style="color:#dc2626">&#9660; En baja</span>':'<span style="color:#ca8a04">&#9644; Estable</span>';
+
+// ===== NAVIGATION =====
+let currentPage='home';
+let empType='permanent';
+let regStep=1;
+const regData={name:'',email:'',country:'',role:'',years:'',modules:[],certs:'',linkedin:'',target:''};
+const charts={};
+
+function go(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el=document.getElementById('page-'+page);
+  if(el) el.classList.add('active');
+  currentPage=page;
+  window.scrollTo(0,0);
+  updateNav();
+  if(page==='salarios') initSalarios();
+  if(page==='mercado') initMercado();
+  if(page==='perfiles') initPerfiles();
+  if(page==='registro') initRegistro();
+  if(page==='diagnóstico') initDiagnóstico();
+}
+
+function updateNav(){
+  const links=[{p:'salarios',l:'Salarios SAP'},{p:'mercado',l:'Mercado Laboral'},{p:'perfiles',l:'Perfiles SAP'},{p:'sobre',l:'Sobre Hoppers'}];
+  const dn=document.getElementById('desktop-nav');
+  dn.innerHTML=links.map(l=>`<button onclick="go('${l.p}')" class="nav-link" style="color:${currentPage===l.p?'#FF1800':'#000A1A99'};${currentPage===l.p?'background:#FF180008':''}">${l.l}</button>`).join('');
+  const mm=document.getElementById('mobile-menu');
+  mm.innerHTML=links.map(l=>`<button onclick="go('${l.p}');toggleMobile()" class="block w-full text-left px-3 py-2 text-base font-medium" style="color:#000A1A">${l.l}</button>`).join('')+`<div style="border-top:1px solid #DDC9B330;padding-top:12px;margin-top:8px"><button onclick="go('login');toggleMobile()" class="block w-full px-4 py-2 text-sm border rounded-md mb-2" style="border-color:#DDC9B3">Iniciar Sesión</button><button onclick="go('registro');toggleMobile()" class="btn-red block w-full text-center" style="padding:8px 16px;font-size:14px">Unirse Gratis</button></div>`;
+}
+
+function toggleMobile(){const m=document.getElementById('mobile-menu');m.classList.toggle('hidden');}
+
+// ===== INIT HOME =====
+function initHome(){
+  // Logos
+  document.getElementById('logos-row').innerHTML=['SAP','Accenture','NTT DATA','KPMG','McKinsey','Deloitte'].map(n=>`<div class="text-lg sm:text-xl font-bold tracking-wider" style="color:#000A1A15">${n}</div>`).join('');
+  // Value props
+  const vp=[{kw:'TRUST.',t:'Confia en tu conocimiento',d:'Datos reales del mercado laboral SAP actualizados semanalmente. Sin promesas vacias. Información verificada de más de 14 países.',c:'#B79E80'},{kw:'HOP.',t:'Da el salto estrategico',d:'Identifica los perfiles con mayor empleabilidad, salarios por país y seniority, y traza tu ruta de certificación.',c:'#FF1800'},{kw:'WORK.',t:'Resultados tangibles en tu carrera',d:'De los datos al empleo. Perfilamiento personalizado, match con ofertas reales y soluciones formativas de un partner oficial de SAP.',c:'#3C0405'}];
+  document.getElementById('value-props').innerHTML=vp.map(p=>`<div class="p-8 rounded-xl border transition-all hover:shadow-lg" style="border-color:#DDC9B340"><p class="text-sm font-bold tracking-widest mb-2" style="color:${p.c}">${p.kw}</p><h3 class="text-xl font-bold mb-3" style="color:#000A1A">${p.t}</h3><p style="color:#000A1A80" class="leading-relaxed">${p.d}</p></div>`).join('');
+  // Top profiles
+  const top=sapProfiles.slice(0,6);
+  document.getElementById('top-profiles').innerHTML=top.map((p,i)=>{const d=demandCfg[p.demand];return`<div class="card"><div class="flex items-start justify-between mb-3"><span class="text-xs font-mono" style="color:#000A1A30">#${i+1}</span><span class="badge ${d.cls}">Demanda ${d.label}</span></div><h3 class="font-bold" style="color:#000A1A">${p.name}</h3><p class="text-xs mt-1" style="color:#000A1A66">${p.module}</p><div class="flex items-center justify-between mt-4 pt-3" style="border-top:1px solid #DDC9B340"><span class="text-xs">${trendHtml(p.trend)}</span><span class="text-xs font-medium" style="color:#000A1A99">~${p.postings} ofertas</span></div></div>`}).join('');
+  // About values
+  const vals=[{t:'Honestidad',d:'Sin frases visionarias. Te hablamos con respeto.'},{t:'Pertenencia',d:'Una comunidad exigente que invierte en formación de verdad.'},{t:'Exclusividad',d:'Para los que ya tienen recorrido, disciplina y ambición.'},{t:'Alcance global',d:'Partner oficial de SAP. Presencia en 14 países.'}];
+  document.getElementById('about-values').innerHTML=vals.map(v=>`<div class="card"><h3 class="font-bold mb-2" style="color:#000A1A">${v.t}</h3><p class="text-sm leading-relaxed" style="color:#000A1A80">${v.d}</p></div>`).join('');
+}
+
+// ===== SALARIOS =====
+function initSalarios(){
+  const fr=document.getElementById('f-region');
+  fr.innerHTML=regions.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  const fs=document.getElementById('f-seniority');
+  fs.innerHTML='<option value="all">Todas</option>'+Object.entries(senLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  onRegionChange();
+}
+function onRegionChange(){
+  const r=document.getElementById('f-region').value;
+  const cs=countries.filter(c=>c.region===r);
+  document.getElementById('f-country').innerHTML=cs.map(c=>`<option value="${c.code}">${c.flag} ${c.name}</option>`).join('');
+  renderSalaries();
+}
+function setEmpType(t){
+  empType=t;
+  document.getElementById('tab-permanent').className='tab-btn'+(t==='permanent'?' active':'');
+  document.getElementById('tab-freelance').className='tab-btn'+(t==='freelance'?' active':'');
+  document.getElementById('chart-subtitle').textContent=t==='permanent'?'(Bruto anual)':'(Tarifa diaria)';
+  renderSalaries();
+}
+function renderSalaries(){
+  const co=document.getElementById('f-country').value;
+  const ro=document.getElementById('f-role').value;
+  const se=document.getElementById('f-seniority').value;
+  // update role filter
+  const rolesInCountry=[...new Set(salaryData.filter(e=>e.country===co&&e.type===empType).map(e=>e.role))];
+  const curRole=document.getElementById('f-role').value;
+  document.getElementById('f-role').innerHTML='<option value="all">Todos los perfiles</option>'+rolesInCountry.map(r=>`<option value="${r}"${r===curRole?' selected':''}>${roleLabels[r]||r}</option>`).join('');
+  // filter
+  const filtered=salaryData.filter(e=>{
+    if(e.country!==co)return false;if(ro!=='all'&&e.role!==ro)return false;
+    if(se!=='all'&&e.seniority!==se)return false;if(e.type!==empType)return false;return true;
+  });
+  const ci=countries.find(c=>c.code===co);
+  document.getElementById('result-count').textContent=filtered.length;
+  document.getElementById('result-country').textContent=(ci?ci.flag+' '+ci.name:'');
+  // Cards
+  document.getElementById('salary-cards').innerHTML=filtered.length?filtered.map(e=>{
+    const isPerm=e.type==='permanent';
+    const val=isPerm?fmtR(e.min,e.max,e.cur):(e.drMin?`${fmtC(e.drMin,e.cur)} - ${fmtC(e.drMax,e.cur)} / dia`:'N/A');
+    const label=isPerm?'Bruto anual':'Tarifa diaria';
+    const barW=Math.min(((isPerm?e.max:e.drMax)/(isPerm?200000:1000))*100,100);
+    return`<div class="card"><div class="flex items-start justify-between mb-3"><div><h3 class="font-bold text-sm" style="color:#000A1A">${roleLabels[e.role]||e.role}</h3><p class="text-xs mt-0.5" style="color:#000A1A66">${senLabels[e.seniority]||e.seniority}</p></div>${e.certBonus?`<span class="badge badge-cert">+${e.certBonus}% cert.</span>`:''}</div><p class="text-lg font-bold" style="color:#000A1A">${val}</p><p class="text-xs mt-1" style="color:#000A1A66">${label}</p><div class="progress-bar mt-3"><div class="progress-fill" style="width:${barW}%"></div></div></div>`;
+  }).join(''):'<div class="col-span-full py-16 text-center"><p style="color:#000A1A80">No se encontraron datos para los filtros seleccionados.</p></div>';
+  // Chart
+  const chartData=filtered.slice(0,10).map(e=>({
+    label:(roleLabels[e.role]||e.role).substring(0,20)+' ('+e.seniority+')',
+    min:empType==='permanent'?e.min:e.drMin,max:empType==='permanent'?e.max:e.drMax
+  }));
+  if(charts.salary){charts.salary.destroy();}
+  if(chartData.length>0){
+    const ctx=document.getElementById('salary-chart').getContext('2d');
+    charts.salary=new Chart(ctx,{type:'bar',data:{labels:chartData.map(d=>d.label),datasets:[{label:'Mínimo',data:chartData.map(d=>d.min),backgroundColor:'#B79E80',borderRadius:4},{label:'Máximo',data:chartData.map(d=>d.max),backgroundColor:'#FF1800',borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{ticks:{callback:v=>abbr(v),font:{size:11}}},y:{ticks:{font:{size:11}}}}}});
+  }
+}
+
+// ===== MERCADO =====
+function initMercado(){
+  initMercadoScraping();
+  const totalP=sapProfiles.reduce((a,p)=>a+p.postings,0);
+  const critCount=sapProfiles.filter(p=>p.demand==='crítical').length;
+  const upCount=sapProfiles.filter(p=>p.trend==='up').length;
+  document.getElementById('market-kpis').innerHTML=[
+    {v:fmtN(totalP)+'+',l:'Ofertas SAP activas',bg:'#FF180015',c:'#FF1800'},
+    {v:critCount,l:'Perfiles demanda crítica',bg:'#fee2e2',c:'#dc2626'},
+    {v:'14',l:'Países monitorizados',bg:'#dcfce7',c:'#16a34a'},
+    {v:upCount+'/'+sapProfiles.length,l:'Perfiles en alza',bg:'#ffedd5',c:'#ea580c'}
+  ].map(k=>`<div class="card"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background:${k.bg}"><span style="color:${k.c};font-size:18px;font-weight:bold">${typeof k.v==='number'?k.v:''}</span></div><div><p class="text-2xl font-bold" style="color:#000A1A">${k.v}</p><p class="text-xs" style="color:#000A1A66">${k.l}</p></div></div></div>`).join('');
+  // Ranking
+  const maxP=sapProfiles[0].postings;
+  document.getElementById('profile-ranking').innerHTML=sapProfiles.map((p,i)=>{const d=demandCfg[p.demand];return`<div class="flex items-center gap-4"><span class="text-sm font-mono w-6 text-right" style="color:#000A1A30">${i+1}</span><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-1 flex-wrap"><span class="text-sm font-medium" style="color:#000A1A">${p.name}</span><span class="text-xs">${trendHtml(p.trend)}</span><span class="badge ${d.cls}">${d.label}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(p.postings/maxP)*100}%"></div></div></div><span class="text-xs font-medium w-20 text-right" style="color:#000A1A80">~${p.postings}</span></div>`}).join('');
+  // Charts
+  if(charts.trend)charts.trend.destroy();if(charts.pie)charts.pie.destroy();if(charts.region)charts.region.destroy();
+  const wt=[3200,3350,3100,3500,3420,3650,3580,3800,3720,3900,3850,4020];
+  charts.trend=new Chart(document.getElementById('trend-chart').getContext('2d'),{type:'line',data:{labels:wt.map((_,i)=>'S'+(i+1)),datasets:[{label:'Ofertas',data:wt,borderColor:'#FF1800',backgroundColor:'#FF180020',borderWidth:2,pointBackgroundColor:'#FF1800',pointRadius:3,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}}},x:{ticks:{font:{size:11}}}}}});
+  const catD=[sapProfiles.filter(p=>p.cat==='functional').reduce((a,p)=>a+p.postings,0),sapProfiles.filter(p=>p.cat==='technical').reduce((a,p)=>a+p.postings,0),sapProfiles.filter(p=>p.cat==='management').reduce((a,p)=>a+p.postings,0)];
+  charts.pie=new Chart(document.getElementById('pie-chart').getContext('2d'),{type:'doughnut',data:{labels:['Funcional','Técnico','Gestion'],datasets:[{data:catD,backgroundColor:['#FF1800','#B79E80','#3C0405'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+  const rd=[{r:'España',p:850},{r:'Alemania',p:1200},{r:'Suiza',p:320},{r:'Francia',p:680},{r:'Italia',p:420},{r:'Mexico',p:380},{r:'USA',p:560}];
+  charts.region=new Chart(document.getElementById('region-chart').getContext('2d'),{type:'bar',data:{labels:rd.map(d=>d.r),datasets:[{label:'Ofertas',data:rd.map(d=>d.p),backgroundColor:'#FF1800',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}}},x:{ticks:{font:{size:11}}}}}});
+}
+
+// ===== PERFILES =====
+let profileTab='all';
+function initPerfiles(){
+  document.getElementById('profiles-tabs').innerHTML=[['all','Todos'],['functional','Funcional'],['technical','Técnico'],['management','Gestion']].map(([v,l])=>`<button class="tab-btn${profileTab===v?' active':''}" onclick="setProfileTab('${v}')">${l}</button>`).join('');
+  renderProfiles();
+}
+function setProfileTab(t){profileTab=t;initPerfiles();}
+function renderProfiles(){
+  const list=profileTab==='all'?sapProfiles:sapProfiles.filter(p=>p.cat===profileTab);
+  document.getElementById('profiles-grid').innerHTML=list.map(p=>{
+    const d=demandCfg[p.demand];
+    const salES=salaryData.find(e=>e.role===p.slug&&e.country==='ES'&&e.seniority==='senior'&&e.type==='permanent');
+    const salDE=salaryData.find(e=>e.role===p.slug&&e.country==='DE'&&e.seniority==='senior'&&e.type==='permanent');
+    return`<div class="card" id="profile-${p.slug}">
+      <div class="flex items-start justify-between mb-4"><div><h3 class="font-bold" style="color:#000A1A">${p.name}</h3><p class="text-xs" style="color:#000A1A66">${p.module}</p></div><div class="flex items-center gap-2"><span class="text-xs">${trendHtml(p.trend)}</span><span class="badge ${d.cls}">${d.label}</span></div></div>
+      <p class="text-sm leading-relaxed mb-4" style="color:#000A1A99">${p.desc}</p>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        ${salES?`<div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase tracking-wider mb-1" style="color:#000A1A66">España (Senior)</p><p class="text-sm font-bold" style="color:#000A1A">${fmtR(salES.min,salES.max,salES.cur)}</p></div>`:''}
+        ${salDE?`<div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase tracking-wider mb-1" style="color:#000A1A66">Alemania (Senior)</p><p class="text-sm font-bold" style="color:#000A1A">${fmtR(salDE.min,salDE.max,salDE.cur)}</p></div>`:''}
+      </div>
+      <button onclick="toggleProfile('${p.slug}')" class="text-xs font-medium" style="color:#FF1800;background:none;border:none;cursor:pointer">Mas detalles &#9654;</button>
+      <div id="detail-${p.slug}" class="hidden mt-4 pt-4 space-y-4" style="border-top:1px solid #DDC9B330">
+        <div><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:#000A1A99">Skills requeridos</p><div class="flex flex-wrap gap-1.5">${p.skills.map(s=>`<span class="skill-tag">${s}</span>`).join('')}</div></div>
+        <div><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:#000A1A99">Certificaciones</p><ul class="space-y-1">${p.certs.map(c=>`<li class="text-xs" style="color:#000A1A80"><span style="color:#FF1800">-</span> ${c}</li>`).join('')}</ul></div>
+        <div><p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:#000A1A99">Ruta profesional</p><div class="flex items-center gap-2 flex-wrap">${p.path.map((s,i)=>`<span class="text-xs px-2 py-1 rounded" style="background:#DDC9B320;color:#000A1A99">${s}</span>${i<p.path.length-1?'<span style="color:#000A1A30">&#9654;</span>':''}`).join('')}</div></div>
+        <p class="text-xs pt-2" style="color:#000A1A66">~${p.postings} ofertas activas</p>
+        <button onclick="event.stopPropagation();showInfographic('${p.slug}')" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white" style="background:#FF1800;border:none;cursor:pointer">&#128202; Ver Infografia del Perfil</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleProfile(slug){
+  const el=document.getElementById('detail-'+slug);
+  el.classList.toggle('hidden');
+}
+
+// ===== REGISTRO =====
+function initRegistro(){
+  const steps=[{l:'Datos personales',n:1},{l:'Experiencia SAP',n:2},{l:'Certificaciones',n:3}];
+  document.getElementById('reg-steps').innerHTML=steps.map(s=>`<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style="background:${regStep>=s.n?'#FF1800':'#DDC9B330'};color:${regStep>=s.n?'#fff':'#000A1A30'}">${regStep>s.n?'&#10003;':s.n}</div>${s.n<3?`<div class="w-12 h-0.5" style="background:${regStep>s.n?'#FF1800':'#DDC9B330'}"></div>`:''}`).join('');
+  const sapMods=['FI/CO','SD','MM','PP','ABAP','Basís','S/4HANA Cloud','S/4HANA Migration','EWM/TM','SuccessFactors','BTP','PI/PO/CPI','Security/GRC'];
+  let html='';
+  if(regStep===1){
+    html=`<div class="space-y-4 text-left">
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Nombre completo</label><input class="filter-select" placeholder="Tu nombre" value="${regData.name}" oninput="regData.name=this.value"></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Email profesional</label><input type="email" class="filter-select" placeholder="tu@email.com" value="${regData.email}" oninput="regData.email=this.value"></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Pais</label><select class="filter-select" onchange="regData.country=this.value"><option value="">Selecciona tu pais</option>${countries.map(c=>`<option value="${c.code}"${regData.country===c.code?' selected':''}>${c.flag} ${c.name}</option>`).join('')}</select></div>
+      <button onclick="regStep=2;initRegistro()" class="btn-red w-full">Siguiente &#8594;</button>
+    </div>`;
+  } else if(regStep===2){
+    html=`<div class="space-y-4 text-left">
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Rol actual</label><input class="filter-select" placeholder="ej. Consultor FI/CO" value="${regData.role}" oninput="regData.role=this.value"></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Anos de experiencia</label><select class="filter-select" onchange="regData.years=this.value"><option value="">Selecciona</option><option${regData.years==='0'?' selected':''}>Sin experiencia</option><option value="1-3"${regData.years==='1-3'?' selected':''}>1-3 anos</option><option value="3-5"${regData.years==='3-5'?' selected':''}>3-5 anos</option><option value="5-7"${regData.years==='5-7'?' selected':''}>5-7 anos</option><option value="7+"${regData.years==='7+'?' selected':''}>7+ anos</option></select></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Modulos SAP</label><div class="flex flex-wrap gap-2">${sapMods.map(m=>`<button onclick="toggleRegMod('${m}')" class="text-xs px-2.5 py-1 rounded-full border cursor-pointer" style="background:${regData.modules.includes(m)?'#FF1800':'#DDC9B320'};color:${regData.modules.includes(m)?'#fff':'#000A1A99'};border-color:${regData.modules.includes(m)?'#FF1800':'#DDC9B340'}">${m}</button>`).join('')}</div></div>
+      <div class="flex gap-3"><button onclick="regStep=1;initRegistro()" class="flex-1 py-2.5 border rounded-md font-medium" style="border-color:#DDC9B3">&#8592; Atras</button><button onclick="regStep=3;initRegistro()" class="flex-1 btn-red">Siguiente &#8594;</button></div>
+    </div>`;
+  } else {
+    html=`<div class="space-y-4 text-left">
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Certificaciones SAP</label><input class="filter-select" placeholder="ej. S/4HANA Finance, ABAP Associate..." value="${regData.certs}" oninput="regData.certs=this.value"></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">LinkedIn (opcional)</label><input class="filter-select" placeholder="https://linkedin.com/in/tu-perfil" value="${regData.linkedin}" oninput="regData.linkedin=this.value"></div>
+      <div><label class="text-sm font-medium block mb-1.5" style="color:#000A1A">Rol objetivo</label><select class="filter-select" onchange="regData.target=this.value"><option value="">A qué perfil quieres llegar?</option>${Object.entries(roleLabels).map(([k,v])=>`<option value="${k}"${regData.target===k?' selected':''}>${v}</option>`).join('')}</select></div>
+      <div class="flex gap-3"><button onclick="regStep=2;initRegistro()" class="flex-1 py-2.5 border rounded-md font-medium" style="border-color:#DDC9B3">&#8592; Atras</button><button onclick="go('diagnóstico')" class="flex-1 btn-red">Iniciar diagnóstico &#8594;</button></div>
+    </div>`;
+  }
+  document.getElementById('reg-form').innerHTML=html;
+}
+function toggleRegMod(m){
+  const i=regData.modules.indexOf(m);
+  if(i>=0)regData.modules.splice(i,1);else regData.modules.push(m);
+  initRegistro();
+}
+
+// ===== DIAGNOSTIC ENGINE =====
+let inputMode='chat';
+let chatHistory=[];
+let chatStep=0;
+let collectedText='';
+let isRecording=false;
+let recognition=null;
+
+// Skill keyword database for extraction
+const skillKeywords={
+  'fi':{skill:'FI',profiles:['consultant_fi_co']}, 'finance':{skill:'FI',profiles:['consultant_fi_co']}, 'finanzas':{skill:'FI',profiles:['consultant_fi_co']}, 'contabilidad':{skill:'FI',profiles:['consultant_fi_co']}, 'accounting':{skill:'FI',profiles:['consultant_fi_co']}, 'cierres':{skill:'FI',profiles:['consultant_fi_co']}, 'activos fijos':{skill:'FI',profiles:['consultant_fi_co']},
+  'co':{skill:'CO',profiles:['consultant_fi_co']}, 'controlling':{skill:'CO',profiles:['consultant_fi_co']}, 'centros de coste':{skill:'CO',profiles:['consultant_fi_co']}, 'cost center':{skill:'CO',profiles:['consultant_fi_co']},
+  'sd':{skill:'SD',profiles:['consultant_sd']}, 'ventas':{skill:'SD',profiles:['consultant_sd']}, 'sales':{skill:'SD',profiles:['consultant_sd']}, 'facturación':{skill:'SD',profiles:['consultant_sd']}, 'billing':{skill:'SD',profiles:['consultant_sd']}, 'pedidos':{skill:'SD',profiles:['consultant_sd']}, 'pricing':{skill:'SD',profiles:['consultant_sd']},
+  'mm':{skill:'MM',profiles:['consultant_mm']}, 'materiales':{skill:'MM',profiles:['consultant_mm']}, 'compras':{skill:'MM',profiles:['consultant_mm']}, 'procurement':{skill:'MM',profiles:['consultant_mm']}, 'inventario':{skill:'MM',profiles:['consultant_mm']}, 'purchasíng':{skill:'MM',profiles:['consultant_mm']}, 'mrp':{skill:'MRP',profiles:['consultant_mm','consultant_pp']},
+  'pp':{skill:'PP',profiles:['consultant_pp']}, 'producción':{skill:'PP',profiles:['consultant_pp']}, 'manufacturing':{skill:'PP',profiles:['consultant_pp']}, 'fabricación':{skill:'PP',profiles:['consultant_pp']},
+  'abap':{skill:'ABAP',profiles:['abap_developer']}, 'programación':{skill:'ABAP',profiles:['abap_developer']}, 'desarrollo':{skill:'ABAP',profiles:['abap_developer','btp_developer']}, 'developer':{skill:'Development',profiles:['abap_developer','btp_developer']}, 'debugging':{skill:'Debugging',profiles:['abap_developer']}, 'rap':{skill:'RAP',profiles:['abap_developer']}, 'cds':{skill:'CDS Views',profiles:['abap_developer']}, 'fiori':{skill:'Fiori/UI5',profiles:['abap_developer','btp_developer']}, 'ui5':{skill:'UI5',profiles:['abap_developer','btp_developer']}, 'amdp':{skill:'AMDP',profiles:['abap_developer']}, 'odata':{skill:'OData',profiles:['abap_developer','btp_developer','integration']},
+  'basís':{skill:'Basís',profiles:['basís_admin']}, 'administración':{skill:'Admin SAP',profiles:['basís_admin']}, 'transporte':{skill:'Transportes',profiles:['basís_admin']}, 'monitoreo':{skill:'Monitoreo',profiles:['basís_admin']}, 'hana':{skill:'SAP HANA',profiles:['basís_admin','abap_developer','s4hana_cloud']}, 'netweaver':{skill:'NetWeaver',profiles:['basís_admin']},
+  's/4hana':{skill:'S/4HANA',profiles:['s4hana_cloud','s4hana_migration']}, 's4hana':{skill:'S/4HANA',profiles:['s4hana_cloud','s4hana_migration']}, 's4':{skill:'S/4HANA',profiles:['s4hana_cloud','s4hana_migration']}, 'cloud':{skill:'Cloud',profiles:['s4hana_cloud','btp_developer']}, 'clean core':{skill:'Clean Core',profiles:['s4hana_cloud']}, 'activate':{skill:'SAP Activate',profiles:['s4hana_cloud','project_manager']}, 'fit to standard':{skill:'Fit-to-Standard',profiles:['s4hana_cloud']}, 'fit-to-standard':{skill:'Fit-to-Standard',profiles:['s4hana_cloud']},
+  'migración':{skill:'Migration',profiles:['s4hana_migration']}, 'migration':{skill:'Migration',profiles:['s4hana_migration']}, 'conversión':{skill:'System Conversión',profiles:['s4hana_migration']}, 'brownfield':{skill:'Brownfield',profiles:['s4hana_migration']}, 'greenfield':{skill:'Greenfield',profiles:['s4hana_migration']},
+  'ewm':{skill:'EWM',profiles:['ewm_tm']}, 'warehouse':{skill:'Warehouse',profiles:['ewm_tm']}, 'almacen':{skill:'Almacen',profiles:['ewm_tm']}, 'logística':{skill:'Logística',profiles:['ewm_tm']}, 'logistics':{skill:'Logistics',profiles:['ewm_tm']}, 'tm':{skill:'TM',profiles:['ewm_tm']}, 'transporte':{skill:'Transporte',profiles:['ewm_tm']},
+  'successfactors':{skill:'SuccessFactors',profiles:['successfactors']}, 'employee central':{skill:'Employee Central',profiles:['successfactors']}, 'rrhh':{skill:'RRHH',profiles:['successfactors']}, 'recursos humanos':{skill:'HR',profiles:['successfactors']}, 'talento':{skill:'Talent',profiles:['successfactors']}, 'nómina':{skill:'Payroll',profiles:['successfactors']},
+  'btp':{skill:'BTP',profiles:['btp_developer']}, 'cap':{skill:'SAP CAP',profiles:['btp_developer']}, 'build':{skill:'SAP Build',profiles:['btp_developer']}, 'cloud foundry':{skill:'Cloud Foundry',profiles:['btp_developer']},
+  'pi':{skill:'PI/PO',profiles:['integration']}, 'po':{skill:'PI/PO',profiles:['integration']}, 'cpi':{skill:'CPI',profiles:['integration']}, 'integración':{skill:'Integración',profiles:['integration']}, 'integration':{skill:'Integration',profiles:['integration']}, 'idoc':{skill:'IDoc',profiles:['integration']}, 'edi':{skill:'EDI',profiles:['integration']}, 'api':{skill:'API',profiles:['integration','btp_developer']}, 'middleware':{skill:'Middleware',profiles:['integration']},
+  'proyecto':{skill:'Project Mgmt',profiles:['project_manager']}, 'project':{skill:'Project Mgmt',profiles:['project_manager']}, 'gestión':{skill:'Gestion',profiles:['project_manager']}, 'scrum':{skill:'Scrum',profiles:['project_manager']}, 'agile':{skill:'Agile',profiles:['project_manager']}, 'pmp':{skill:'PMP',profiles:['project_manager']}, 'stakeholder':{skill:'Stakeholders',profiles:['project_manager']},
+  'arquitectura':{skill:'Arquitectura',profiles:['solution_architect']}, 'architect':{skill:'Architecture',profiles:['solution_architect']}, 'enterprise':{skill:'Enterprise',profiles:['solution_architect']}, 'solucion':{skill:'Solutions',profiles:['solution_architect']},
+  'seguridad':{skill:'Security',profiles:['security_grc']}, 'security':{skill:'Security',profiles:['security_grc']}, 'grc':{skill:'GRC',profiles:['security_grc']}, 'autorizaciónes':{skill:'Autorizaciónes',profiles:['security_grc']}, 'roles':{skill:'Roles SAP',profiles:['security_grc']}, 'sod':{skill:'SoD',profiles:['security_grc']}, 'auditoría':{skill:'Auditoría',profiles:['security_grc']},
+  // Seniority keywords
+  'junior':{skill:'Junior',seniority:'junior'}, 'senior':{skill:'Senior',seniority:'senior'}, 'lead':{skill:'Lead',seniority:'architect'}, 'manager':{skill:'Manager',seniority:'architect'}, 'director':{skill:'Director',seniority:'architect'}, 'arquitecto':{skill:'Arquitecto',seniority:'architect'},
+  // Certifications
+  'certificado':{skill:'Certificado SAP'}, 'certificación':{skill:'Certificacion SAP'}, 'certified':{skill:'Certified'},
+};
+
+// Extract skills from text
+function extractSkills(text){
+  const lower=text.toLowerCase();
+  const found=new Map();
+  const profileScores={};
+  let detectedSeniority='mid';
+  // Check years
+  const yearMatch=lower.match(/(\d+)\s*(anos?|years?|a.os)/);
+  if(yearMatch){
+    const y=parseInt(yearMatch[1]);
+    if(y<=3) detectedSeniority='junior';
+    else if(y<=5) detectedSeniority='mid';
+    else if(y<=7) detectedSeniority='senior';
+    else detectedSeniority='architect';
+  }
+  // Also from registration data
+  if(regData.years==='0'||regData.years==='1-3') detectedSeniority='junior';
+  else if(regData.years==='3-5') detectedSeniority='mid';
+  else if(regData.years==='5-7') detectedSeniority='senior';
+  else if(regData.years==='7+') detectedSeniority='architect';
+  // Extract keywords
+  Object.entries(skillKeywords).forEach(([kw,data])=>{
+    if(lower.includes(kw)){
+      found.set(data.skill,true);
+      if(data.profiles){
+        data.profiles.forEach(p=>{profileScores[p]=(profileScores[p]||0)+1;});
+      }
+      if(data.seniority) detectedSeniority=data.seniority;
+    }
+  });
+  // Also check modules from registration
+  if(regData.modules.length>0){
+    regData.modules.forEach(m=>{
+      const ml=m.toLowerCase();
+      Object.entries(skillKeywords).forEach(([kw,data])=>{
+        if(ml.includes(kw)||kw.includes(ml)){
+          found.set(data.skill,true);
+          if(data.profiles) data.profiles.forEach(p=>{profileScores[p]=(profileScores[p]||0)+1;});
+        }
+      });
+    });
+  }
+  return {skills:[...found.keys()],profileScores,seniority:detectedSeniority};
+}
+
+// Calculate profile matches
+function calculateMatches(extraction){
+  const {skills,profileScores,seniority}=extraction;
+  const maxScore=Math.max(...Object.values(profileScores),1);
+  return sapProfiles.map(p=>{
+    const rawScore=profileScores[p.slug]||0;
+    // Base match from keyword hits
+    let matchPct=Math.min(Math.round((rawScore/Math.max(maxScore,3))*100),95);
+    // Bonus for demand level
+    if(p.demand==='crítical') matchPct=Math.min(matchPct+10,98);
+    else if(p.demand==='high') matchPct=Math.min(matchPct+5,95);
+    // Minimum if any related skills found
+    if(rawScore>0 && matchPct<25) matchPct=25;
+    // Small random base for profiles with no match to show some recommendations
+    if(matchPct===0 && p.demand==='crítical') matchPct=Math.floor(Math.random()*15)+10;
+    return {...p,matchPct,rawScore};
+  }).sort((a,b)=>b.matchPct-a.matchPct);
+}
+
+function generateResults(text){
+  document.getElementById('diag-input-section').classList.add('hidden');
+  document.getElementById('diag-processing').classList.remove('hidden');
+  const msgs=['Extrayendo habilidades y experiencia...','Comparando con perfiles SAP del mercado...','Calculando empleabilidad y match laboral...','Generando recomendaciones formativas...'];
+  let mi=0;
+  const interval=setInterval(()=>{
+    mi++;
+    if(mi<msgs.length) document.getElementById('processing-status').textContent=msgs[mi];
+  },800);
+
+  setTimeout(()=>{
+    clearInterval(interval);
+    document.getElementById('diag-processing').classList.add('hidden');
+    document.getElementById('diag-results').classList.remove('hidden');
+    const extraction=extractSkills(text);
+    const matches=calculateMatches(extraction);
+    const topMatch=matches[0];
+    const sen=extraction.seniority;
+
+    // User name
+    document.getElementById('result-user-name').textContent=regData.name?`Resultados para ${regData.name}`:'Resultados de tu diagnóstico';
+
+    // Employability score
+    const empScore=Math.min(Math.max(Math.round(topMatch.matchPct*0.9+(extraction.skills.length*3)),15),96);
+    document.getElementById('employability-score').textContent=empScore+'%';
+    let empDesc='';
+    if(empScore>=80) empDesc='Excelente posiciónamiento. Tu perfil tiene alta demanda en el mercado SAP actual.';
+    else if(empScore>=60) empDesc='Buen perfil con oportunidades claras. Algunas certificaciónes clave podrían impulsar tu empleabilidad.';
+    else if(empScore>=40) empDesc='Perfil con potencial. Recomendamos formación específica para acceder a los roles de mayor demanda.';
+    else empDesc='Estas en el inicio de tu camino SAP. La formación adecuada puede abrir grandes oportunidades.';
+    document.getElementById('employability-desc').textContent=empDesc;
+
+    // Detected skills
+    document.getElementById('detected-skills').innerHTML=extraction.skills.length>0?
+      extraction.skills.map(s=>`<span class="skill-tag" style="font-size:12px;padding:4px 12px">${s}</span>`).join(''):
+      '<p class="text-sm" style="color:#000A1A60">No se detectaron habilidades especificas. Intenta ser más detallado en tu descripción.</p>';
+
+    // Profile matches (top 5)
+    document.getElementById('profile-matches').innerHTML=matches.slice(0,5).map((m,i)=>{
+      const d=demandCfg[m.demand];
+      const color=m.matchPct>=70?'#16a34a':m.matchPct>=40?'#ea580c':'#B79E80';
+      const salES=salaryData.find(e=>e.role===m.slug&&e.country==='ES'&&e.seniority===sen&&e.type==='permanent');
+      const salDE=salaryData.find(e=>e.role===m.slug&&e.country==='DE'&&e.seniority===sen&&e.type==='permanent');
+      return`<div class="result-card"><div class="flex items-start justify-between mb-3"><div class="flex items-center gap-3"><span class="text-lg font-bold" style="color:${color}">${m.matchPct}%</span><div><h4 class="font-bold" style="color:#000A1A">${m.name}</h4><p class="text-xs" style="color:#000A1A60">${m.module} | ${trendHtml(m.trend)} | <span class="badge ${d.cls}">${d.label}</span></p></div></div><span class="text-xs" style="color:#000A1A40">#${i+1}</span></div><div class="match-bar mb-3"><div class="match-fill" style="width:${m.matchPct}%;background:${color}"></div></div>${(salES||salDE)?`<div class="grid grid-cols-2 gap-3"><div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase" style="color:#000A1A60">España (${senLabels[sen]||sen})</p><p class="text-sm font-bold" style="color:#000A1A">${salES?fmtR(salES.min,salES.max,salES.cur):'N/D'}</p></div><div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase" style="color:#000A1A60">Alemania (${senLabels[sen]||sen})</p><p class="text-sm font-bold" style="color:#000A1A">${salDE?fmtR(salDE.min,salDE.max,salDE.cur):'N/D'}</p></div></div>`:''}</div>`;
+    }).join('');
+
+    // Salary expectations
+    const topSlug=topMatch.slug;
+    const salCountries=[{c:'ES',n:'España',f:'🇪🇸'},{c:'DE',n:'Alemania',f:'🇩🇪'},{c:'US',n:'USA',f:'🇺🇸'}];
+    document.getElementById('salary-expectations').innerHTML=salCountries.map(sc=>{
+      const s=salaryData.find(e=>e.role===topSlug&&e.country===sc.c&&e.seniority===sen&&e.type==='permanent');
+      return`<div class="rounded-lg p-4" style="background:#DDC9B315;border:1px solid #DDC9B330"><p class="text-sm font-medium mb-1" style="color:#000A1A">${sc.f} ${sc.n}</p><p class="text-lg font-bold" style="color:#FF1800">${s?fmtR(s.min,s.max,s.cur):'N/D'}</p><p class="text-xs" style="color:#000A1A60">${senLabels[sen]||sen} - ${roleLabels[topSlug]}</p></div>`;
+    }).join('');
+
+    // Recommended certifications
+    const topCerts=matches.slice(0,3).flatMap(m=>m.certs).filter((v,i,a)=>a.indexOf(v)===i).slice(0,5);
+    document.getElementById('recommended-certs').innerHTML=topCerts.map(c=>`<div class="flex items-start gap-2 p-2 rounded-lg" style="background:#16a34a08"><span style="color:#16a34a">&#10003;</span><span class="text-sm" style="color:#000A1A">${c}</span></div>`).join('');
+
+    // Training path
+    const gaps=[];
+    const topP=sapProfiles.find(p=>p.slug===topSlug);
+    if(topP){
+      topP.skills.forEach(s=>{
+        if(!extraction.skills.some(es=>s.toLowerCase().includes(es.toLowerCase())||es.toLowerCase().includes(s.toLowerCase().substring(0,4)))){
+          gaps.push(s);
+        }
+      });
+    }
+    document.getElementById('training-path').innerHTML=(gaps.length>0?gaps.slice(0,5):[topP?.skills[0]||'S/4HANA Cloud']).map((g,i)=>`<div class="flex items-center gap-3 p-3 rounded-lg" style="background:${i===0?'#FF180008':'#FAFAF7'};border:1px solid ${i===0?'#FF180020':'#DDC9B340'}"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style="background:${i===0?'#FF1800':'#DDC9B340'};color:${i===0?'#fff':'#000A1A80'}">${i+1}</div><div><p class="text-sm font-medium" style="color:#000A1A">${g}</p><p class="text-xs" style="color:#000A1A60">${['Curso intensivo (40h)','Taller practico (24h)','Certificacion oficial (80h)','Workshop avanzado (16h)','Masterclass (8h)'][i%5]} - Hoppers Academy</p></div></div>`).join('');
+
+    window.scrollTo(0,0);
+  },3500);
+}
+
+// Chat system
+const chatQuestions=[
+  'Hola! Soy tu asesor virtual de Hoppers. Cuentame, cual es tu experiencia con SAP? (Modulos que conoces, años de experiencia, certificaciónes...)',
+  'Excelente. Y en que sector o industria has trabajado? Cuentame sobre tus proyectos SAP más relevantes.',
+  'Perfecto. Hacia donde quieres orientar tu carrera SAP? Qué tipo de rol te interesa?',
+];
+
+function initDiagnóstico(){
+  setInputMode('chat');
+  chatHistory=[];chatStep=0;collectedText='';
+  document.getElementById('diag-input-section').classList.remove('hidden');
+  document.getElementById('diag-processing').classList.add('hidden');
+  document.getElementById('diag-results').classList.add('hidden');
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML='';
+  addBotMessage(chatQuestions[0]);
+}
+
+function setInputMode(mode){
+  inputMode=mode;
+  document.querySelectorAll('.input-mode').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.input-mode-tab').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('mode-'+mode);
+  if(el){el.classList.remove('hidden');}
+  // Find the matching tab
+  document.querySelectorAll('.input-mode-tab').forEach(t=>{
+    if(t.textContent.toLowerCase().includes(mode==='cv'?'cv':mode==='linkedin'?'linkedin':mode)) t.classList.add('active');
+  });
+  // Re-init for the modes
+  if(mode==='chat'){
+    if(chatHistory.length===0) {
+      const msgs=document.getElementById('chat-messages');
+      if(msgs) {msgs.innerHTML='';addBotMessage(chatQuestions[0]);}
+    }
+  }
+}
+
+function addBotMessage(text){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className='chat-msg bot';
+  div.innerHTML=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addUserMessage(text){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className='chat-msg user';
+  div.textContent=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addTypingIndicator(){
+  const msgs=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className='chat-msg bot';
+  div.id='typing-indicator';
+  div.innerHTML='<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function removeTypingIndicator(){
+  const el=document.getElementById('typing-indicator');
+  if(el) el.remove();
+}
+
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text) return;
+  input.value='';
+  addUserMessage(text);
+  collectedText+=' '+text;
+  chatStep++;
+
+  if(chatStep<chatQuestions.length){
+    addTypingIndicator();
+    setTimeout(()=>{
+      removeTypingIndicator();
+      addBotMessage(chatQuestions[chatStep]);
+    },1000);
+  } else {
+    addTypingIndicator();
+    setTimeout(()=>{
+      removeTypingIndicator();
+      addBotMessage('Perfecto, tengo suficiente información. Voy a analizar tu perfil y preparar tu orientación profesional...');
+      setTimeout(()=>generateResults(collectedText),1500);
+    },1000);
+  }
+}
+
+// Voice system
+function toggleVoice(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome para esta funcionalidad.');
+    return;
+  }
+  const btn=document.getElementById('voice-btn');
+  const status=document.getElementById('voice-status');
+  if(!isRecording){
+    recognition=new SpeechRecognition();
+    recognition.lang='es-ES';
+    recognition.continuous=true;
+    recognition.interimResults=true;
+    recognition.onresult=(e)=>{
+      let transcript='';
+      for(let i=0;i<e.results.length;i++){transcript+=e.results[i][0].transcript;}
+      document.getElementById('voice-transcript').value=transcript;
+    };
+    recognition.onerror=(e)=>{status.textContent='Error: '+e.error;btn.classList.remove('recording');isRecording=false;};
+    recognition.onend=()=>{if(isRecording){recognition.start();}};
+    recognition.start();
+    isRecording=true;
+    btn.classList.add('recording');
+    status.textContent='Escuchando... (pulsa para detener)';
+  } else {
+    recognition.stop();
+    isRecording=false;
+    btn.classList.remove('recording');
+    status.textContent='Grabación finalizada';
+  }
+}
+
+function processVoiceInput(){
+  const text=document.getElementById('voice-transcript').value.trim();
+  if(!text){alert('Por favor, graba o escribe tu experiencia primero.');return;}
+  generateResults(text);
+}
+
+// CV upload
+function handleCVDrop(e){const f=e.dataTransfer.files[0];if(f)handleCVFile(f);}
+function handleCVFile(file){
+  if(!file)return;
+  document.getElementById('cv-filename').textContent=file.name;
+  document.getElementById('cv-preview').classList.remove('hidden');
+  document.getElementById('drop-zone').classList.add('hidden');
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    let text=e.target.result;
+    // For non-text files, show placeholder
+    if(file.type!=='text/plain'&&!file.name.endsWith('.txt')){
+      // Try to extract readable text from the content
+      text=text.replace(/[^\x20-\x7E\xA0-\xFF\n]/g,' ').replace(/\s+/g,' ').trim();
+      if(text.length<50) text='[Archivo PDF cargado: '+file.name+']\n\nPor favor, pega aquí el contenido de tu CV o describe tu experiencia profesional manualmente.';
+    }
+    document.getElementById('cv-text').value=text.substring(0,5000);
+  };
+  if(file.type==='text/plain'||file.name.endsWith('.txt')) reader.readAsText(file);
+  else reader.readAsText(file); // Try to read as text first
+}
+
+function processCVInput(){
+  const text=document.getElementById('cv-text').value.trim();
+  if(!text||text.length<20){alert('Por favor, asegurate de que hay suficiente información sobre tu experiencia.');return;}
+  generateResults(text);
+}
+
+// LinkedIn
+function processLinkedInInput(){
+  const url=document.getElementById('linkedin-url').value;
+  const title=document.getElementById('linkedin-title').value;
+  const summary=document.getElementById('linkedin-summary').value;
+  const combined=[title,summary,url].filter(Boolean).join(' ');
+  if(combined.length<10){alert('Por favor, completa al menos tu titulo profesional y resumen de experiencia.');return;}
+  generateResults(combined);
+}
+
+function resetDiagnostic(){
+  chatHistory=[];chatStep=0;collectedText='';
+  document.getElementById('diag-input-section').classList.remove('hidden');
+  document.getElementById('diag-processing').classList.add('hidden');
+  document.getElementById('diag-results').classList.add('hidden');
+  document.getElementById('cv-preview').classList.add('hidden');
+  document.getElementById('drop-zone').classList.remove('hidden');
+  const msgs=document.getElementById('chat-messages');
+  if(msgs){msgs.innerHTML='';addBotMessage(chatQuestions[0]);}
+  document.getElementById('voice-transcript').value='';
+  document.getElementById('linkedin-url').value='';
+  document.getElementById('linkedin-title').value='';
+  document.getElementById('linkedin-summary').value='';
+  setInputMode('chat');
+  window.scrollTo(0,0);
+}
+
+// ===== PDF GENERATION =====
+let lastDiagResult=null; // store for PDF/email
+
+// Override generateResults to save data for PDF
+const _origGenResults=generateResults;
+generateResults=function(text){
+  // We wrap the original and save the extraction after it runs
+  const origSetTimeout=window.setTimeout;
+  const _st=window.setTimeout;
+  // Save text for later
+  lastDiagResult={text:text,timestamp:new Date()};
+  _origGenResults(text);
+};
+
+// Helper: store results after rendering (called from inside generateResults timeout)
+function saveDiagData(extraction,matches,empScore,sen){
+  lastDiagResult={...lastDiagResult,extraction,matches,empScore,seniority:sen};
+}
+
+// Patch: save data inside the actual generateResults
+// We need to intercept the results. Let's re-define generateResults completely:
+generateResults=function(text){
+  document.getElementById('diag-input-section').classList.add('hidden');
+  document.getElementById('diag-processing').classList.remove('hidden');
+  const msgs=['Extrayendo habilidades y experiencia...','Comparando con perfiles SAP del mercado...','Calculando empleabilidad y match laboral...','Generando recomendaciones formativas...'];
+  let mi=0;
+  const interval=setInterval(()=>{mi++;if(mi<msgs.length)document.getElementById('processing-status').textContent=msgs[mi];},800);
+  setTimeout(()=>{
+    clearInterval(interval);
+    document.getElementById('diag-processing').classList.add('hidden');
+    document.getElementById('diag-results').classList.remove('hidden');
+    const extraction=extractSkills(text);
+    const matches=calculateMatches(extraction);
+    const topMatch=matches[0];
+    const sen=extraction.seniority;
+    const empScore=Math.min(Math.max(Math.round(topMatch.matchPct*0.9+(extraction.skills.length*3)),15),96);
+
+    // SAVE for PDF
+    lastDiagResult={text,timestamp:new Date(),extraction,matches:matches.slice(0,5),empScore,seniority:sen,topMatch,allSkills:extraction.skills};
+
+    document.getElementById('result-user-name').textContent=regData.name?'Resultados para '+regData.name:'Resultados de tu diagnóstico';
+    document.getElementById('employability-score').textContent=empScore+'%';
+    let empDesc='';
+    if(empScore>=80) empDesc='Excelente posiciónamiento. Tu perfil tiene alta demanda en el mercado SAP actual.';
+    else if(empScore>=60) empDesc='Buen perfil con oportunidades claras. Algunas certificaciónes clave podrían impulsar tu empleabilidad.';
+    else if(empScore>=40) empDesc='Perfil con potencial. Recomendamos formación específica para acceder a los roles de mayor demanda.';
+    else empDesc='Estas en el inicio de tu camino SAP. La formación adecuada puede abrir grandes oportunidades.';
+    document.getElementById('employability-desc').textContent=empDesc;
+    document.getElementById('detected-skills').innerHTML=extraction.skills.length>0?extraction.skills.map(s=>'<span class="skill-tag" style="font-size:12px;padding:4px 12px">'+s+'</span>').join(''):'<p class="text-sm" style="color:#000A1A60">No se detectaron habilidades especificas.</p>';
+    document.getElementById('profile-matches').innerHTML=matches.slice(0,5).map((m,i)=>{
+      const d=demandCfg[m.demand];const color=m.matchPct>=70?'#16a34a':m.matchPct>=40?'#ea580c':'#B79E80';
+      const salES=salaryData.find(e=>e.role===m.slug&&e.country==='ES'&&e.seniority===sen&&e.type==='permanent');
+      const salDE=salaryData.find(e=>e.role===m.slug&&e.country==='DE'&&e.seniority===sen&&e.type==='permanent');
+      return'<div class="result-card"><div class="flex items-start justify-between mb-3"><div class="flex items-center gap-3"><span class="text-lg font-bold" style="color:'+color+'">'+m.matchPct+'%</span><div><h4 class="font-bold" style="color:#000A1A">'+m.name+'</h4><p class="text-xs" style="color:#000A1A60">'+m.module+' | '+trendHtml(m.trend)+' | <span class="badge '+d.cls+'">'+d.label+'</span></p></div></div><span class="text-xs" style="color:#000A1A40">#'+(i+1)+'</span></div><div class="match-bar mb-3"><div class="match-fill" style="width:'+m.matchPct+'%;background:'+color+'"></div></div>'+((salES||salDE)?'<div class="grid grid-cols-2 gap-3"><div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase" style="color:#000A1A60">España ('+(senLabels[sen]||sen)+')</p><p class="text-sm font-bold" style="color:#000A1A">'+(salES?fmtR(salES.min,salES.max,salES.cur):'N/D')+'</p></div><div class="rounded-lg p-3" style="background:#DDC9B315"><p class="text-[10px] uppercase" style="color:#000A1A60">Alemania ('+(senLabels[sen]||sen)+')</p><p class="text-sm font-bold" style="color:#000A1A">'+(salDE?fmtR(salDE.min,salDE.max,salDE.cur):'N/D')+'</p></div></div>':'')+'</div>';
+    }).join('');
+    const topSlug=topMatch.slug;
+    const salCountries=[{c:'ES',n:'España',f:'🇪🇸'},{c:'DE',n:'Alemania',f:'🇩🇪'},{c:'US',n:'USA',f:'🇺🇸'}];
+    document.getElementById('salary-expectations').innerHTML=salCountries.map(sc=>{
+      const s=salaryData.find(e=>e.role===topSlug&&e.country===sc.c&&e.seniority===sen&&e.type==='permanent');
+      return'<div class="rounded-lg p-4" style="background:#DDC9B315;border:1px solid #DDC9B330"><p class="text-sm font-medium mb-1" style="color:#000A1A">'+sc.f+' '+sc.n+'</p><p class="text-lg font-bold" style="color:#FF1800">'+(s?fmtR(s.min,s.max,s.cur):'N/D')+'</p><p class="text-xs" style="color:#000A1A60">'+(senLabels[sen]||sen)+' - '+roleLabels[topSlug]+'</p></div>';
+    }).join('');
+    const topCerts=matches.slice(0,3).flatMap(m=>m.certs).filter((v,i,a)=>a.indexOf(v)===i).slice(0,5);
+    document.getElementById('recommended-certs').innerHTML=topCerts.map(c=>'<div class="flex items-start gap-2 p-2 rounded-lg" style="background:#16a34a08"><span style="color:#16a34a">&#10003;</span><span class="text-sm" style="color:#000A1A">'+c+'</span></div>').join('');
+    const topP=sapProfiles.find(p=>p.slug===topSlug);
+    const gaps=[];
+    if(topP){topP.skills.forEach(s=>{if(!extraction.skills.some(es=>s.toLowerCase().includes(es.toLowerCase())||es.toLowerCase().includes(s.toLowerCase().substring(0,4)))){gaps.push(s);}});}
+    lastDiagResult.gaps=gaps;lastDiagResult.topCerts=topCerts;
+    document.getElementById('training-path').innerHTML=(gaps.length>0?gaps.slice(0,5):[topP?.skills[0]||'S/4HANA Cloud']).map((g,i)=>'<div class="flex items-center gap-3 p-3 rounded-lg" style="background:'+(i===0?'#FF180008':'#FAFAF7')+';border:1px solid '+(i===0?'#FF180020':'#DDC9B340')+'"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style="background:'+(i===0?'#FF1800':'#DDC9B340')+';color:'+(i===0?'#fff':'#000A1A80')+'">'+(i+1)+'</div><div><p class="text-sm font-medium" style="color:#000A1A">'+g+'</p><p class="text-xs" style="color:#000A1A60">'+['Curso intensivo (40h)','Taller practico (24h)','Certificacion oficial (80h)','Workshop avanzado (16h)','Masterclass (8h)'][i%5]+' - Hoppers Academy</p></div></div>').join('');
+    window.scrollTo(0,0);
+  },3500);
+};
+
+// ===== DIAGNOSTIC PDF =====
+function downloadDiagnosticPDF(){
+  if(!lastDiagResult){alert('No hay diagnóstico disponible.');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const W=210,M=15,CW=W-2*M;
+  let y=M;
+  const RED=[255,24,0],BLACK=[0,10,26],BEIGE=[221,201,179],MURRAY=[183,158,128],WHITE=[255,255,255];
+
+  // Header bar
+  doc.setFillColor(...BLACK);doc.rect(0,0,W,45,'F');
+  doc.setFillColor(...RED);doc.rect(M,12,8,8,'F');
+  doc.setTextColor(...WHITE);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('H',M+2.8,18.5);
+  doc.setFontSize(18);doc.text('HOPPERS',M+12,19);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(255,255,255);doc.text('Diagnóstico Profesional SAP | '+new Date().toLocaleDateString('es-ES'),M,30);
+  doc.setFontSize(8);doc.text('www.hoppers.academy | Partner oficial SAP para Europa y LATAM',M,36);
+  y=55;
+
+  // User info
+  doc.setTextColor(...BLACK);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Informe de Diagnóstico Profesional',M,y);y+=8;
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+  if(regData.name) {doc.text('Candidato: '+regData.name,M,y);y+=5;}
+  if(regData.email){doc.text('Email: '+regData.email,M,y);y+=5;}
+  const ci=countries.find(c=>c.code===regData.country);
+  if(ci){doc.text('Pais: '+ci.name,M,y);y+=5;}
+  doc.text('Fecha: '+new Date().toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}),M,y);y+=10;
+
+  // Employability Score
+  doc.setFillColor(...RED);doc.roundedRect(M,y,CW,22,3,3,'F');
+  doc.setTextColor(...WHITE);doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text(lastDiagResult.empScore+'%',M+8,y+15);
+  doc.setFontSize(11);doc.text('Índice de Empleabilidad SAP',M+35,y+10);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  let empDesc2='';
+  if(lastDiagResult.empScore>=80)empDesc2='Excelente posiciónamiento en el mercado SAP.';
+  else if(lastDiagResult.empScore>=60)empDesc2='Buen perfil con oportunidades claras de crecimiento.';
+  else if(lastDiagResult.empScore>=40)empDesc2='Perfil con potencial. La formación específica ampliara tus opciones.';
+  else empDesc2='Inicio del camino SAP. La formación adecuada abre grandes oportunidades.';
+  doc.text(empDesc2,M+35,y+17);
+  y+=30;
+
+  // Skills
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Habilidades Detectadas',M,y);y+=6;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  const skillText=lastDiagResult.allSkills.length>0?lastDiagResult.allSkills.join(' | '):'No se detectaron habilidades especificas';
+  const skillLines=doc.splitTextToSize(skillText,CW);
+  doc.text(skillLines,M,y);y+=skillLines.length*4.5+6;
+
+  // Profile matches table
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Perfiles SAP Compatibles',M,y);y+=3;
+  const tableData=lastDiagResult.matches.map((m,i)=>{
+    const salES=salaryData.find(e=>e.role===m.slug&&e.country==='ES'&&e.seniority===lastDiagResult.seniority&&e.type==='permanent');
+    const salDE=salaryData.find(e=>e.role===m.slug&&e.country==='DE'&&e.seniority===lastDiagResult.seniority&&e.type==='permanent');
+    return[
+      '#'+(i+1),
+      m.name,
+      m.matchPct+'%',
+      demandCfg[m.demand].label,
+      salES?fmtR(salES.min,salES.max,salES.cur):'N/D',
+      salDE?fmtR(salDE.min,salDE.max,salDE.cur):'N/D'
+    ];
+  });
+  doc.autoTable({startY:y,head:[['#','Perfil','Match','Demanda','Salario ES','Salario DE']],body:tableData,
+    margin:{left:M,right:M},styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:BLACK,textColor:WHITE,fontSize:8},
+    alternateRowStyles:{fillColor:[245,243,238]},columnStyles:{0:{cellWidth:8},2:{cellWidth:15,halign:'center'},3:{cellWidth:18}}});
+  y=doc.lastAutoTable.finalY+10;
+
+  // Check page break
+  if(y>240){doc.addPage();y=M;}
+
+  // Salary expectations
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Expectativa Salarial Estimada',M,y);y+=3;
+  const topSlug=lastDiagResult.topMatch.slug;
+  const salTableData=[{c:'ES',n:'España'},{c:'DE',n:'Alemania'},{c:'CH',n:'Suiza'},{c:'FR',n:'Francia'},{c:'US',n:'USA'},{c:'MX',n:'Mexico'},{c:'BR',n:'Brasíl'}].map(sc=>{
+    const s=salaryData.find(e=>e.role===topSlug&&e.country===sc.c&&e.seniority===lastDiagResult.seniority&&e.type==='permanent');
+    return[sc.n,s?fmtR(s.min,s.max,s.cur):'N/D',senLabels[lastDiagResult.seniority]||lastDiagResult.seniority];
+  }).filter(r=>r[1]!=='N/D');
+  doc.autoTable({startY:y,head:[['Pais','Rango Salarial ('+roleLabels[topSlug]+')','Nivel']],body:salTableData,
+    margin:{left:M,right:M},styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:RED,textColor:WHITE,fontSize:8},
+    alternateRowStyles:{fillColor:[255,245,243]}});
+  y=doc.lastAutoTable.finalY+10;
+
+  if(y>240){doc.addPage();y=M;}
+
+  // Certifications
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Certificaciones Recomendadas',M,y);y+=6;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  (lastDiagResult.topCerts||[]).forEach(c=>{
+    const lines=doc.splitTextToSize('> '+c,CW);
+    doc.text(lines,M,y);y+=lines.length*4.5+2;
+  });
+  y+=4;
+
+  // Training path / Gaps
+  if(y>250){doc.addPage();y=M;}
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Plan de Acción - Ruta Formativa Hoppers Academy',M,y);y+=6;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  const gapList=lastDiagResult.gaps||[];
+  const courses=['Curso intensivo (40h)','Taller practico (24h)','Certificacion oficial (80h)','Workshop avanzado (16h)','Masterclass (8h)'];
+  (gapList.length>0?gapList.slice(0,6):['S/4HANA Cloud Fundamentals']).forEach((g,i)=>{
+    doc.setFont('helvetica','bold');doc.setTextColor(...BLACK);
+    doc.text((i+1)+'. '+g,M,y);y+=4.5;
+    doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+    doc.text('   '+courses[i%5]+' - Hoppers Academy',M,y);y+=5.5;
+  });
+  y+=6;
+
+  // Footer CTA
+  if(y>260){doc.addPage();y=M;}
+  doc.setFillColor(...BEIGE);doc.roundedRect(M,y,CW,28,3,3,'F');
+  doc.setTextColor(...BLACK);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('Siguiente paso: Habla con un asesor de Hoppers Academy',M+6,y+10);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  doc.text('Agenda una sesión gratuita en hoppers.academy para disenar tu plan de formación personalizado.',M+6,y+17);
+  doc.text('Email: info@hoppers.academy | Web: www.hoppers.academy',M+6,y+23);
+
+  // Page footer
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFontSize(7);doc.setTextColor(150,150,150);
+    doc.text('Hoppers Academy | Diagnóstico Profesional SAP | Confidencial | '+new Date().toLocaleDateString('es-ES'),M,290);
+    doc.text('Página '+i+'/'+pageCount,W-M-20,290);
+  }
+
+  const fileName='Hoppers_Diagnóstico_SAP_'+(regData.name||'Usuario').replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+  doc.save(fileName);
+}
+
+// ===== MARKET REPORT PDF (PUBLIC) =====
+function downloadMarketReport(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const W=210,M=15,CW=W-2*M;
+  let y=M;
+  const RED=[255,24,0],BLACK=[0,10,26],BEIGE=[221,201,179],WHITE=[255,255,255];
+
+  // Header
+  doc.setFillColor(...BLACK);doc.rect(0,0,W,45,'F');
+  doc.setFillColor(...RED);doc.rect(M,12,8,8,'F');
+  doc.setTextColor(...WHITE);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('H',M+2.8,18.5);
+  doc.setFontSize(18);doc.text('HOPPERS',M+12,19);
+  doc.setFontSize(12);doc.text('Informe de Mercado SAP - Abril 2026',M,30);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Salarios, perfiles y empleabilidad | Europa, Latinoamerica y USA | www.hoppers.academy',M,37);
+  y=55;
+
+  // Intro
+  doc.setTextColor(...BLACK);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Panorama del Mercado Laboral SAP',M,y);y+=7;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  const intro='El ecosistema SAP atraviesa una transformación sin precedentes impulsada por la migración obligatoria a S/4HANA (fecha límite 2027/2030). Este informe presenta los perfiles más demandados, rangos salariales por país y nivel, y las tendencias clave del mercado laboral para profesionales SAP.';
+  const introLines=doc.splitTextToSize(intro,CW);
+  doc.text(introLines,M,y);y+=introLines.length*4.5+8;
+
+  // Key metrics
+  const totalP=sapProfiles.reduce((a,p)=>a+p.postings,0);
+  doc.setFillColor(245,243,238);doc.roundedRect(M,y,CW,16,3,3,'F');
+  doc.setTextColor(...RED);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text(fmtN(totalP)+'+ ofertas activas',M+6,y+7);
+  doc.text('15 perfiles analizados',M+70,y+7);
+  doc.text('14 países',M+140,y+7);
+  doc.setTextColor(100,100,100);doc.setFontSize(7);doc.setFont('helvetica','normal');
+  doc.text('Datos estimados Q2 2026',M+6,y+12);
+  y+=22;
+
+  // Profiles ranking table
+  doc.setTextColor(...BLACK);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Ranking de Perfiles SAP por Demanda',M,y);y+=3;
+  const profTableData=sapProfiles.map((p,i)=>[
+    '#'+(i+1),p.name,p.module,demandCfg[p.demand].label,
+    p.trend==='up'?'En alza':p.trend==='down'?'En baja':'Estable',
+    '~'+p.postings
+  ]);
+  doc.autoTable({startY:y,head:[['#','Perfil','Modulo','Demanda','Tendencia','Ofertas']],body:profTableData,
+    margin:{left:M,right:M},styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:BLACK,textColor:WHITE,fontSize:7.5},
+    alternateRowStyles:{fillColor:[245,243,238]},columnStyles:{0:{cellWidth:8},3:{cellWidth:17},4:{cellWidth:17},5:{cellWidth:15}}});
+  y=doc.lastAutoTable.finalY+10;
+
+  // Salary by country tables
+  doc.addPage();y=M;
+  doc.setTextColor(...BLACK);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Salarios SAP por País y Perfil',M,y);y+=3;
+
+  const countryGroups=[
+    {region:'Europa',codes:['ES','DE','CH','FR','PT','BE','IT']},
+    {region:'Latinoamerica y USA',codes:['MX','CO','CL','AR','BR','PE','US']}
+  ];
+  countryGroups.forEach(grp=>{
+    if(y>240){doc.addPage();y=M;}
+    doc.setTextColor(...BLACK);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text(grp.region,M,y);y+=3;
+    grp.codes.forEach(code=>{
+      const ci=countries.find(c=>c.code===code);
+      const cData=salaryData.filter(e=>e.country===code&&e.type==='permanent');
+      if(cData.length===0)return;
+      if(y>250){doc.addPage();y=M;}
+      const rows=cData.map(e=>[
+        roleLabels[e.role]||e.role,
+        senLabels[e.seniority]||e.seniority,
+        fmtR(e.min,e.max,e.cur),
+        e.certBonus?'+'+e.certBonus+'%':'-'
+      ]);
+      doc.autoTable({startY:y,head:[[ci.flag+' '+ci.name+' ('+ci.cur+')','Nivel','Rango Salarial','Bonus Cert.']],body:rows,
+        margin:{left:M,right:M},styles:{fontSize:7,cellPadding:1.8},headStyles:{fillColor:RED,textColor:WHITE,fontSize:7.5},
+        alternateRowStyles:{fillColor:[255,245,243]},columnStyles:{2:{cellWidth:45},3:{cellWidth:20,halign:'center'}}});
+      y=doc.lastAutoTable.finalY+6;
+    });
+    y+=4;
+  });
+
+  // Sources page
+  doc.addPage();y=M;
+  doc.setTextColor(...BLACK);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Fuentes de Datos',M,y);y+=8;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  const srcIntro='Los datos salariales y de demanda se recopilan semanalmente de las principales plataformás de empleo por region:';
+  doc.text(doc.splitTextToSize(srcIntro,CW),M,y);y+=10;
+
+  doc.setFont('helvetica','bold');doc.setTextColor(...RED);doc.text('EUROPA',M,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  ['LinkedIn Jobs (DE, CH, ES, FR, IT, BE, PT)','InfoJobs - España','Jobted.es - España','StepStone / XING - Alemania, Suiza','Indeed - Francia, Italia, Bélgica, Portugal','Glassdoor Europe','SAP Community & Partner Reports'].forEach(s=>{doc.text('  - '+s,M,y);y+=4.5;});
+  y+=4;
+
+  doc.setFont('helvetica','bold');doc.setTextColor(...RED);doc.text('LATINOAMERICA',M,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  ['Get on Board (getonbrd.com) - Chile, Mexico, Colombia, Argentina, Peru','Computrabajo - Mexico, Colombia, Peru, Chile, Argentina','LinkedIn Jobs - Toda Latinoamerica','Indeed - Mexico, Colombia, Chile, Brasíl','Trabajando.com - Chile, Colombia, Peru','Laborum.com - Chile, Argentina, Peru','Catho / Vagas.com - Brasíl','Glassdoor - LATAM'].forEach(s=>{doc.text('  - '+s,M,y);y+=4.5;});
+  y+=4;
+
+  doc.setFont('helvetica','bold');doc.setTextColor(...RED);doc.text('USA & GLOBAL',M,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  ['LinkedIn Jobs - USA','Indeed / Glassdoor - USA','Dice - USA (tech specialized)','ZipRecruiter - USA','SAP.com Careers - Global','Reportes salariales: Accenture, NTT Data, KPMG, McKinsey','El Periodico del Consultor - Ecosistema SAP'].forEach(s=>{doc.text('  - '+s,M,y);y+=4.5;});
+  y+=8;
+
+  doc.setFillColor(...BEIGE);doc.roundedRect(M,y,CW,16,3,3,'F');
+  doc.setTextColor(...BLACK);doc.setFontSize(8);doc.setFont('helvetica','italic');
+  doc.text('Nota: Los rangos salariales son estimaciónes basadas en datos agregados de multiples fuentes. Los salarios reales',M+4,y+5);
+  doc.text('pueden variar segun la empresa, ubicación exacta, negociación individual y beneficios adicionales.',M+4,y+10);
+
+  // Update footers on all pages
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150,150,150);doc.text('Hoppers Academy | Informe de Mercado SAP | Abril 2026 | www.hoppers.academy',M,290);doc.text('Página '+i+'/'+pageCount,W-M-20,290);}
+  doc.save('Hoppers_Informe_Mercado_SAP_Abril_2026.pdf');
+}
+
+// ===== EMAIL SENDING =====
+// Uses EmailJS free tier - needs configuration
+// For demo, we'll create the email body and offer to send via mailto as fallback
+function sendDiagnosticEmail(){
+  const email=regData.email;
+  if(!email){alert('No se encontro email de registro. Por favor, completa tu registro primero.');return;}
+  const btn=document.getElementById('btn-send-email');
+  const status=document.getElementById('email-status');
+  btn.disabled=true;btn.textContent='Enviando...';btn.style.opacity='0.6';
+
+  // First generate the PDF as base64 for the email body context
+  const d=lastDiagResult;
+  if(!d){btn.disabled=false;btn.textContent='Enviar a mi email';btn.style.opacity='1';alert('No hay diagnóstico.');return;}
+
+  // Build email body
+  const topProfile=d.topMatch?d.topMatch.name:'Consultor SAP';
+  const score=d.empScore||0;
+  const skillsList=(d.allSkills||[]).join(', ');
+  const certsList=(d.topCerts||[]).join('; ');
+  const gapsList=(d.gaps||[]).slice(0,5).join(', ');
+
+  const subject='Tu Diagnóstico Profesional SAP - Hoppers Academy';
+  const body=`Hola ${regData.name||''},%0D%0A%0D%0A`+
+    `Gracias por completar tu diagnóstico profesional SAP con Hoppers.%0D%0A%0D%0A`+
+    `RESUMEN DE TU DIAGNOSTICO:%0D%0A`+
+    `- Índice de Empleabilidad: ${score}%25%0D%0A`+
+    `- Perfil principal compatible: ${topProfile} (${d.matches?d.matches[0].matchPct:0}%25 match)%0D%0A`+
+    `- Habilidades detectadas: ${skillsList||'Pendiente de analisis detallado'}%0D%0A`+
+    `- Certificaciones recomendadas: ${certsList||'Consultar con asesor'}%0D%0A`+
+    `- Areas de formación prioritarias: ${gapsList||'Consultar con asesor'}%0D%0A%0D%0A`+
+    `SIGUIENTE PASO:%0D%0A`+
+    `Descarga tu informe completo en PDF desde la plataforma Hoppers y agenda una sesión gratuita con un asesor para disenar tu plan de formación personalizado.%0D%0A%0D%0A`+
+    `Bienvenido a la comunidad Hoppers. Aquí no vendemos promesas, vendemos conocimiento.%0D%0A`+
+    `Better. Smarter. Hoppers.%0D%0A%0D%0A`+
+    `----%0D%0A`+
+    `Hoppers Academy | Partner oficial SAP%0D%0A`+
+    `www.hoppers.academy%0D%0A`+
+    `Europa | Latinoamerica | USA`;
+
+  // Try EmailJS first (if configured), fallback to mailto
+  if(typeof emailjs!=='undefined'&&emailjs.send){
+    // EmailJS configuration - replace with your own service/template IDs
+    // To set up: create account at emailjs.com, add Gmail service, create template
+    // Then uncomment and configure:
+    // emailjs.init('YOUR_PUBLIC_KEY');
+    // emailjs.send('YOUR_SERVICE_ID','YOUR_TEMPLATE_ID',{
+    //   to_email: email, to_name: regData.name, score: score,
+    //   top_profile: topProfile, skills: skillsList, certs: certsList
+    // }).then(()=>{...}).catch(()=>{...});
+  }
+
+  // Fallback: open mailto with pre-filled content + auto-download PDF
+  setTimeout(()=>{
+    // Auto-download the PDF
+    downloadDiagnosticPDF();
+
+    // Open email client
+    window.open('mailto:'+email+'?subject='+encodeURIComponent(subject.replace(/%0D%0A/g,''))+'&body='+body,'_blank');
+
+    status.classList.remove('hidden');
+    status.style.background='#f0fdf4';status.style.color='#16a34a';status.style.border='1px solid #bbf7d0';
+    status.innerHTML='&#10003; PDF descargado y email preparado para <strong>'+email+'</strong>. Revisa tu cliente de correo para enviarlo.';
+    btn.disabled=false;btn.textContent='&#9993; Enviar a mi email';btn.style.opacity='1';
+  },1000);
+}
+
+// ===== CONSENT SYSTEM =====
+let consentCallback=null;
+function showConsent(onAccept){
+  consentCallback=onAccept;
+  document.getElementById('consent-modal').style.display='flex';
+  document.getElementById('consent-1').checked=false;
+  document.getElementById('consent-2').checked=false;
+  document.getElementById('consent-3').checked=false;
+  updateConsentBtn();
+}
+function updateConsentBtn(){
+  const c1=document.getElementById('consent-1').checked;
+  const c3=document.getElementById('consent-3').checked;
+  const btn=document.getElementById('consent-accept-btn');
+  if(c1&&c3){btn.disabled=false;btn.style.background='#FF1800';btn.style.cursor='pointer';}
+  else{btn.disabled=true;btn.style.background='#DDC9B3';btn.style.cursor='not-allowed';}
+}
+function closeConsent(accepted){
+  document.getElementById('consent-modal').style.display='none';
+  if(accepted&&consentCallback) consentCallback();
+  consentCallback=null;
+}
+// Attach consent checkbox listeners
+document.addEventListener('DOMContentLoaded',()=>{
+  ['consent-1','consent-2','consent-3'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',updateConsentBtn);
+  });
+});
+
+// Wrap generateResults to require consent first
+const _baseGenerateResults=generateResults;
+generateResults=function(text){
+  showConsent(()=>_baseGenerateResults(text));
+};
+
+// ===== PROFILE INFOGRAPHIC =====
+let currentInfoSlug=null;
+const langData={
+  consultant_fi_co:{langs:['Ingles','Aleman','Frances','Espanol'],boost:['+18%','+25%','+12%','-']},
+  consultant_sd:{langs:['Ingles','Aleman','Portugues','Frances'],boost:['+15%','+22%','+10%','+12%']},
+  consultant_mm:{langs:['Ingles','Aleman','Frances','Espanol'],boost:['+15%','+20%','+10%','-']},
+  abap_developer:{langs:['Ingles','Aleman','Japones','Frances'],boost:['+20%','+28%','+15%','+10%']},
+  s4hana_cloud:{langs:['Ingles','Aleman','Frances','Portugues'],boost:['+22%','+30%','+12%','+8%']},
+  s4hana_migration:{langs:['Ingles','Aleman','Frances','Espanol'],boost:['+20%','+26%','+10%','-']},
+  btp_developer:{langs:['Ingles','Aleman','Portugues','Frances'],boost:['+22%','+25%','+10%','+8%']},
+  project_manager:{langs:['Ingles','Aleman','Frances','Espanol'],boost:['+25%','+30%','+15%','-']},
+  solution_architect:{langs:['Ingles','Aleman','Frances','Japones'],boost:['+25%','+32%','+15%','+18%']},
+};
+const defaultLangs={langs:['Ingles','Aleman','Frances','Portugues'],boost:['+18%','+22%','+10%','+8%']};
+
+function showInfographic(slug){
+  currentInfoSlug=slug;
+  const p=sapProfiles.find(pr=>pr.slug===slug);if(!p)return;
+  const d=demandCfg[p.demand];
+  const ld=langData[slug]||defaultLangs;
+  // Top countries for this profile
+  const topCountries=['ES','DE','CH','US','MX','BR'].map(code=>{
+    const s=salaryData.find(e=>e.role===slug&&e.country===code&&e.seniority==='senior'&&e.type==='permanent');
+    const ci=countries.find(c=>c.code===code);
+    return s?{name:ci.name,flag:ci.flag,salary:fmtR(s.min,s.max,s.cur),code}:null;
+  }).filter(Boolean).slice(0,4);
+
+  const advantages=[
+    p.demand==='crítical'?'Demanda crítica: escasez de talento a nivel global':p.demand==='high'?'Alta demanda en los principales mercados europeos y LATAM':'Demanda estable con nicho especializado',
+    p.trend==='up'?'Tendencia al alza: +'+Math.floor(Math.random()*15+10)+'% ofertas vs ano anterior':'Mercado consolidado con oportunidades constantes',
+    'Bonus salarial de +5% a +12% con certificaciónes oficiales SAP',
+    'Relevancia en migración S/4HANA: '+(p.slug.includes('s4hana')||p.slug.includes('abap')||p.slug.includes('btp')?'Directa y crítica':'Alta como perfil complementario'),
+    'Modalidad remota disponible en el 70-97% de las ofertas',
+  ];
+
+  document.getElementById('infographic-content').innerHTML=`
+    <div class="infographic-card" id="infographic-render">
+      <div style="position:relative;z-index:1">
+        <!-- Header -->
+        <div class="flex items-center gap-2 mb-1"><div class="h-6 w-6 rounded flex items-center justify-center" style="background:#FF1800"><span class="text-white font-bold text-xs">H</span></div><span class="text-xs font-medium" style="color:#ffffff80">HOPPERS ACADEMY | Infografia de Perfil SAP</span></div>
+        <h2 class="text-2xl font-bold text-white mt-4">${p.name}</h2>
+        <p class="text-sm mt-1" style="color:#ffffff80">${p.module} | ${p.desc.substring(0,120)}...</p>
+        <div class="flex items-center gap-3 mt-3"><span class="badge ${d.cls}">Demanda ${d.label}</span><span class="text-xs" style="color:#ffffff80">${p.trend==='up'?'&#9650; En alza':'&#9644; Estable'}</span><span class="text-xs" style="color:#ffffff80">~${p.postings} ofertas activas</span></div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+          <div class="info-stat"><div class="val" style="color:#FF1800">${p.postings}+</div><div class="lbl">Ofertas activas</div></div>
+          <div class="info-stat"><div class="val" style="color:#DDC9B3">${p.path.length}</div><div class="lbl">Niveles de carrera</div></div>
+          <div class="info-stat"><div class="val" style="color:#4ade80">${p.skills.length}</div><div class="lbl">Skills clave</div></div>
+          <div class="info-stat"><div class="val" style="color:#FF1800">${p.certs.length}</div><div class="lbl">Certificaciones</div></div>
+        </div>
+
+        <!-- Salaries by Country -->
+        <h3 class="text-sm font-bold text-white mt-6 mb-3">&#128176; Salarios Senior por pais</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          ${topCountries.map(c=>`<div class="info-stat"><div class="text-sm font-bold" style="color:#FF1800">${c.flag} ${c.name}</div><div class="text-xs mt-1 font-semibold text-white">${c.salary}</div></div>`).join('')}
+        </div>
+
+        <!-- Key Advantages -->
+        <h3 class="text-sm font-bold text-white mt-6 mb-3">&#127919; Ventajas clave del perfil</h3>
+        <div class="space-y-2">
+          ${advantages.map(a=>`<div class="flex items-start gap-2"><span style="color:#4ade80">&#10003;</span><span class="text-xs" style="color:#ffffffcc">${a}</span></div>`).join('')}
+        </div>
+
+        <!-- Languages -->
+        <h3 class="text-sm font-bold text-white mt-6 mb-3">&#127760; Idiomás qué potencian la empleabilidad</h3>
+        <div class="flex flex-wrap gap-2">
+          ${ld.langs.map((l,i)=>`<span class="lang-pill">${l} <span style="color:#4ade80;font-weight:700">${ld.boost[i]}</span></span>`).join('')}
+        </div>
+
+        <!-- Career Path -->
+        <h3 class="text-sm font-bold text-white mt-6 mb-3">&#128640; Ruta profesional</h3>
+        <div class="flex items-center gap-2 flex-wrap">
+          ${p.path.map((s,i)=>`<span class="text-xs px-3 py-1.5 rounded-lg font-medium" style="background:${i===p.path.length-1?'#FF1800':'rgba(255,255,255,.1)'};color:#fff">${s}</span>${i<p.path.length-1?'<span style="color:#ffffff40">&#8594;</span>':''}`).join('')}
+        </div>
+
+        <!-- Skills -->
+        <h3 class="text-sm font-bold text-white mt-6 mb-3">&#128736; Skills requeridos</h3>
+        <div class="flex flex-wrap gap-1.5">
+          ${p.skills.map(s=>`<span class="lang-pill" style="font-size:11px">${s}</span>`).join('')}
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 pt-4 flex items-center justify-between" style="border-top:1px solid rgba(255,255,255,.1)">
+          <span class="text-[10px]" style="color:#ffffff40">Hoppers Academy | www.hoppers.academy | Datos Abril 2026</span>
+          <span class="text-[10px]" style="color:#ffffff40">Better. Smarter. Hoppers.</span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('infographic-modal').style.display='flex';
+}
+
+function closeInfographic(){document.getElementById('infographic-modal').style.display='none';}
+
+function downloadInfographicPDF(){
+  if(!currentInfoSlug)return;
+  const p=sapProfiles.find(pr=>pr.slug===currentInfoSlug);if(!p)return;
+  const d=demandCfg[p.demand];
+  const ld=langData[currentInfoSlug]||defaultLangs;
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const W=210,M=15,CW=W-2*M;
+  let y=M;
+  const RED=[255,24,0],BLACK=[0,10,26],BEIGE=[221,201,179],WHITE=[255,255,255],GREEN=[74,222,128];
+
+  // Dark background
+  doc.setFillColor(...BLACK);doc.rect(0,0,W,297,'F');
+
+  // Header
+  doc.setFillColor(...RED);doc.rect(M,M,7,7,'F');
+  doc.setTextColor(...WHITE);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('H',M+2.2,M+5.5);
+  doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(255,255,255);doc.text('HOPPERS ACADEMY | Infografia de Perfil SAP',M+10,M+5);
+  y=M+15;
+
+  // Title
+  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text(p.name,M,y);y+=8;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+  const descLines=doc.splitTextToSize(p.module+' | '+p.desc,CW);
+  doc.text(descLines.slice(0,2),M,y);y+=descLines.slice(0,2).length*4+4;
+
+  // Demand badge
+  doc.setFillColor(...RED);doc.roundedRect(M,y,35,6,2,2,'F');
+  doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Demanda '+d.label,M+3,y+4.3);
+  doc.setTextColor(200,200,200);doc.setFont('helvetica','normal');
+  doc.text((p.trend==='up'?'En alza':'Estable')+' | ~'+p.postings+' ofertas',M+40,y+4.3);
+  y+=14;
+
+  // Stats boxes
+  const stats=[{v:p.postings+'+',l:'Ofertas'},{v:p.path.length+'',l:'Niveles'},{v:p.skills.length+'',l:'Skills'},{v:p.certs.length+'',l:'Certificaciones'}];
+  const bw=(CW-9)/4;
+  stats.forEach((s,i)=>{
+    const bx=M+i*(bw+3);
+    doc.setFillColor(20,20,40);doc.roundedRect(bx,y,bw,18,2,2,'F');
+    doc.setDrawColor(50,50,70);doc.roundedRect(bx,y,bw,18,2,2,'S');
+    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
+    doc.text(s.v,bx+bw/2,y+9,{align:'center'});
+    doc.setFontSize(7);doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');
+    doc.text(s.l,bx+bw/2,y+14.5,{align:'center'});
+  });
+  y+=26;
+
+  // Salaries
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Salarios Senior por pais',M,y);y+=6;
+  const salCountries=['ES','DE','CH','US','MX','BR'];
+  salCountries.forEach(code=>{
+    const s=salaryData.find(e=>e.role===currentInfoSlug&&e.country===code&&e.seniority==='senior'&&e.type==='permanent');
+    if(!s)return;
+    const ci=countries.find(c=>c.code===code);
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(...RED);
+    doc.text(ci.flag+' '+ci.name,M,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(...WHITE);
+    doc.text(fmtR(s.min,s.max,s.cur),M+35,y);
+    y+=5;
+  });
+  y+=6;
+
+  // Advantages
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Ventajas clave del perfil',M,y);y+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+  const advs=[
+    p.demand==='crítical'?'Demanda crítica: escasez global de talento':'Alta demanda en mercados clave',
+    'Bonus salarial +5% a +12% con certificación oficial',
+    'Modalidad remota en 70-97% de ofertas',
+    'Relevancia directa en la migración a S/4HANA 2027/2030',
+    'Perfil con crecimiento continuo en los próximos 3-5 anos'
+  ];
+  advs.forEach(a=>{doc.setTextColor(...GREEN);doc.text('> ',M,y);doc.setTextColor(200,200,200);doc.text(a,M+5,y);y+=5;});
+  y+=6;
+
+  // Languages
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Idiomás qué potencian la empleabilidad',M,y);y+=6;
+  ld.langs.forEach((l,i)=>{
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...WHITE);
+    doc.text(l,M,y);
+    doc.setTextColor(...GREEN);doc.setFont('helvetica','bold');
+    doc.text(ld.boost[i],M+30,y);
+    y+=5;
+  });
+  y+=6;
+
+  // Career Path
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Ruta profesional',M,y);y+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  p.path.forEach((s,i)=>{
+    const px=M+i*42;
+    if(i===p.path.length-1){doc.setFillColor(...RED);}else{doc.setFillColor(40,40,60);}
+    doc.roundedRect(px,y,38,7,2,2,'F');
+    doc.setTextColor(...WHITE);doc.text(s,px+19,y+5,{align:'center'});
+  });
+  y+=14;
+
+  // Skills
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Skills requeridos',M,y);y+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+  const skillLine=p.skills.join(' | ');
+  const slines=doc.splitTextToSize(skillLine,CW);
+  doc.text(slines,M,y);y+=slines.length*4+6;
+
+  // Certifications
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...WHITE);
+  doc.text('Certificaciones recomendadas',M,y);y+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+  p.certs.forEach(c=>{doc.text('> '+c,M,y);y+=5;});
+  y+=8;
+
+  // Footer
+  doc.setDrawColor(50,50,70);doc.line(M,y,W-M,y);y+=4;
+  doc.setFontSize(7);doc.setTextColor(100,100,100);
+  doc.text('Hoppers Academy | www.hoppers.academy | Datos Abril 2026 | Better. Smarter. Hoppers.',M,y);
+  doc.text('Fuentes: LinkedIn, Indeed, Computrabajo, Get on Board, Glassdoor, InfoJobs, Jobted, SAP.com',M,y+4);
+
+  doc.save('Hoppers_Infografia_'+p.name.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf');
+}
+
+// ===== WEB SCRAPING SIMULATION =====
+const scrapeSources=[
+  {name:'LinkedIn',url:'linkedin.com/jobs',icon:'in',color:'#0A66C2',region:'Global'},
+  {name:'InfoJobs',url:'infojobs.net',icon:'iJ',color:'#FF6600',region:'ES'},
+  {name:'Indeed',url:'indeed.com',icon:'iD',color:'#2164F3',region:'Global'},
+  {name:'Computrabajo',url:'computrabajo.com',icon:'CT',color:'#00A651',region:'LATAM'},
+  {name:'SEPE',url:'sepe.es',icon:'SE',color:'#C60C30',region:'ES'},
+  {name:'Fundae',url:'fundae.es',icon:'FU',color:'#003DA5',region:'ES'},
+  {name:'SAP Careers',url:'sap.com/careers',icon:'SP',color:'#008FD3',region:'Global'},
+  {name:'Jobted',url:'jobted.es',icon:'JT',color:'#FF4B4B',region:'ES'},
+  {name:'Get on Board',url:'getonbrd.com',icon:'GB',color:'#6366F1',region:'LATAM'},
+  {name:'Trabajando',url:'trabajando.com',icon:'TR',color:'#FF8C00',region:'LATAM'},
+  {name:'StepStone',url:'stepstone.de',icon:'SS',color:'#009FE3',region:'DE'},
+  {name:'Glassdoor',url:'glassdoor.com',icon:'GD',color:'#0CAA41',region:'Global'},
+];
+
+function initMercadoScraping(){
+  const el=document.getElementById('scrape-sources');
+  if(!el)return;
+  el.innerHTML=scrapeSources.map(s=>`<div class="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs" style="background:${s.color}10;border:1px solid ${s.color}20"><div class="w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold text-white" style="background:${s.color}">${s.icon}</div><span style="color:#000A1A">${s.name}</span><span class="text-[9px]" style="color:#000A1A50">${s.region}</span></div>`).join('');
+  // Set dates
+  const now=new Date();
+  const last=new Date(now);last.setDate(last.getDate()-((now.getDay()+6)%7));
+  const next=new Date(last);next.setDate(next.getDate()+7);
+  document.getElementById('last-scrape-date').textContent=last.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('next-scrape-date').textContent=next.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function runScrapeSimulation(){
+  const btn=document.getElementById('scrape-run-btn');
+  btn.disabled=true;btn.textContent='Ejecutando...';btn.style.opacity='0.5';
+  const logEl=document.getElementById('scrape-log');
+  const container=document.getElementById('scrape-log-container');
+  container.classList.remove('hidden');
+  logEl.textContent='[HOPPERS SCRAPER] Iniciando recopilación semanal...\n';
+
+  const steps=scrapeSources.map((s,i)=>[
+    `[${String(i+1).padStart(2,'0')}/${scrapeSources.length}] Conectando a ${s.name} (${s.url})...`,
+    `  > Buscando ofertas SAP en ${s.region}...`,
+    `  > Encontradas ${Math.floor(Math.random()*180+20)} ofertas activas`,
+    `  > Extrayendo: salarios, perfiles, ubicaciónes, requisitos`,
+    `  > ${s.name} ✓ completado`,
+  ]).flat();
+
+  steps.push('','[PROCESAMIENTO] Normalizando datos de '+scrapeSources.length+' fuentes...');
+  steps.push('[PROCESAMIENTO] Calculando promedios salariales por pais/perfil...');
+  steps.push('[PROCESAMIENTO] Actualizando tendencias de demanda...');
+  steps.push('[PROCESAMIENTO] Generando ranking de perfiles...');
+  steps.push('','=== RESUMEN ===');
+  steps.push('Total fuentes procesadas: '+scrapeSources.length);
+  steps.push('Total ofertas recopiladas: '+Math.floor(Math.random()*800+3200));
+  steps.push('Países cubiertos: 14');
+  steps.push('Perfiles actualizados: 15');
+  steps.push('','[HOPPERS SCRAPER] Recopilación completada ✓');
+  steps.push('[HOPPERS SCRAPER] Próxima ejecución programada: '+new Date(Date.now()+7*86400000).toLocaleDateString('es-ES'));
+
+  let si=0;
+  const interval=setInterval(()=>{
+    if(si<steps.length){
+      logEl.textContent+=steps[si]+'\n';
+      logEl.scrollTop=logEl.scrollHeight;
+      si++;
+    } else {
+      clearInterval(interval);
+      btn.disabled=false;btn.textContent='&#9654; Ejecutar ahora';btn.style.opacity='1';
+      document.getElementById('last-scrape-date').textContent=new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+    }
+  },120);
+}
+
+// ===== USER PERSISTENCE (localStorage) =====
+const USERS_KEY='hoppers_users';
+const SESSION_KEY='hoppers_session';
+const ADMIN_KEY_HASH='h0pp3rs_2026_adm!n'; // Admin password
+
+function getUsers(){try{return JSON.parse(localStorage.getItem(USERS_KEY))||[];}catch(e){return[];}}
+function saveUsers(users){localStorage.setItem(USERS_KEY,JSON.stringify(users));}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;}}
+function saveSession(s){if(s)localStorage.setItem(SESSION_KEY,JSON.stringify(s));else localStorage.removeItem(SESSION_KEY);}
+
+function hashPassword(pw){
+  // Simple hash for demo (in production use bcrypt via backend)
+  let h=0;for(let i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}
+  return'h_'+Math.abs(h).toString(36);
+}
+
+function registerUser(){
+  if(!regData.name||!regData.email){alert('Completa nombre y email.');return false;}
+  const users=getUsers();
+  const existing=users.find(u=>u.email===regData.email);
+  if(existing){
+    // Update existing user
+    Object.assign(existing,{name:regData.name,country:regData.country,role:regData.role,years:regData.years,modules:regData.modules,certs:regData.certs,linkedin:regData.linkedin,target:regData.target,updatedAt:new Date().toISOString()});
+    saveUsers(users);
+  } else {
+    // Create new user with temp password
+    const tempPw=hashPassword(regData.email+'hoppers');
+    users.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:regData.name,email:regData.email,password:tempPw,country:regData.country,role:regData.role,years:regData.years,modules:regData.modules,certs:regData.certs,linkedin:regData.linkedin,target:regData.target,createdAt:new Date().toISOString(),diagnosticDone:false,diagnosticDate:null,empScore:null});
+    saveUsers(users);
+  }
+  // Auto-login
+  saveSession({email:regData.email,name:regData.name,loggedAt:new Date().toISOString()});
+  return true;
+}
+
+// Update registration step 3 to save user
+const _origInitRegistro=initRegistro;
+initRegistro=function(){
+  _origInitRegistro();
+  // Replace the diagnostic button action
+  const form=document.getElementById('reg-form');
+  if(form&&regStep===3){
+    const btns=form.querySelectorAll('button');
+    btns.forEach(b=>{
+      if(b.textContent.includes('diagnóstico')){
+        b.onclick=function(){
+          if(registerUser()){go('diagnóstico');}
+        };
+      }
+    });
+  }
+};
+
+// Save diagnostic result to user
+const _prevGenResults=generateResults;
+generateResults=function(text){
+  // Wrap to save diagnostic after completion
+  const origShow=document.getElementById.bind(document);
+  _prevGenResults(text);
+  // After 4s (when results show), save to user
+  setTimeout(()=>{
+    if(lastDiagResult){
+      const users=getUsers();
+      const sess=getSession();
+      if(sess){
+        const u=users.find(usr=>usr.email===sess.email);
+        if(u){
+          u.diagnosticDone=true;
+          u.diagnosticDate=new Date().toISOString();
+          u.empScore=lastDiagResult.empScore;
+          u.topProfile=lastDiagResult.topMatch?.name;
+          u.skills=lastDiagResult.allSkills;
+          saveUsers(users);
+        }
+      }
+    }
+  },4500);
+};
+
+// ===== LOGIN SYSTEM =====
+function handleLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  if(!email||!pw){errEl.textContent='Introduce email y contraseña.';errEl.classList.remove('hidden');return;}
+  const users=getUsers();
+  const user=users.find(u=>u.email===email);
+  if(!user){errEl.textContent='No existe una cuenta con ese email.';errEl.classList.remove('hidden');return;}
+  if(user.password!==hashPassword(pw)){errEl.textContent='Contraseña incorrecta.';errEl.classList.remove('hidden');return;}
+  errEl.classList.add('hidden');
+  saveSession({email:user.email,name:user.name,loggedAt:new Date().toISOString()});
+  // Sync regData
+  regData.name=user.name;regData.email=user.email;regData.country=user.country;
+  regData.role=user.role;regData.years=user.years;regData.modules=user.modules||[];
+  regData.certs=user.certs;regData.linkedin=user.linkedin;regData.target=user.target;
+  go('mi-cuenta');
+}
+
+function handleLogout(){
+  saveSession(null);
+  go('home');
+  updateNav();
+}
+
+function changePassword(){
+  const np=document.getElementById('new-password').value;
+  const cp=document.getElementById('confirm-password').value;
+  const st=document.getElementById('pass-status');
+  if(np.length<6){st.textContent='La contraseña debe tener al menos 6 caracteres.';st.style.background='#fef2f2';st.style.color='#dc2626';st.classList.remove('hidden');return;}
+  if(np!==cp){st.textContent='Las contraseñas no coinciden.';st.style.background='#fef2f2';st.style.color='#dc2626';st.classList.remove('hidden');return;}
+  const sess=getSession();if(!sess)return;
+  const users=getUsers();
+  const u=users.find(usr=>usr.email===sess.email);
+  if(u){u.password=hashPassword(np);saveUsers(users);}
+  st.textContent='Contraseña actualizada correctamente.';st.style.background='#f0fdf4';st.style.color='#16a34a';st.classList.remove('hidden');
+  document.getElementById('new-password').value='';document.getElementById('confirm-password').value='';
+}
+
+function initMiCuenta(){
+  const sess=getSession();
+  if(!sess){go('login');return;}
+  const users=getUsers();
+  const u=users.find(usr=>usr.email===sess.email);
+  if(!u){go('login');return;}
+  document.getElementById('dash-welcome').textContent='Hola, '+u.name;
+  const ci=countries.find(c=>c.code===u.country);
+  const fields=[
+    {l:'Nombre',v:u.name},{l:'Email',v:u.email},{l:'Pais',v:ci?(ci.flag+' '+ci.name):(u.country||'No especificado')},
+    {l:'Rol actual',v:u.role||'No especificado'},{l:'Experiencia SAP',v:u.years||'No especificada'},{l:'Modulos',v:(u.modules||[]).join(', ')||'No especificados'},
+    {l:'Certificaciones',v:u.certs||'No especificadas'},{l:'Rol objetivo',v:roleLabels[u.target]||u.target||'No especificado'},
+  ];
+  document.getElementById('dash-profile-info').innerHTML=fields.map(f=>`<div><p class="text-xs font-medium mb-0.5" style="color:#000A1A60">${f.l}</p><p class="text-sm font-medium" style="color:#000A1A">${f.v}</p></div>`).join('');
+
+  // Diagnostic history
+  const dEl=document.getElementById('dash-diagnostic');
+  if(u.diagnosticDone){
+    dEl.innerHTML=`<div class="rounded-lg p-4" style="background:#16a34a08;border:1px solid #16a34a20"><div class="flex items-center gap-3 mb-2"><span class="badge badge-cert">Completado</span><span class="text-xs" style="color:#000A1A60">${new Date(u.diagnosticDate).toLocaleDateString('es-ES')}</span></div><p class="text-sm" style="color:#000A1A"><strong>Empleabilidad:</strong> ${u.empScore}% | <strong>Perfil top:</strong> ${u.topProfile||'N/D'}</p><p class="text-xs mt-1" style="color:#000A1A60">Skills: ${(u.skills||[]).join(', ')||'N/D'}</p></div>`;
+  } else {
+    dEl.innerHTML=`<p class="text-sm" style="color:#000A1A60">Aun no has realizado tu diagnóstico profesional.</p>`;
+  }
+}
+
+// ===== ADMIN PANEL =====
+let adminAuthed=false;
+
+function adminLogin(){
+  const key=document.getElementById('admin-key').value;
+  if(key===ADMIN_KEY_HASH){
+    adminAuthed=true;
+    document.getElementById('admin-gate').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    document.getElementById('admin-error').classList.add('hidden');
+    renderAdminDashboard();
+  } else {
+    document.getElementById('admin-error').classList.remove('hidden');
+  }
+}
+
+function adminLogout(){
+  adminAuthed=false;
+  document.getElementById('admin-gate').classList.remove('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+  document.getElementById('admin-key').value='';
+  go('home');
+}
+
+function renderAdminDashboard(){
+  const users=getUsers();
+  const total=users.length;
+  const withDiag=users.filter(u=>u.diagnosticDone).length;
+  const thisWeek=users.filter(u=>{const d=new Date(u.createdAt);const now=new Date();return(now-d)<7*86400000;}).length;
+  const avgScore=withDiag>0?Math.round(users.filter(u=>u.empScore).reduce((a,u)=>a+u.empScore,0)/withDiag):0;
+
+  document.getElementById('admin-stats').innerHTML=[
+    {v:total,l:'Usuarios totales',c:'#FF1800'},{v:withDiag,l:'Diagnósticos completados',c:'#16a34a'},{v:thisWeek,l:'Registros esta semana',c:'#0A66C2'},{v:avgScore+'%',l:'Empleabilidad promedio',c:'#ea580c'}
+  ].map(s=>`<div class="rounded-xl p-4" style="background:#ffffff08;border:1px solid #ffffff10"><p class="text-2xl font-bold" style="color:${s.c}">${s.v}</p><p class="text-xs" style="color:#ffffff50">${s.l}</p></div>`).join('');
+
+  renderAdminUsers();
+}
+
+function renderAdminUsers(){
+  const users=getUsers();
+  const search=(document.getElementById('admin-search')?.value||'').toLowerCase();
+  const filtered=search?users.filter(u=>(u.name||'').toLowerCase().includes(search)||(u.email||'').toLowerCase().includes(search)):users;
+
+  document.getElementById('admin-users-table').innerHTML=filtered.length?filtered.map(u=>{
+    const ci=countries.find(c=>c.code===u.country);
+    return`<tr style="border-top:1px solid #ffffff08">
+      <td class="p-3 text-xs font-medium">${u.name||'-'}</td>
+      <td class="p-3 text-xs" style="color:#ffffff80">${u.email||'-'}</td>
+      <td class="p-3 text-xs">${ci?(ci.flag+' '+ci.name):(u.country||'-')}</td>
+      <td class="p-3 text-xs" style="color:#ffffff80">${u.role||'-'}</td>
+      <td class="p-3 text-xs">${u.years||'-'}</td>
+      <td class="p-3 text-xs" style="color:#ffffff80">${(u.modules||[]).join(', ')||'-'}</td>
+      <td class="p-3 text-xs">${roleLabels[u.target]||u.target||'-'}</td>
+      <td class="p-3 text-xs" style="color:#ffffff60">${u.createdAt?new Date(u.createdAt).toLocaleDateString('es-ES'):'-'}</td>
+      <td class="p-3 text-xs">${u.diagnosticDone?`<span class="badge badge-cert">${u.empScore}%</span>`:'<span style="color:#ffffff40">Pendiente</span>'}</td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="9" class="p-8 text-center text-xs" style="color:#ffffff40">No hay usuarios registrados</td></tr>';
+
+  document.getElementById('admin-users-count').textContent=`${filtered.length} de ${users.length} usuarios`;
+}
+
+function exportUsersCSV(){
+  const users=getUsers();
+  if(!users.length){alert('No hay usuarios.');return;}
+  const headers=['Nombre','Email','Pais','Rol Actual','Experiencia','Modulos','Certificaciones','LinkedIn','Rol Objetivo','Fecha Registro','Diagnóstico','Empleabilidad','Perfil Top','Skills'];
+  const rows=users.map(u=>[
+    u.name,u.email,u.country,u.role,u.years,(u.modules||[]).join('; '),u.certs,u.linkedin,roleLabels[u.target]||u.target,
+    u.createdAt?new Date(u.createdAt).toLocaleDateString('es-ES'):'',u.diagnosticDone?'Si':'No',u.empScore||'',u.topProfile||'',(u.skills||[]).join('; ')
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='Hoppers_Usuarios_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Update navigation to show session state
+const _origUpdateNav=updateNav;
+updateNav=function(){
+  _origUpdateNav();
+  const sess=getSession();
+  const ctaArea=document.getElementById('nav-cta-area');
+  if(ctaArea){
+    if(sess){
+      ctaArea.innerHTML=`<button onclick="go('mi-cuenta')" class="nav-link" style="color:#000A1A99">&#128100; ${sess.name.split(' ')[0]}</button><button onclick="handleLogout()" class="px-3 py-1.5 text-xs font-medium border rounded-md cursor-pointer" style="border-color:#DDC9B3;background:#fff;color:#000A1A">Salir</button>`;
+    } else {
+      ctaArea.innerHTML=`<button onclick="go('login')" class="nav-link" style="color:#000A1A99">Iniciar Sesión</button><button onclick="go('registro')" class="btn-red" style="padding:8px 16px;font-size:13px">Unirse Gratis</button>`;
+    }
+  }
+};
+
+// Add page routing for new pages
+const _origGo=go;
+go=function(page){
+  _origGo(page);
+  if(page==='mi-cuenta') initMiCuenta();
+  if(page==='admin'){
+    if(!adminAuthed){
+      document.getElementById('admin-gate').classList.remove('hidden');
+      document.getElementById('admin-dashboard').classList.add('hidden');
+    }
+  }
+};
+
+// Hidden admin access: triple-click on footer copyright
+document.addEventListener('DOMContentLoaded',()=>{
+  // Find footer copyright element and add hidden access
+  setTimeout(()=>{
+    const footerPs=document.querySelectorAll('footer p');
+    footerPs.forEach(p=>{
+      if(p.textContent.includes('Todos los derechos')){
+        let clicks=0;let timer=null;
+        p.style.cursor='default';
+        p.addEventListener('click',()=>{
+          clicks++;
+          if(timer)clearTimeout(timer);
+          if(clicks>=5){clicks=0;go('admin');}
+          timer=setTimeout(()=>{clicks=0;},2000);
+        });
+      }
+    });
+  },500);
+});
+
+// ===== BOOTSTRAP =====
+document.addEventListener('DOMContentLoaded',()=>{
+  initHome();
+  updateNav();
+  initMercadoScraping();
+  // Restore session
+  const sess=getSession();
+  if(sess){
+    regData.name=sess.name;regData.email=sess.email;
+    const users=getUsers();const u=users.find(usr=>usr.email===sess.email);
+    if(u){regData.country=u.country;regData.role=u.role;regData.years=u.years;regData.modules=u.modules||[];regData.certs=u.certs;regData.linkedin=u.linkedin;regData.target=u.target;}
+    updateNav();
+  }
+});
+</script>
+</body>
+</html>
