@@ -1,5 +1,7 @@
 import { sapProfiles } from "@/lib/data/sapProfiles";
 import { allSalaryData } from "@/lib/data/salaryData";
+import { hoppersCourses, getCoursesForProfiles } from "@/lib/data/courses";
+import type { HoppersCourse } from "@/lib/data/courses";
 import { formatSalaryRange } from "@/lib/utils/formatters";
 
 export type Seniority = "junior" | "mid" | "senior" | "architect";
@@ -29,7 +31,10 @@ export interface DiagnosticResult {
   salaryExpectations: { country: string; flag: string; salary: string; label: string }[];
   recommendedCerts: string[];
   trainingGaps: string[];
+  recommendedCourses: HoppersCourse[];
 }
+
+export type { HoppersCourse };
 
 const skillKeywords: Record<string, { skill: string; profiles?: string[]; seniority?: Seniority }> = {
   fi: { skill: "FI", profiles: ["consultant_fi_co"] },
@@ -262,6 +267,9 @@ export function buildDiagnosticResult(text: string, yearsExperience?: string): D
       (s) => !skills.some((es) => s.toLowerCase().includes(es.toLowerCase()) || es.toLowerCase().includes(s.toLowerCase().substring(0, 4)))
     ) || [];
 
+  const topSlugs = matches.slice(0, 3).map((m) => m.slug);
+  const recommendedCourses = getCoursesForProfiles(topSlugs);
+
   return {
     skills,
     seniority,
@@ -272,5 +280,6 @@ export function buildDiagnosticResult(text: string, yearsExperience?: string): D
     salaryExpectations,
     recommendedCerts,
     trainingGaps,
+    recommendedCourses,
   };
 }

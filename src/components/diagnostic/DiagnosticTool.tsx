@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConsentModal } from "./ConsentModal";
 import { buildDiagnosticResult } from "@/lib/diagnostic";
-import type { DiagnosticResult } from "@/lib/diagnostic";
+import type { DiagnosticResult, HoppersCourse } from "@/lib/diagnostic";
+import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
 import { getSession, saveDiagnosticResult } from "@/lib/auth";
 
@@ -386,16 +387,57 @@ function DiagnosticResults({
         ))}
       </div>
 
-      {result.recommendedCerts.length > 0 && (
+      {result.recommendedCourses.length > 0 && (
         <Card className="p-5">
-          <h3 className="font-bold text-hopper-black mb-3">Certificaciones recomendadas</h3>
-          <div className="space-y-2">
-            {result.recommendedCerts.map((c) => (
-              <div key={c} className="flex items-center gap-2 text-sm">
-                <span className="text-hopper-red">→</span>
-                <span>{c}</span>
-              </div>
-            ))}
+          <h3 className="font-bold text-hopper-black mb-1">Catálogo de cursos Hoppers Academy</h3>
+          <p className="text-xs text-gray-400 mb-4">Los marcados en verde tienen fecha confirmada · Los más relevantes para tu perfil aparecen primero</p>
+          <div className="space-y-3">
+            {result.recommendedCourses.map((course) => {
+              const next = nextEdition(course);
+              const isProfileMatch = course.profiles.some((p) =>
+                result.matches.slice(0, 3).map((m) => m.slug).includes(p)
+              );
+              return (
+                <div
+                  key={course.id}
+                  className={`border rounded-lg p-3 flex flex-col gap-1 ${isProfileMatch ? "border-hopper-red/30 bg-hopper-red/5" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-hopper-black leading-tight">{course.name}</span>
+                      {isProfileMatch && (
+                        <span className="text-xs text-hopper-red font-medium">Recomendado</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs font-bold bg-hopper-black text-white rounded px-1.5 py-0.5">
+                      {course.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">{course.description}</p>
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    {course.durationHours ? (
+                      <span className="text-xs text-gray-400">{course.durationHours}h</span>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Duración por confirmar</span>
+                    )}
+                    {next ? (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        next.type === "confirmed"
+                          ? "bg-green-100 text-green-700"
+                          : next.type === "webinar"
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {next.type === "confirmed" ? "Próx. edición:" : next.type === "webinar" ? "Webinar previsto:" : "Edición privada:"}{" "}
+                        {next.period}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">Fecha por confirmar</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
