@@ -141,10 +141,8 @@ export default function RegistroPage() {
   return (
     <Card className="w-full max-w-xl border-hopper-beige/60">
       <CardHeader className="text-center">
-        <div className="flex items-center justify-center gap-1.5 mb-4">
-          <div className="h-10 w-10 rounded bg-hopper-red flex items-center justify-center">
-            <span className="text-white font-bold">H</span>
-          </div>
+        <div className="flex items-center justify-center mb-4">
+          <img src="/landingpage/logo-hoppers-negro.svg" alt="Hoppers" className="h-10 w-auto" />
         </div>
         <CardTitle className="text-2xl font-bold text-hopper-black">
           Unete a Hoppers

@@ -42,10 +42,10 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-hopper-beige/30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <header className="sticky top-0 z-50 w-full border-b border-[rgba(195,175,153,0.08)] bg-[#000A1A]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center">
-          <img src="/landingpage/logo-hoppers-negro.svg" alt="Hoppers" className="h-8 w-auto" />
+          <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -57,8 +57,8 @@ export default function Navbar() {
                 href={link.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
                   isActive
-                    ? "text-hopper-black border border-hopper-black/30"
-                    : "text-hopper-black/70 hover:text-hopper-red hover:bg-hopper-beige/20"
+                    ? "text-white border border-white/30"
+                    : "text-white/70 hover:text-hopper-red hover:bg-white/5"
                 }`}
               >
                 {link.label}
@@ -71,7 +71,7 @@ export default function Navbar() {
           {session ? (
             <>
               <Link href="/mi-cuenta">
-                <Button variant="ghost" size="sm" className="text-hopper-black/70 hover:text-hopper-black">
+                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
                   {session.name.split(" ")[0]}
                 </Button>
               </Link>
@@ -79,7 +79,7 @@ export default function Navbar() {
                 size="sm"
                 variant="outline"
                 onClick={handleLogout}
-                className="text-hopper-black/70"
+                className="text-white/70 border-white/20 hover:bg-white/10"
               >
                 Cerrar sesion
               </Button>
@@ -87,7 +87,7 @@ export default function Navbar() {
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-hopper-black/70 hover:text-hopper-black">
+                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
                   Iniciar Sesion
                 </Button>
               </Link>
@@ -101,7 +101,7 @@ export default function Navbar() {
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-hopper-black/70 hover:bg-hopper-beige/20 transition-colors">
+          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white/70 hover:bg-white/10 transition-colors">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent className="w-[300px] bg-white">

@@ -52,13 +52,8 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-1">
-            <div className="flex items-center gap-1.5 mb-4">
-              <div className="h-8 w-8 rounded bg-hopper-red flex items-center justify-center">
-                <span className="text-white font-bold text-sm">H</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                HOPPERS
-              </span>
+            <div className="flex items-center mb-4">
+              <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
             </div>
             <p className="text-sm text-white/50 leading-relaxed">
               Better. Smarter. Hoppers.
