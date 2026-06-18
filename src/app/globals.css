@@ -131,7 +131,7 @@
 }
 
 @layer base {
-  * {
+  *:not(.lp-root):not(.lp-root *) {
     @apply border-border outline-ring/50;
   }
   body {

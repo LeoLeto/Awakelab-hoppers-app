@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ const navLinks = [
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<HoppersSession | null>(null);
 
@@ -55,15 +56,22 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-3 py-2 text-sm font-medium text-hopper-black/70 hover:text-hopper-red transition-colors rounded-md hover:bg-hopper-beige/20"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
+                  isActive
+                    ? "text-hopper-black border border-hopper-black/30"
+                    : "text-hopper-black/70 hover:text-hopper-red hover:bg-hopper-beige/20"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">

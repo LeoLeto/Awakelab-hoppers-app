@@ -11,6 +11,7 @@ import type { DiagnosticResult, HoppersCourse } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
 import { getSession, saveDiagnosticResult } from "@/lib/auth";
+import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 
 const GUIDED_QUESTIONS = [
   "Cuéntame sobre tu experiencia con SAP. ¿Con qué módulos has trabajado?",
@@ -19,6 +20,7 @@ const GUIDED_QUESTIONS = [
 ];
 
 export function DiagnosticTool() {
+  const { setShowNav } = useDiagnosticNav();
   const [mode, setMode] = useState<"chat" | "free" | "cv">("chat");
   const [chatStep, setChatStep] = useState(0);
   const [chatAnswers, setChatAnswers] = useState<string[]>([]);
@@ -35,8 +37,10 @@ export function DiagnosticTool() {
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatStep, chatAnswers]);
+    if (chatAnswers.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [chatAnswers]);
 
   function handleChatSend() {
     if (!chatInput.trim()) return;
@@ -72,6 +76,7 @@ export function DiagnosticTool() {
       });
     }
     setResult(pendingResult);
+    setShowNav(true);
     setPendingResult(null);
   }
 
@@ -146,6 +151,7 @@ export function DiagnosticTool() {
 
   function handleReset() {
     setResult(null);
+    setShowNav(false);
     setPendingResult(null);
     setChatStep(0);
     setChatAnswers([]);
@@ -319,7 +325,7 @@ function DiagnosticResults({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 py-8">
       <Card className="p-6 bg-hopper-black text-white">
         <div className="flex items-center justify-between mb-2">
           <div>
