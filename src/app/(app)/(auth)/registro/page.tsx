@@ -94,6 +94,20 @@ export default function RegistroPage() {
     setFormData((prev) => ({ ...prev, [field]: value ?? "" }));
   };
 
+  function inferSegment(yearsExperience: string): string {
+    if (yearsExperience === "0" || yearsExperience === "1-3") return "aspirante";
+    if (yearsExperience === "3-5") return "usuario_sap";
+    return "consultor";
+  }
+
+  function goToStep4() {
+    setFormData((prev) => ({
+      ...prev,
+      currentSegment: prev.currentSegment || inferSegment(prev.yearsExperience),
+    }));
+    setStep(4);
+  }
+
   const toggleModule = (mod: string) => {
     const current = formData.sapModules;
     if (current.includes(mod)) {
@@ -354,7 +368,7 @@ export default function RegistroPage() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setStep(4)}
+                  onClick={goToStep4}
                   className="flex-1 bg-hopper-red hover:bg-hopper-red-dark text-white"
                 >
                   Siguiente
