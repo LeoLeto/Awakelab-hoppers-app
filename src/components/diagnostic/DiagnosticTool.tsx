@@ -2,304 +2,911 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ConsentModal } from "./ConsentModal";
+import { Check, Mail, LogIn } from "lucide-react";
+import { countries } from "@/lib/data/countries";
+import { roleLabels } from "@/lib/data/sapProfiles";
 import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult, HoppersCourse } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
-import { getSession, saveDiagnosticResult } from "@/lib/auth";
+import { getSession, registerUser, saveDiagnosticResult } from "@/lib/auth";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
+import Link from "next/link";
 
-const GUIDED_QUESTIONS = [
-  "Cuéntame sobre tu experiencia con SAP. ¿Con qué módulos has trabajado?",
-  "¿Cuántos años llevas trabajando con SAP y cuál es tu nivel de experiencia?",
-  "¿Tienes certificaciones SAP o estás pensando en obtenerlas?",
+type Phase = "chat" | "profile_select" | "email_verify" | "gdpr_consent" | "processing" | "result";
+
+type ChatStep =
+  | "experience"
+  | "modules"
+  | "certifications"
+  | "cert_input"
+  | "current_role"
+  | "target_role"
+  | "linkedin"
+  | "linkedin_input"
+  | "name"
+  | "email"
+  | "country";
+
+interface ChatMessage {
+  from: "bot" | "user";
+  content: string;
+}
+
+const SAP_MODULES = [
+  "FI/CO",
+  "SD",
+  "MM",
+  "PP",
+  "ABAP",
+  "Basis",
+  "S/4HANA Cloud",
+  "S/4HANA Migration",
+  "EWM/TM",
+  "SuccessFactors",
+  "BTP",
+  "PI/PO/CPI",
+  "Security/GRC",
+  "SAC",
+  "Otro",
 ];
+
+const SAP_SEGMENTS = [
+  {
+    id: "aspirante",
+    label: "Aspirante",
+    description: "Perfil inicial en el ecosistema SAP, con poca o ninguna experiencia previa.",
+    bullets: [
+      "Recién licenciados o con menos de un año de experiencia.",
+      "Personas sin experiencia en SAP.",
+    ],
+  },
+  {
+    id: "usuario_sap",
+    label: "Usuario SAP",
+    description: "Profesional con conocimiento o uso previo de SAP que busca especializarse o crecer.",
+    bullets: [
+      "Usuarios con experiencia previa de uso de SAP, misma solución u otras.",
+      "Personas con conocimiento del área funcional.",
+    ],
+  },
+  {
+    id: "consultor",
+    label: "Consultor",
+    description: "Profesional con experiencia sólida en implantación o consultoría SAP.",
+    bullets: ["Consultores con experiencia previa en el área desarrollada en el programa u otras."],
+  },
+];
+
+function inferSegment(yearsExperience: string): string {
+  if (yearsExperience === "0" || yearsExperience === "1-3") return "aspirante";
+  if (yearsExperience === "3-5") return "usuario_sap";
+  return "consultor";
+}
+
+const STEP_BOT_MESSAGES: Record<ChatStep, string> = {
+  experience:
+    "¡Hola! Soy tu asistente de diagnóstico SAP. Voy a hacerte algunas preguntas para conocer tu perfil. ¿Cuántos años llevas trabajando con SAP?",
+  modules: "¿Con qué módulos SAP has trabajado? Selecciona todos los que apliquen.",
+  certifications: "¿Tienes certificaciones SAP?",
+  cert_input: "¿Cuáles son tus certificaciones? Escríbelas a continuación.",
+  current_role: "¿Cuál es tu rol actual en el ecosistema SAP?",
+  target_role: "¿Y cuál es el rol al que aspiras llegar?",
+  linkedin: "¿Te gustaría vincular tu perfil de LinkedIn?",
+  linkedin_input: "Escribe el enlace de tu perfil de LinkedIn.",
+  name: "Para crear tu cuenta, ¿cuál es tu nombre completo?",
+  email: "¿Cuál es tu email profesional?",
+  country: "¿En qué país te encuentras?",
+};
 
 export function DiagnosticTool() {
   const { setShowNav } = useDiagnosticNav();
-  const [mode, setMode] = useState<"chat" | "free" | "cv">("chat");
-  const [chatStep, setChatStep] = useState(0);
-  const [chatAnswers, setChatAnswers] = useState<string[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [freeText, setFreeText] = useState("");
-  const [cvText, setCvText] = useState("");
-  const [processing, setProcessing] = useState(false);
+
+  const [phase, setPhase] = useState<Phase>("chat");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatStep, setChatStep] = useState<ChatStep>("experience");
+  const [textInput, setTextInput] = useState("");
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+
+  const [yearsExperience, setYearsExperience] = useState("");
+  const [modules, setModules] = useState<string[]>([]);
+  const [certifications, setCertifications] = useState("");
+  const [currentRole, setCurrentRole] = useState("");
+  const [targetRole, setTargetRole] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("");
+
+  const [currentSegment, setCurrentSegment] = useState("");
+  const [aspirationalSegment, setAspirationalSegment] = useState("");
+
   const [result, setResult] = useState<DiagnosticResult | null>(null);
-  const [consentOpen, setConsentOpen] = useState(false);
-  const [pendingResult, setPendingResult] = useState<DiagnosticResult | null>(null);
-  const [voiceActive, setVoiceActive] = useState(false);
-  const [yearsExp, setYearsExp] = useState("3-5");
+  const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    if (chatAnswers.length > 0) {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, [chatAnswers]);
-
-  function handleChatSend() {
-    if (!chatInput.trim()) return;
-    const newAnswers = [...chatAnswers, chatInput.trim()];
-    setChatAnswers(newAnswers);
-    setChatInput("");
-    if (chatStep < GUIDED_QUESTIONS.length - 1) {
-      setChatStep((s) => s + 1);
-    } else {
-      runDiagnostic(newAnswers.join(" "));
-    }
-  }
-
-  function runDiagnostic(text: string) {
-    setProcessing(true);
-    setTimeout(() => {
-      const r = buildDiagnosticResult(text, yearsExp);
-      setPendingResult(r);
-      setProcessing(false);
-      setConsentOpen(true);
-    }, 1800);
-  }
-
-  function handleConsentAccept() {
-    setConsentOpen(false);
-    if (!pendingResult) return;
     const session = getSession();
     if (session) {
-      saveDiagnosticResult({
-        empScore: pendingResult.empScore,
-        topProfile: pendingResult.topSlug,
-        skills: pendingResult.skills,
-      });
-    }
-    setResult(pendingResult);
-    setShowNav(true);
-    setPendingResult(null);
-  }
-
-  function handleConsentCancel() {
-    setConsentOpen(false);
-    setPendingResult(null);
-    setProcessing(false);
-  }
-
-  function handleFreeSubmit() {
-    const text = freeText.trim();
-    if (!text) return;
-    runDiagnostic(text);
-  }
-
-  function handleCvUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = (ev.target?.result as string) || "";
-      setCvText(text.slice(0, 4000));
-    };
-    reader.readAsText(file);
-  }
-
-  function toggleVoice() {
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Tu navegador no soporta reconocimiento de voz. Usa Chrome.");
-      return;
-    }
-    if (voiceActive) {
-      recognitionRef.current?.stop();
-      setVoiceActive(false);
-      return;
-    }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-ES";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (e: any) => {
-      let transcript = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
+      const stored = localStorage.getItem("hoppers_diag_result");
+      if (stored) {
+        try {
+          setResult(JSON.parse(stored));
+          setPhase("result");
+          setShowNav(true);
+          return;
+        } catch {}
       }
-      if (mode === "free") setFreeText((prev) => prev + " " + transcript);
-      else setChatInput(transcript);
-    };
-    recognition.onerror = () => setVoiceActive(false);
-    recognition.onend = () => setVoiceActive(false);
-    recognition.start();
-    recognitionRef.current = recognition;
-    setVoiceActive(true);
+    }
+    setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages]);
+
+  function appendBotMessage(content: string) {
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { from: "bot", content }]);
+    }, 400);
+  }
+
+  function advanceToStep(step: ChatStep) {
+    setChatStep(step);
+    appendBotMessage(STEP_BOT_MESSAGES[step]);
+  }
+
+  function handleExperienceSelect(value: string, label: string) {
+    setYearsExperience(value);
+    setMessages((prev) => [...prev, { from: "user", content: label }]);
+    advanceToStep("modules");
+  }
+
+  function toggleModule(mod: string) {
+    setSelectedModules((prev) =>
+      prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod]
+    );
+  }
+
+  function handleModulesConfirm() {
+    if (selectedModules.length === 0) return;
+    setModules(selectedModules);
+    setMessages((prev) => [
+      ...prev,
+      { from: "user", content: selectedModules.join(", ") },
+    ]);
+    setSelectedModules([]);
+    advanceToStep("certifications");
+  }
+
+  function handleCertificationsYes() {
+    setMessages((prev) => [...prev, { from: "user", content: "Sí" }]);
+    advanceToStep("cert_input");
+  }
+
+  function handleCertificationsNo() {
+    setCertifications("");
+    setMessages((prev) => [...prev, { from: "user", content: "No" }]);
+    advanceToStep("current_role");
+  }
+
+  function handleCertInputSubmit() {
+    if (!textInput.trim()) return;
+    setCertifications(textInput.trim());
+    setMessages((prev) => [...prev, { from: "user", content: textInput.trim() }]);
+    setTextInput("");
+    advanceToStep("current_role");
+  }
+
+  function handleCurrentRoleSelect(slug: string, label: string) {
+    setCurrentRole(slug);
+    setMessages((prev) => [...prev, { from: "user", content: label }]);
+    advanceToStep("target_role");
+  }
+
+  function handleTargetRoleSelect(slug: string, label: string) {
+    setTargetRole(slug);
+    setMessages((prev) => [...prev, { from: "user", content: label }]);
+    advanceToStep("linkedin");
+  }
+
+  function handleLinkedinYes() {
+    setMessages((prev) => [...prev, { from: "user", content: "Sí" }]);
+    advanceToStep("linkedin_input");
+  }
+
+  function handleLinkedinNo() {
+    setLinkedin("");
+    setMessages((prev) => [...prev, { from: "user", content: "No" }]);
+    advanceToStep("name");
+  }
+
+  function handleLinkedinInputSubmit() {
+    if (!textInput.trim()) return;
+    setLinkedin(textInput.trim());
+    setMessages((prev) => [...prev, { from: "user", content: textInput.trim() }]);
+    setTextInput("");
+    advanceToStep("name");
+  }
+
+  function handleNameSubmit() {
+    if (!textInput.trim()) return;
+    setName(textInput.trim());
+    setMessages((prev) => [...prev, { from: "user", content: textInput.trim() }]);
+    setTextInput("");
+    advanceToStep("email");
+  }
+
+  function handleEmailSubmit() {
+    if (!textInput.trim()) return;
+    setEmail(textInput.trim());
+    setMessages((prev) => [...prev, { from: "user", content: textInput.trim() }]);
+    setTextInput("");
+    advanceToStep("country");
+  }
+
+  function handleCountrySelect(countryName: string) {
+    setCountry(countryName);
+    setMessages((prev) => [...prev, { from: "user", content: countryName }]);
+    setTimeout(() => {
+      const preSegment = inferSegment(yearsExperience);
+      setCurrentSegment(preSegment);
+      setPhase("profile_select");
+    }, 800);
+  }
+
+  async function onEmailVerifyContinue() {
+    setPhase("processing");
+    const text =
+      modules.join(" ") + " " + certifications + " " + currentRole + " " + targetRole;
+    const diagResult = buildDiagnosticResult(text, yearsExperience);
+
+    const registerResult = await registerUser({
+      name,
+      email,
+      country,
+      currentRole,
+      yearsExperience,
+      sapModules: modules,
+      certifications,
+      linkedinUrl: linkedin,
+      targetRole,
+    });
+
+    if (!registerResult.success) {
+      localStorage.setItem(
+        "hoppers_session",
+        JSON.stringify({
+          name,
+          email,
+          country,
+          loggedAt: new Date().toISOString(),
+        })
+      );
+    }
+
+    localStorage.setItem("hoppers_diag_result", JSON.stringify(diagResult));
+
+    await saveDiagnosticResult({
+      empScore: diagResult.empScore,
+      topProfile: diagResult.topSlug,
+      skills: diagResult.skills,
+      fullResult: diagResult,
+    });
+
+    setResult(diagResult);
+    setPhase("result");
+    setShowNav(true);
+  }
+
+  function handleReset() {
+    localStorage.removeItem("hoppers_diag_result");
+    setPhase("chat");
+    setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+    setChatStep("experience");
+    setTextInput("");
+    setSelectedModules([]);
+    setYearsExperience("");
+    setModules([]);
+    setCertifications("");
+    setCurrentRole("");
+    setTargetRole("");
+    setLinkedin("");
+    setName("");
+    setEmail("");
+    setCountry("");
+    setCurrentSegment("");
+    setAspirationalSegment("");
+    setResult(null);
+    setEmailVerifyLoading(false);
+    setShowNav(false);
   }
 
   function handleDownloadPDF() {
     if (!result) return;
     const session = getSession();
-    let userName = session?.name;
-    let userEmail = session?.email;
-    downloadDiagnosticPDF(result, userName, userEmail, session?.country);
+    downloadDiagnosticPDF(
+      result,
+      session?.name ?? name,
+      session?.email ?? email,
+      session?.country ?? country
+    );
   }
 
   function handleEmailSend() {
     if (!result) return;
     const body = encodeURIComponent(
-      `Hola equipo Hoppers Academy,\n\nAcabo de completar mi diagnostico profesional SAP y me gustaria recibir mas informacion.\n\nPerfil detectado: ${result.matches[0]?.name}\nIndice de empleabilidad: ${result.empScore}%\nHabilidades: ${result.skills.join(", ")}\n\nQuedo a vuestra disposicion.\n\nSaludos`
+      `Hola equipo Hoppers Academy,\n\nAcabo de completar mi diagnóstico profesional SAP y me gustaría recibir más información.\n\nPerfil detectado: ${result.matches[0]?.name}\nÍndice de empleabilidad: ${result.empScore}%\nHabilidades: ${result.skills.join(", ")}\n\nQuedo a vuestra disposición.\n\nSaludos`
     );
-    window.location.href = `mailto:info@hoppers.academy?subject=Diagnostico SAP - Solicito informacion&body=${body}`;
+    window.location.href = `mailto:info@hoppers.academy?subject=Diagnóstico SAP - Solicito información&body=${body}`;
   }
 
-  function handleReset() {
-    setResult(null);
-    setShowNav(false);
-    setPendingResult(null);
-    setChatStep(0);
-    setChatAnswers([]);
-    setChatInput("");
-    setFreeText("");
-    setCvText("");
-    setProcessing(false);
-  }
-
-  if (processing) {
+  if (phase === "processing") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
         <div className="w-16 h-16 border-4 border-hopper-red border-t-transparent rounded-full animate-spin" />
         <div className="text-center">
           <p className="text-lg font-bold text-hopper-black">Analizando tu perfil SAP...</p>
-          <p className="text-sm text-gray-500 mt-1">Cruzando con 14.000+ ofertas de empleo en tiempo real</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Cruzando con 14.000+ ofertas de empleo en tiempo real
+          </p>
         </div>
       </div>
     );
   }
 
-  if (result) {
-    return <DiagnosticResults result={result} onReset={handleReset} onDownload={handleDownloadPDF} onEmail={handleEmailSend} />;
+  if (phase === "result" && result) {
+    return (
+      <DiagnosticResults
+        result={result}
+        onReset={handleReset}
+        onDownload={handleDownloadPDF}
+        onEmail={handleEmailSend}
+      />
+    );
+  }
+
+  if (phase === "profile_select") {
+    return (
+      <ProfileSelectScreen
+        currentSegment={currentSegment}
+        aspirationalSegment={aspirationalSegment}
+        onCurrentSegmentChange={setCurrentSegment}
+        onAspirationalSegmentChange={setAspirationalSegment}
+        onContinue={() => setPhase("email_verify")}
+      />
+    );
+  }
+
+  if (phase === "email_verify") {
+    return (
+      <EmailVerifyScreen
+        email={email}
+        loading={emailVerifyLoading}
+        onContinue={() => setPhase("gdpr_consent")}
+      />
+    );
+  }
+
+  if (phase === "gdpr_consent") {
+    return (
+      <GdprConsentScreen
+        onContinue={() => {
+          setEmailVerifyLoading(true);
+          onEmailVerifyContinue();
+        }}
+      />
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <ConsentModal open={consentOpen} onAccept={handleConsentAccept} onCancel={handleConsentCancel} />
-
-      <div className="flex gap-2 mb-6">
-        {(["chat", "free", "cv"] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-              mode === m ? "bg-hopper-red text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {m === "chat" ? "Guiado" : m === "free" ? "Texto libre" : "Subir CV"}
-          </button>
-        ))}
-        <button
-          onClick={toggleVoice}
-          className={`ml-auto px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
-            voiceActive ? "bg-hopper-red text-white border-hopper-red animate-pulse" : "border-gray-300 text-gray-600"
-          }`}
+    <div className="max-w-2xl mx-auto space-y-3">
+      <div className="flex justify-end">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-hopper-red transition-colors"
         >
-          {voiceActive ? "Detener voz" : "Entrada de voz"}
-        </button>
+          <LogIn className="w-4 h-4" />
+          Ya tengo cuenta. Entrar
+        </Link>
       </div>
-
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700 mr-2">Anos de experiencia con SAP:</label>
-        <select
-          value={yearsExp}
-          onChange={(e) => setYearsExp(e.target.value)}
-          className="text-sm border rounded px-2 py-1"
-        >
-          <option value="0">Sin experiencia</option>
-          <option value="1-3">1-3 anos</option>
-          <option value="3-5">3-5 anos</option>
-          <option value="5-7">5-7 anos</option>
-          <option value="7+">7+ anos</option>
-        </select>
-      </div>
-
-      {mode === "chat" && (
-        <div className="border rounded-xl overflow-hidden">
-          <div className="bg-hopper-black text-white px-4 py-3 text-sm font-semibold">Diagnostico guiado</div>
-          <div className="p-4 min-h-[280px] space-y-3 bg-gray-50">
-            {GUIDED_QUESTIONS.slice(0, chatStep + 1).map((q, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex gap-2">
-                  <div className="w-7 h-7 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">H</div>
-                  <div className="bg-white border rounded-lg px-3 py-2 text-sm max-w-xs">{q}</div>
-                </div>
-                {chatAnswers[i] && (
-                  <div className="flex justify-end">
-                    <div className="bg-hopper-black text-white rounded-lg px-3 py-2 text-sm max-w-xs">{chatAnswers[i]}</div>
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={chatEndRef} />
+      <div className="border rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-hopper-black text-white px-4 py-3 text-sm font-semibold flex items-center gap-2">
+          <div className="w-6 h-6 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold">
+            H
           </div>
-          <div className="border-t p-3 flex gap-2 bg-white">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleChatSend()}
-              placeholder="Escribe tu respuesta..."
-              className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red"
-            />
-            <Button size="sm" onClick={handleChatSend} className="bg-hopper-red hover:bg-hopper-red/90 text-white">
-              Enviar
-            </Button>
-          </div>
+          Diagnóstico SAP Guiado
         </div>
-      )}
 
-      {mode === "free" && (
-        <div className="space-y-4">
-          <Textarea
-            value={freeText}
-            onChange={(e) => setFreeText(e.target.value)}
-            placeholder="Describe tu experiencia con SAP: modulos, proyectos, anos de experiencia, certificaciones, sector... Cuanto mas detallado, mejor sera el diagnostico."
-            className="min-h-[240px] text-sm"
-          />
-          <Button
-            onClick={handleFreeSubmit}
-            disabled={freeText.trim().length < 30}
-            className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
-          >
-            Analizar mi perfil
-          </Button>
-        </div>
-      )}
-
-      {mode === "cv" && (
-        <div className="space-y-4">
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-            <p className="text-gray-500 mb-3 text-sm">Sube tu CV en formato TXT o pega el texto</p>
-            <label
-              htmlFor="cv-upload"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+        <div className="p-4 min-h-[320px] max-h-[440px] overflow-y-auto space-y-4 bg-gray-50">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"} gap-2`}
             >
-              Seleccionar archivo
-            </label>
-            <input type="file" accept=".txt,.text" onChange={handleCvUpload} className="hidden" id="cv-upload" />
-          </div>
-          {cvText && (
-            <>
-              <Textarea
-                value={cvText}
-                onChange={(e) => setCvText(e.target.value)}
-                className="min-h-[160px] text-xs font-mono"
+              {msg.from === "bot" && (
+                <div className="w-7 h-7 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">
+                  H
+                </div>
+              )}
+              <div
+                className={`rounded-lg px-3 py-2 text-sm max-w-xs lg:max-w-sm ${
+                  msg.from === "user"
+                    ? "bg-hopper-black text-white"
+                    : "bg-white border text-hopper-black"
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="border-t bg-white p-4">
+          {chatStep === "experience" && (
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "Sin experiencia", value: "0" },
+                { label: "1-3 años", value: "1-3" },
+                { label: "3-5 años", value: "3-5" },
+                { label: "5-7 años", value: "5-7" },
+                { label: "7+ años", value: "7+" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleExperienceSelect(opt.value, opt.label)}
+                  className="px-4 py-2 rounded-full border border-hopper-black text-sm font-medium hover:bg-hopper-black hover:text-white transition-colors"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {chatStep === "modules" && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {SAP_MODULES.map((mod) => (
+                  <button
+                    key={mod}
+                    onClick={() => toggleModule(mod)}
+                    className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                      selectedModules.includes(mod)
+                        ? "bg-hopper-red text-white border-hopper-red"
+                        : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                    }`}
+                  >
+                    {selectedModules.includes(mod) && (
+                      <Check className="inline w-3 h-3 mr-1" />
+                    )}
+                    {mod}
+                  </button>
+                ))}
+              </div>
+              <Button
+                onClick={handleModulesConfirm}
+                disabled={selectedModules.length === 0}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
+              >
+                Confirmar selección ({selectedModules.length})
+              </Button>
+            </div>
+          )}
+
+          {chatStep === "certifications" && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleCertificationsYes}
+                className="flex-1 py-3 rounded-lg border-2 border-green-500 text-green-700 font-semibold text-sm hover:bg-green-50 transition-colors"
+              >
+                ✓ Sí
+              </button>
+              <button
+                onClick={handleCertificationsNo}
+                className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                ✗ No
+              </button>
+            </div>
+          )}
+
+          {chatStep === "cert_input" && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCertInputSubmit()}
+                placeholder="Ej: SAP S/4HANA Finance, SAP SD..."
+                className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red"
               />
               <Button
-                onClick={() => runDiagnostic(cvText)}
-                className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white"
+                onClick={handleCertInputSubmit}
+                disabled={!textInput.trim()}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
               >
-                Analizar CV
+                Enviar
               </Button>
-            </>
+            </div>
+          )}
+
+          {chatStep === "current_role" && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {Object.entries(roleLabels).map(([slug, label]) => (
+                <button
+                  key={slug}
+                  onClick={() => handleCurrentRoleSelect(slug, label)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:border-hopper-red hover:text-hopper-red hover:bg-hopper-red/5 transition-colors text-left"
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                onClick={() => handleCurrentRoleSelect("sin_rol", "Sin rol definido")}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-500 hover:border-gray-500 hover:text-gray-700 transition-colors text-left"
+              >
+                Sin rol definido
+              </button>
+            </div>
+          )}
+
+          {chatStep === "target_role" && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {Object.entries(roleLabels).map(([slug, label]) => (
+                <button
+                  key={slug}
+                  onClick={() => handleTargetRoleSelect(slug, label)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:border-hopper-red hover:text-hopper-red hover:bg-hopper-red/5 transition-colors text-left"
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                onClick={() => handleTargetRoleSelect("sin_rol", "Sin rol definido")}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-500 hover:border-gray-500 hover:text-gray-700 transition-colors text-left"
+              >
+                Sin rol definido
+              </button>
+            </div>
+          )}
+
+          {chatStep === "linkedin" && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleLinkedinYes}
+                className="flex-1 py-3 rounded-lg border-2 border-blue-500 text-blue-700 font-semibold text-sm hover:bg-blue-50 transition-colors"
+              >
+                ✓ Sí
+              </button>
+              <button
+                onClick={handleLinkedinNo}
+                className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                ✗ No
+              </button>
+            </div>
+          )}
+
+          {chatStep === "linkedin_input" && (
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLinkedinInputSubmit()}
+                placeholder="https://linkedin.com/in/tu-perfil"
+                className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red"
+              />
+              <Button
+                onClick={handleLinkedinInputSubmit}
+                disabled={!textInput.trim()}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
+              >
+                Enviar
+              </Button>
+            </div>
+          )}
+
+          {chatStep === "name" && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleNameSubmit()}
+                placeholder="Tu nombre completo"
+                className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red"
+              />
+              <Button
+                onClick={handleNameSubmit}
+                disabled={!textInput.trim()}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
+              >
+                Enviar
+              </Button>
+            </div>
+          )}
+
+          {chatStep === "email" && (
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
+                placeholder="tu@email.com"
+                className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red"
+              />
+              <Button
+                onClick={handleEmailSubmit}
+                disabled={!textInput.trim()}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
+              >
+                Enviar
+              </Button>
+            </div>
+          )}
+
+          {chatStep === "country" && (
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+              {countries.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => handleCountrySelect(c.name)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-300 text-sm font-medium text-gray-700 hover:border-hopper-red hover:text-hopper-red hover:bg-hopper-red/5 transition-colors"
+                >
+                  <span>{c.flag}</span>
+                  <span>{c.name}</span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+function ProfileSelectScreen({
+  currentSegment,
+  aspirationalSegment,
+  onCurrentSegmentChange,
+  onAspirationalSegmentChange,
+  onContinue,
+}: {
+  currentSegment: string;
+  aspirationalSegment: string;
+  onCurrentSegmentChange: (s: string) => void;
+  onAspirationalSegmentChange: (s: string) => void;
+  onContinue: () => void;
+}) {
+  const canContinue = currentSegment !== "" && aspirationalSegment !== "";
+
+  return (
+    <div className="max-w-3xl mx-auto py-8 space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-black text-hopper-black">Tu perfil SAP</h2>
+        <p className="text-sm text-gray-500 mt-2">
+          Selecciona tu perfil actual y el perfil al que aspiras. Esto nos ayuda a personalizar tu
+          diagnóstico.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-hopper-black uppercase tracking-wide">
+            Perfil actual
+          </h3>
+          {SAP_SEGMENTS.map((seg) => {
+            const isSelected = currentSegment === seg.id;
+            return (
+              <button
+                key={seg.id}
+                onClick={() => onCurrentSegmentChange(seg.id)}
+                className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
+                  isSelected
+                    ? "border-hopper-red bg-hopper-red/5"
+                    : "border-gray-200 hover:border-hopper-red/50"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-hopper-black text-sm">{seg.label}</span>
+                  {isSelected && (
+                    <span className="text-xs bg-hopper-red text-white px-2 py-0.5 rounded-full font-semibold">
+                      Seleccionado
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-2">{seg.description}</p>
+                <ul className="space-y-1">
+                  {seg.bullets.map((b, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex gap-1.5">
+                      <span className="text-hopper-red mt-0.5">•</span>
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-hopper-black uppercase tracking-wide">
+            Perfil aspiracional
+          </h3>
+          {SAP_SEGMENTS.map((seg) => {
+            const isSelected = aspirationalSegment === seg.id;
+            return (
+              <button
+                key={seg.id}
+                onClick={() => onAspirationalSegmentChange(seg.id)}
+                className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
+                  isSelected
+                    ? "border-hopper-black bg-hopper-black/5"
+                    : "border-gray-200 hover:border-hopper-black/40"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-hopper-black text-sm">{seg.label}</span>
+                  {isSelected && (
+                    <span className="text-xs bg-hopper-black text-white px-2 py-0.5 rounded-full font-semibold">
+                      Seleccionado
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-2">{seg.description}</p>
+                <ul className="space-y-1">
+                  {seg.bullets.map((b, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex gap-1.5">
+                      <span className="text-hopper-black mt-0.5">•</span>
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-center pt-2">
+        <Button
+          onClick={onContinue}
+          disabled={!canContinue}
+          className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8 disabled:opacity-50"
+        >
+          Continuar →
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function EmailVerifyScreen({
+  email,
+  loading,
+  onContinue,
+}: {
+  email: string;
+  loading: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="max-w-md mx-auto py-16 text-center space-y-5">
+      <div className="flex justify-center">
+        <div className="w-16 h-16 rounded-full bg-hopper-red/10 flex items-center justify-center">
+          <Mail className="w-8 h-8 text-hopper-red" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-black text-hopper-black">Verifica tu email</h2>
+        <p className="text-sm text-gray-500">Te hemos enviado un email de verificación a:</p>
+        <p className="font-bold text-hopper-black">{email}</p>
+      </div>
+      <p className="text-xs text-gray-400">
+        Revisa tu bandeja de entrada (y la carpeta de spam). Una vez verificado, podrás acceder a tu
+        diagnóstico personalizado.
+      </p>
+      <Button
+        onClick={onContinue}
+        disabled={loading}
+        className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8"
+      >
+        {loading ? "Procesando..." : "Continuar →"}
+      </Button>
+    </div>
+  );
+}
+
+function GdprConsentScreen({ onContinue }: { onContinue: () => void }) {
+  const [tratamiento, setTratamiento] = useState(false);
+  const [comunicaciones, setComunicaciones] = useState(false);
+  const [comparticion, setComparticion] = useState(false);
+
+  const canContinue = tratamiento && comparticion;
+
+  return (
+    <div className="max-w-md mx-auto py-12 space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-black text-hopper-black">Consentimiento RGPD</h2>
+        <p className="text-sm text-gray-500">
+          Para generar tu informe de empleabilidad SAP personalizado, necesitamos tu consentimiento
+          para procesar los datos que nos has proporcionado.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <label className="flex gap-3 items-start cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={tratamiento}
+            onChange={(e) => setTratamiento(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-hopper-red shrink-0"
+          />
+          <div>
+            <p className="text-sm font-semibold text-hopper-black">
+              * Tratamiento de datos <span className="text-hopper-red">(requerido)</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Acepto que Hoppers Academy procese los datos proporcionados para generar mi informe
+              personalizado de empleabilidad SAP, de acuerdo con su política de privacidad.
+            </p>
+          </div>
+        </label>
+
+        <label className="flex gap-3 items-start cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={comunicaciones}
+            onChange={(e) => setComunicaciones(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-hopper-red shrink-0"
+          />
+          <div>
+            <p className="text-sm font-semibold text-hopper-black">
+              Comunicaciones <span className="text-gray-400 font-normal">(opcional)</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Acepto recibir comunicaciones comerciales sobre formaciones, webinars y oportunidades
+              laborales SAP de Hoppers Academy.
+            </p>
+          </div>
+        </label>
+
+        <label className="flex gap-3 items-start cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={comparticion}
+            onChange={(e) => setComparticion(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-hopper-red shrink-0"
+          />
+          <div>
+            <p className="text-sm font-semibold text-hopper-black">
+              * Compartición de datos <span className="text-hopper-red">(requerido)</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Acepto que mis datos puedan ser compartidos con empresas partners de Hoppers Academy
+              que puedan estar interesadas en mi perfil profesional SAP.
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <p className="text-xs text-gray-400">
+        * Los campos marcados con asterisco son obligatorios para generar el informe.
+      </p>
+
+      <Button
+        onClick={onContinue}
+        disabled={!canContinue}
+        className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
+      >
+        Generar mi informe →
+      </Button>
     </div>
   );
 }
@@ -315,13 +922,20 @@ function DiagnosticResults({
   onDownload: () => void;
   onEmail: () => void;
 }) {
-  const scoreColor = result.empScore >= 80 ? "#10B981" : result.empScore >= 60 ? "#F59E0B" : result.empScore >= 40 ? "#F97316" : "#EF4444";
+  const scoreColor =
+    result.empScore >= 80
+      ? "#10B981"
+      : result.empScore >= 60
+      ? "#F59E0B"
+      : result.empScore >= 40
+      ? "#F97316"
+      : "#EF4444";
 
   const seniorityLabel: Record<string, string> = {
-    junior: "Junior (0-3 anos)",
-    mid: "Intermedio (3-5 anos)",
-    senior: "Senior (5-7+ anos)",
-    architect: "Arquitecto / Lead (8+ anos)",
+    junior: "Junior (0-3 años)",
+    mid: "Intermedio (3-5 años)",
+    senior: "Senior (5-7+ años)",
+    architect: "Arquitecto / Lead (8+ años)",
   };
 
   return (
@@ -329,8 +943,10 @@ function DiagnosticResults({
       <Card className="p-6 bg-hopper-black text-white">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-sm text-gray-400">Indice de empleabilidad SAP</p>
-            <p className="text-5xl font-black mt-1" style={{ color: scoreColor }}>{result.empScore}%</p>
+            <p className="text-sm text-gray-400">Índice de empleabilidad SAP</p>
+            <p className="text-5xl font-black mt-1" style={{ color: scoreColor }}>
+              {result.empScore}%
+            </p>
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400">Nivel detectado</p>
@@ -341,7 +957,10 @@ function DiagnosticResults({
         {result.skills.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
             {result.skills.map((s) => (
-              <span key={s} className="bg-hopper-red/20 text-hopper-red border border-hopper-red/30 text-xs px-2 py-0.5 rounded">
+              <span
+                key={s}
+                className="bg-hopper-red/20 text-hopper-red border border-hopper-red/30 text-xs px-2 py-0.5 rounded"
+              >
                 {s}
               </span>
             ))}
@@ -375,7 +994,11 @@ function DiagnosticResults({
                 variant={m.demandLevel === "critical" ? "destructive" : "outline"}
                 className="text-xs shrink-0"
               >
-                {m.demandLevel === "critical" ? "Critica" : m.demandLevel === "high" ? "Alta" : "Media"}
+                {m.demandLevel === "critical"
+                  ? "Crítica"
+                  : m.demandLevel === "high"
+                  ? "Alta"
+                  : "Media"}
               </Badge>
             </div>
           ))}
@@ -383,34 +1006,46 @@ function DiagnosticResults({
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {result.salaryExpectations.filter((s) => s.salary !== "N/D").map((s) => (
-          <Card key={s.country} className="p-4 text-center">
-            <p className="text-2xl mb-1">{s.flag}</p>
-            <p className="text-xs text-gray-500 mb-1">{s.country}</p>
-            <p className="text-sm font-bold text-hopper-black">{s.salary}</p>
-            <p className="text-xs text-gray-400">{result.seniority}</p>
-          </Card>
-        ))}
+        {result.salaryExpectations
+          .filter((s) => s.salary !== "N/D")
+          .map((s) => (
+            <Card key={s.country} className="p-4 text-center">
+              <p className="text-2xl mb-1">{s.flag}</p>
+              <p className="text-xs text-gray-500 mb-1">{s.country}</p>
+              <p className="text-sm font-bold text-hopper-black">{s.salary}</p>
+              <p className="text-xs text-gray-400">{result.seniority}</p>
+            </Card>
+          ))}
       </div>
 
       {result.recommendedCourses.length > 0 && (
         <Card className="p-5">
           <h3 className="font-bold text-hopper-black mb-1">Catálogo de cursos Hoppers Academy</h3>
-          <p className="text-xs text-gray-400 mb-4">Los marcados en verde tienen fecha confirmada · Los más relevantes para tu perfil aparecen primero</p>
+          <p className="text-xs text-gray-400 mb-4">
+            Los marcados en verde tienen fecha confirmada · Los más relevantes para tu perfil aparecen
+            primero
+          </p>
           <div className="space-y-3">
             {result.recommendedCourses.map((course) => {
               const next = nextEdition(course);
               const isProfileMatch = course.profiles.some((p) =>
-                result.matches.slice(0, 3).map((m) => m.slug).includes(p)
+                result.matches
+                  .slice(0, 3)
+                  .map((m) => m.slug)
+                  .includes(p)
               );
               return (
                 <div
                   key={course.id}
-                  className={`border rounded-lg p-3 flex flex-col gap-1 ${isProfileMatch ? "border-hopper-red/30 bg-hopper-red/5" : ""}`}
+                  className={`border rounded-lg p-3 flex flex-col gap-1 ${
+                    isProfileMatch ? "border-hopper-red/30 bg-hopper-red/5" : ""
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-hopper-black leading-tight">{course.name}</span>
+                      <span className="text-sm font-semibold text-hopper-black leading-tight">
+                        {course.name}
+                      </span>
                       {isProfileMatch && (
                         <span className="text-xs text-hopper-red font-medium">Recomendado</span>
                       )}
@@ -427,14 +1062,20 @@ function DiagnosticResults({
                       <span className="text-xs text-gray-400 italic">Duración por confirmar</span>
                     )}
                     {next ? (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        next.type === "confirmed"
-                          ? "bg-green-100 text-green-700"
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          next.type === "confirmed"
+                            ? "bg-green-100 text-green-700"
+                            : next.type === "webinar"
+                            ? "bg-blue-100 text-blue-600"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {next.type === "confirmed"
+                          ? "Próx. edición:"
                           : next.type === "webinar"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {next.type === "confirmed" ? "Próx. edición:" : next.type === "webinar" ? "Webinar previsto:" : "Edición privada:"}{" "}
+                          ? "Webinar previsto:"
+                          : "Edición privada:"}{" "}
                         {next.period}
                       </span>
                     ) : (
@@ -450,7 +1091,7 @@ function DiagnosticResults({
 
       {result.trainingGaps.length > 0 && (
         <Card className="p-5">
-          <h3 className="font-bold text-hopper-black mb-3">Plan de formacion recomendado</h3>
+          <h3 className="font-bold text-hopper-black mb-3">Plan de formación recomendado</h3>
           <div className="space-y-3">
             {result.trainingGaps.slice(0, 5).map((g, i) => (
               <div key={g} className="flex gap-3 items-start">
@@ -472,10 +1113,10 @@ function DiagnosticResults({
           Descargar informe PDF
         </Button>
         <Button variant="outline" onClick={onEmail}>
-          Solicitar asesoria gratuita
+          Solicitar asesoría gratuita
         </Button>
         <Button variant="ghost" onClick={onReset}>
-          Nuevo diagnostico
+          Nuevo diagnóstico
         </Button>
       </div>
     </div>

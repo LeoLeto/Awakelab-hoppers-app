@@ -234,9 +234,9 @@ export function buildDiagnosticResult(text: string, yearsExperience?: string): D
 
   let empDesc = "";
   if (empScore >= 80) empDesc = "Excelente posicionamiento. Tu perfil tiene alta demanda en el mercado SAP actual.";
-  else if (empScore >= 60) empDesc = "Buen perfil con oportunidades claras. Algunas certificaciones clave podrian impulsar tu empleabilidad.";
-  else if (empScore >= 40) empDesc = "Perfil con potencial. Recomendamos formacion especifica para acceder a los roles de mayor demanda.";
-  else empDesc = "Estas en el inicio de tu camino SAP. La formacion adecuada puede abrir grandes oportunidades.";
+  else if (empScore >= 60) empDesc = "Buen perfil con oportunidades claras. Algunas certificaciones clave podrían impulsar tu empleabilidad.";
+  else if (empScore >= 40) empDesc = "Perfil con potencial. Recomendamos formación específica para acceder a los roles de mayor demanda.";
+  else empDesc = "Estás en el inicio de tu camino SAP. La formación adecuada puede abrir grandes oportunidades.";
 
   const countryMeta = [
     { country: "ES", flag: "🇪🇸", name: "España" },

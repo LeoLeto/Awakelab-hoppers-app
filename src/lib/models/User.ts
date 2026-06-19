@@ -18,6 +18,7 @@ export interface IUser extends Document {
   empScore?: number;
   topProfile?: string;
   skills?: string[];
+  diagnosticResult?: Record<string, unknown>;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -37,6 +38,7 @@ const UserSchema = new Schema<IUser>(
     empScore: { type: Number },
     topProfile: { type: String },
     skills: { type: [String] },
+    diagnosticResult: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );
