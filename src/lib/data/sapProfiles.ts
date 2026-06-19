@@ -440,6 +440,27 @@ export const demandLevels = {
 };
 
 export const roleLabels: Record<string, string> = {
+  aspirante_sap: "Aspirante SAP",
+  usuario_sap: "Usuario SAP",
+  consultant_fi_co: "Consultor FI/CO",
+  consultant_sd: "Consultor SD",
+  consultant_mm: "Consultor MM",
+  consultant_pp: "Consultor PP",
+  abap_developer: "Desarrollador ABAP",
+  basis_admin: "Administrador Basis",
+  s4hana_cloud: "Consultor S/4HANA Cloud",
+  s4hana_migration: "Consultor Migración S/4HANA",
+  ewm_tm: "Consultor EWM/TM",
+  successfactors: "Consultor SuccessFactors",
+  btp_developer: "Desarrollador BTP",
+  integration: "Consultor Integración",
+  project_manager: "Project Manager SAP",
+  solution_architect: "Solution Architect SAP",
+  security_grc: "Consultor Security/GRC",
+};
+
+export const targetRoleLabels: Record<string, string> = {
+  usuario_sap: "Usuario SAP",
   consultant_fi_co: "Consultor FI/CO",
   consultant_sd: "Consultor SD",
   consultant_mm: "Consultor MM",

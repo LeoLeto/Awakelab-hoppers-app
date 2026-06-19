@@ -18,7 +18,12 @@ export interface RegisterData {
 }
 
 const SESSION_KEY = "hoppers_session";
+const DIAG_KEY = "hoppers_diag_result";
 export const ADMIN_PASSWORD = "h0pp3rs_2026_adm!n";
+
+function diagBackupKey(email: string) {
+  return `hoppers_diag_backup_${email.toLowerCase()}`;
+}
 
 // ─── Session cache (localStorage — UI only, not authoritative) ────────────────
 
@@ -93,9 +98,8 @@ export async function loginUser(
   }
 }
 
-function loginUserLocal(email: string, name: string): { success: boolean; error?: string } {
+function loginUserLocal(email: string, name: string): { success: boolean; error?: string; diagnosticResult?: unknown } {
   try {
-    // Verificar contra sesión previa si existe
     const stored = localStorage.getItem(SESSION_KEY);
     if (stored) {
       const session: HoppersSession = JSON.parse(stored);
@@ -104,16 +108,27 @@ function loginUserLocal(email: string, name: string): { success: boolean; error?
           return { success: false, error: "El nombre no coincide con el registrado." };
         }
         saveSession({ ...session, loggedAt: new Date().toISOString() });
+        // Restaurar resultado desde backup local si existe
+        const backup = localStorage.getItem(diagBackupKey(email));
+        if (backup) {
+          localStorage.setItem(DIAG_KEY, backup);
+          return { success: true, diagnosticResult: JSON.parse(backup) };
+        }
         return { success: true };
       }
     }
-    // Sin sesión previa y DB no disponible: crear sesión local con los datos proporcionados
     saveSession({
       email: email.toLowerCase(),
       name: name.trim(),
       country: "",
       loggedAt: new Date().toISOString(),
     });
+    // Intentar restaurar backup de un diagnóstico previo
+    const backup = localStorage.getItem(diagBackupKey(email));
+    if (backup) {
+      localStorage.setItem(DIAG_KEY, backup);
+      return { success: true, diagnosticResult: JSON.parse(backup) };
+    }
     return { success: true };
   } catch {
     return { success: false, error: "Error al acceder al almacenamiento local." };
@@ -125,7 +140,8 @@ export async function logoutUser(): Promise<void> {
     await fetch("/api/auth/logout", { method: "POST" });
   } catch {}
   saveSession(null);
-  localStorage.removeItem("hoppers_diag_result");
+  localStorage.removeItem(DIAG_KEY);
+  // No eliminamos el backup — persiste para restaurar al volver a iniciar sesión
 }
 
 export async function updatePassword(
@@ -150,7 +166,14 @@ export async function saveDiagnosticResult(result: {
   topProfile: string;
   skills: string[];
   fullResult?: unknown;
+  email?: string;
 }): Promise<void> {
+  // Guardar backup local keyed por email para funcionar sin MongoDB
+  if (result.email && result.fullResult) {
+    try {
+      localStorage.setItem(diagBackupKey(result.email), JSON.stringify(result.fullResult));
+    } catch {}
+  }
   try {
     await fetch("/api/diagnostic/save", {
       method: "POST",
