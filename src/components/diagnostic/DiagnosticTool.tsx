@@ -15,7 +15,7 @@ import { getSession, registerUser, saveDiagnosticResult } from "@/lib/auth";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
 
-type Phase = "chat" | "profile_select" | "email_verify" | "gdpr_consent" | "processing" | "result";
+type Phase = "chat" | "email_verify" | "gdpr_consent" | "processing" | "result";
 
 type ChatStep =
   | "experience"
@@ -53,39 +53,6 @@ const SAP_MODULES = [
   "Otro",
 ];
 
-const SAP_SEGMENTS = [
-  {
-    id: "aspirante",
-    label: "Aspirante",
-    description: "Perfil inicial en el ecosistema SAP, con poca o ninguna experiencia previa.",
-    bullets: [
-      "Recién licenciados o con menos de un año de experiencia.",
-      "Personas sin experiencia en SAP.",
-    ],
-  },
-  {
-    id: "usuario_sap",
-    label: "Usuario SAP",
-    description: "Profesional con conocimiento o uso previo de SAP que busca especializarse o crecer.",
-    bullets: [
-      "Usuarios con experiencia previa de uso de SAP, misma solución u otras.",
-      "Personas con conocimiento del área funcional.",
-    ],
-  },
-  {
-    id: "consultor",
-    label: "Consultor",
-    description: "Profesional con experiencia sólida en implantación o consultoría SAP.",
-    bullets: ["Consultores con experiencia previa en el área desarrollada en el programa u otras."],
-  },
-];
-
-function inferSegment(yearsExperience: string): string {
-  if (yearsExperience === "0" || yearsExperience === "1-3") return "aspirante";
-  if (yearsExperience === "3-5") return "usuario_sap";
-  return "consultor";
-}
-
 const STEP_BOT_MESSAGES: Record<ChatStep, string> = {
   experience:
     "¡Hola! Soy tu asistente de diagnóstico SAP. Voy a hacerte algunas preguntas para conocer tu perfil. ¿Cuántos años llevas trabajando con SAP?",
@@ -119,9 +86,6 @@ export function DiagnosticTool() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("");
-
-  const [currentSegment, setCurrentSegment] = useState("");
-  const [aspirationalSegment, setAspirationalSegment] = useState("");
 
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
@@ -252,9 +216,7 @@ export function DiagnosticTool() {
     setCountry(countryName);
     setMessages((prev) => [...prev, { from: "user", content: countryName }]);
     setTimeout(() => {
-      const preSegment = inferSegment(yearsExperience);
-      setCurrentSegment(preSegment);
-      setPhase("profile_select");
+      setPhase("email_verify");
     }, 800);
   }
 
@@ -318,8 +280,6 @@ export function DiagnosticTool() {
     setName("");
     setEmail("");
     setCountry("");
-    setCurrentSegment("");
-    setAspirationalSegment("");
     setResult(null);
     setEmailVerifyLoading(false);
     setShowNav(false);
@@ -365,18 +325,6 @@ export function DiagnosticTool() {
         onReset={handleReset}
         onDownload={handleDownloadPDF}
         onEmail={handleEmailSend}
-      />
-    );
-  }
-
-  if (phase === "profile_select") {
-    return (
-      <ProfileSelectScreen
-        currentSegment={currentSegment}
-        aspirationalSegment={aspirationalSegment}
-        onCurrentSegmentChange={setCurrentSegment}
-        onAspirationalSegmentChange={setAspirationalSegment}
-        onContinue={() => setPhase("email_verify")}
       />
     );
   }
@@ -666,122 +614,6 @@ export function DiagnosticTool() {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ProfileSelectScreen({
-  currentSegment,
-  aspirationalSegment,
-  onCurrentSegmentChange,
-  onAspirationalSegmentChange,
-  onContinue,
-}: {
-  currentSegment: string;
-  aspirationalSegment: string;
-  onCurrentSegmentChange: (s: string) => void;
-  onAspirationalSegmentChange: (s: string) => void;
-  onContinue: () => void;
-}) {
-  const canContinue = currentSegment !== "" && aspirationalSegment !== "";
-
-  return (
-    <div className="max-w-3xl mx-auto py-8 space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-black text-hopper-black">Tu perfil SAP</h2>
-        <p className="text-sm text-gray-500 mt-2">
-          Selecciona tu perfil actual y el perfil al que aspiras. Esto nos ayuda a personalizar tu
-          diagnóstico.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-hopper-black uppercase tracking-wide">
-            Perfil actual
-          </h3>
-          {SAP_SEGMENTS.map((seg) => {
-            const isSelected = currentSegment === seg.id;
-            return (
-              <button
-                key={seg.id}
-                onClick={() => onCurrentSegmentChange(seg.id)}
-                className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-                  isSelected
-                    ? "border-hopper-red bg-hopper-red/5"
-                    : "border-gray-200 hover:border-hopper-red/50"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-hopper-black text-sm">{seg.label}</span>
-                  {isSelected && (
-                    <span className="text-xs bg-hopper-red text-white px-2 py-0.5 rounded-full font-semibold">
-                      Seleccionado
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mb-2">{seg.description}</p>
-                <ul className="space-y-1">
-                  {seg.bullets.map((b, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex gap-1.5">
-                      <span className="text-hopper-red mt-0.5">•</span>
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-hopper-black uppercase tracking-wide">
-            Perfil aspiracional
-          </h3>
-          {SAP_SEGMENTS.map((seg) => {
-            const isSelected = aspirationalSegment === seg.id;
-            return (
-              <button
-                key={seg.id}
-                onClick={() => onAspirationalSegmentChange(seg.id)}
-                className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-                  isSelected
-                    ? "border-hopper-black bg-hopper-black/5"
-                    : "border-gray-200 hover:border-hopper-black/40"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-hopper-black text-sm">{seg.label}</span>
-                  {isSelected && (
-                    <span className="text-xs bg-hopper-black text-white px-2 py-0.5 rounded-full font-semibold">
-                      Seleccionado
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mb-2">{seg.description}</p>
-                <ul className="space-y-1">
-                  {seg.bullets.map((b, i) => (
-                    <li key={i} className="text-xs text-gray-600 flex gap-1.5">
-                      <span className="text-hopper-black mt-0.5">•</span>
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex justify-center pt-2">
-        <Button
-          onClick={onContinue}
-          disabled={!canContinue}
-          className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8 disabled:opacity-50"
-        >
-          Continuar →
-        </Button>
       </div>
     </div>
   );
