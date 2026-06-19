@@ -66,25 +66,57 @@ export async function registerUser(
 
 export async function loginUser(
   email: string,
-  password: string
-): Promise<{ success: boolean; error?: string }> {
+  name: string
+): Promise<{ success: boolean; error?: string; diagnosticResult?: unknown }> {
   try {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, name }),
     });
     const json = await res.json();
-    if (!res.ok) return { success: false, error: json.error };
+    if (res.ok) {
+      saveSession({
+        email: json.user.email,
+        name: json.user.name,
+        country: json.user.country || "",
+        loggedAt: new Date().toISOString(),
+      });
+      return { success: true, diagnosticResult: json.diagnosticResult ?? null };
+    }
+    if (res.status >= 500) {
+      return loginUserLocal(email, name);
+    }
+    return { success: false, error: json.error };
+  } catch {
+    return loginUserLocal(email, name);
+  }
+}
+
+function loginUserLocal(email: string, name: string): { success: boolean; error?: string } {
+  try {
+    // Verificar contra sesión previa si existe
+    const stored = localStorage.getItem(SESSION_KEY);
+    if (stored) {
+      const session: HoppersSession = JSON.parse(stored);
+      if (session.email.toLowerCase() === email.toLowerCase()) {
+        if (session.name.trim().toLowerCase() !== name.trim().toLowerCase()) {
+          return { success: false, error: "El nombre no coincide con el registrado." };
+        }
+        saveSession({ ...session, loggedAt: new Date().toISOString() });
+        return { success: true };
+      }
+    }
+    // Sin sesión previa y DB no disponible: crear sesión local con los datos proporcionados
     saveSession({
-      email: json.user.email,
-      name: json.user.name,
-      country: json.user.country || "",
+      email: email.toLowerCase(),
+      name: name.trim(),
+      country: "",
       loggedAt: new Date().toISOString(),
     });
     return { success: true };
   } catch {
-    return { success: false, error: "Error de conexion." };
+    return { success: false, error: "Error al acceder al almacenamiento local." };
   }
 }
 
@@ -93,6 +125,7 @@ export async function logoutUser(): Promise<void> {
     await fetch("/api/auth/logout", { method: "POST" });
   } catch {}
   saveSession(null);
+  localStorage.removeItem("hoppers_diag_result");
 }
 
 export async function updatePassword(
@@ -116,6 +149,7 @@ export async function saveDiagnosticResult(result: {
   empScore: number;
   topProfile: string;
   skills: string[];
+  fullResult?: unknown;
 }): Promise<void> {
   try {
     await fetch("/api/diagnostic/save", {
@@ -124,4 +158,15 @@ export async function saveDiagnosticResult(result: {
       body: JSON.stringify(result),
     });
   } catch {}
+}
+
+export async function getDiagnosticResult(): Promise<unknown | null> {
+  try {
+    const res = await fetch("/api/diagnostic/result");
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.result ?? null;
+  } catch {
+    return null;
+  }
 }

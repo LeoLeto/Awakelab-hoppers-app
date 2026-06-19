@@ -38,15 +38,13 @@ export default function Navbar() {
   async function handleLogout() {
     await logoutUser();
     setSession(null);
-    router.push("/");
+    router.push("/login");
   }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[rgba(195,175,153,0.08)] bg-[#000A1A]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center">
-          <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
-        </Link>
+        <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
 
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
@@ -77,26 +75,19 @@ export default function Navbar() {
               </Link>
               <Button
                 size="sm"
-                variant="outline"
+                variant="ghost"
                 onClick={handleLogout}
-                className="text-white/70 border-white/20 hover:bg-white/10"
+                className="text-white/70 border border-white/20 hover:text-white hover:bg-white/10"
               >
                 Cerrar sesion
               </Button>
             </>
           ) : (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                  Iniciar Sesion
-                </Button>
-              </Link>
-              <Link href="/registro">
-                <Button size="sm" className="bg-hopper-red hover:bg-hopper-red-dark text-white">
-                  Unirse Gratis
-                </Button>
-              </Link>
-            </>
+            <Link href="/login">
+              <Button size="sm" className="bg-hopper-red hover:bg-hopper-red-dark text-white">
+                Iniciar Sesion
+              </Button>
+            </Link>
           )}
         </div>
 
@@ -134,18 +125,11 @@ export default function Navbar() {
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Link href="/login" onClick={() => setOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        Iniciar Sesion
-                      </Button>
-                    </Link>
-                    <Link href="/registro" onClick={() => setOpen(false)}>
-                      <Button className="w-full bg-hopper-red hover:bg-hopper-red-dark text-white">
-                        Unirse Gratis
-                      </Button>
-                    </Link>
-                  </>
+                  <Link href="/login" onClick={() => setOpen(false)}>
+                    <Button className="w-full bg-hopper-red hover:bg-hopper-red-dark text-white">
+                      Iniciar Sesion
+                    </Button>
+                  </Link>
                 )}
               </div>
             </div>

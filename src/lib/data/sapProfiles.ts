@@ -22,15 +22,15 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "FI/CO",
     description:
-      "Especialista en los modulos de Finanzas (FI) y Controlling (CO) de SAP. Responsable de la configuracion de procesos contables, gestion financiera, centros de coste y reportes financieros.",
+      "Especialista en los módulos de Finanzas (FI) y Controlling (CO) de SAP. Responsable de la configuración de procesos contables, gestión financiera, centros de coste y reportes financieros.",
     requiredSkills: [
       "Contabilidad financiera",
       "Controlling",
-      "Gestion de activos",
+      "Gestión de activos",
       "Cierres contables",
       "Reporting financiero",
       "S/4HANA Finance",
-      "Integracion FI-MM/SD",
+      "Integración FI-MM/SD",
     ],
     certifications: [
       "SAP Certified Associate - SAP S/4HANA Cloud Financial Accounting",
@@ -49,13 +49,13 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "SD",
     description:
-      "Experto en el modulo de Ventas y Distribucion. Configura procesos de ventas, facturacion, gestion de pedidos, precios y condiciones comerciales dentro del ecosistema SAP.",
+      "Experto en el módulo de Ventas y Distribución. Configura procesos de ventas, facturación, gestión de pedidos, precios y condiciones comerciales dentro del ecosistema SAP.",
     requiredSkills: [
-      "Gestion de pedidos",
-      "Facturacion",
+      "Gestión de pedidos",
+      "Facturación",
       "Condiciones de precio",
       "Entregas y expediciones",
-      "Integracion SD-MM/FI",
+      "Integración SD-MM/FI",
       "S/4HANA Sales",
     ],
     certifications: [
@@ -74,14 +74,14 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "MM",
     description:
-      "Especialista en Gestion de Materiales. Configura procesos de compras, gestion de inventarios, evaluacion de proveedores y planificacion de necesidades de materiales.",
+      "Especialista en Gestión de Materiales. Configura procesos de compras, gestión de inventarios, evaluación de proveedores y planificación de necesidades de materiales.",
     requiredSkills: [
-      "Gestion de compras",
+      "Gestión de compras",
       "Inventario",
-      "Evaluacion de proveedores",
+      "Evaluación de proveedores",
       "MRP",
-      "Gestion de almacenes",
-      "Integracion MM-FI/SD",
+      "Gestión de almacenes",
+      "Integración MM-FI/SD",
     ],
     certifications: [
       "SAP Certified Associate - SAP S/4HANA Sourcing and Procurement",
@@ -99,13 +99,13 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "PP",
     description:
-      "Especialista en Planificacion de la Produccion. Configura procesos de fabricacion, planificacion de capacidades, ordenes de produccion y gestion de la cadena productiva.",
+      "Especialista en Planificación de la Producción. Configura procesos de fabricación, planificación de capacidades, órdenes de producción y gestión de la cadena productiva.",
     requiredSkills: [
-      "Planificacion de produccion",
+      "Planificación de producción",
       "MRP",
-      "Gestion de capacidades",
-      "Ordenes de fabricacion",
-      "Integracion PP-MM/CO",
+      "Gestión de capacidades",
+      "Órdenes de fabricación",
+      "Integración PP-MM/CO",
       "S/4HANA Manufacturing",
     ],
     certifications: [
@@ -113,7 +113,7 @@ export const sapProfiles: SAPProfile[] = [
     ],
     demandLevel: "medium",
     migrationRelevance: "medium",
-    careerPath: ["Junior PP", "Consultor PP", "Senior PP", "Lead Produccion"],
+    careerPath: ["Junior PP", "Consultor PP", "Senior PP", "Lead Producción"],
     avgJobPostings: 150,
     trendDirection: "stable",
   },
@@ -124,9 +124,9 @@ export const sapProfiles: SAPProfile[] = [
     category: "technical",
     module: "ABAP",
     description:
-      "Desarrollador tecnico especializado en el lenguaje ABAP de SAP. Domina tanto el ABAP clasico como las nuevas tecnologias RAP (RESTful ABAP Programming) y CDS Views para S/4HANA.",
+      "Desarrollador técnico especializado en el lenguaje ABAP de SAP. Domina tanto el ABAP clásico como las nuevas tecnologías RAP (RESTful ABAP Programming) y CDS Views para S/4HANA.",
     requiredSkills: [
-      "ABAP clasico",
+      "ABAP clásico",
       "ABAP OO",
       "RAP (RESTful ABAP)",
       "CDS Views",
@@ -142,7 +142,7 @@ export const sapProfiles: SAPProfile[] = [
     ],
     demandLevel: "critical",
     migrationRelevance: "high",
-    careerPath: ["Junior ABAP", "Developer ABAP", "Senior ABAP", "Arquitecto Tecnico"],
+    careerPath: ["Junior ABAP", "Developer ABAP", "Senior ABAP", "Arquitecto Técnico"],
     avgJobPostings: 420,
     trendDirection: "up",
   },
@@ -153,9 +153,9 @@ export const sapProfiles: SAPProfile[] = [
     category: "technical",
     module: "Basis/NetWeaver",
     description:
-      "Administrador de sistemas SAP. Responsable de la instalacion, configuracion, transporte, monitoreo y mantenimiento de la infraestructura SAP.",
+      "Administrador de sistemas SAP. Responsable de la instalación, configuración, transporte, monitoreo y mantenimiento de la infraestructura SAP.",
     requiredSkills: [
-      "Administracion SAP",
+      "Administración SAP",
       "Transportes",
       "Monitoreo de sistemas",
       "SAP HANA DB",
@@ -179,7 +179,7 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "S/4HANA Cloud",
     description:
-      "Especialista en la implementacion y configuracion de SAP S/4HANA Cloud (Public y Private Edition). La habilidad mas demandada del ecosistema debido a la fecha limite de migracion 2027/2030.",
+      "Especialista en la implementación y configuración de SAP S/4HANA Cloud (Public y Private Edition). La habilidad más demandada del ecosistema debido a la fecha límite de migración 2027/2030.",
     requiredSkills: [
       "S/4HANA Cloud Public Ed.",
       "S/4HANA Cloud Private Ed.",
@@ -206,7 +206,7 @@ export const sapProfiles: SAPProfile[] = [
     category: "technical",
     module: "S/4HANA Migration",
     description:
-      "Especialista en proyectos de migracion desde SAP ECC a S/4HANA. Domina las herramientas de conversion, validacion de datos y estrategias de migracion (Brownfield, Greenfield, Selective).",
+      "Especialista en proyectos de migración desde SAP ECC a S/4HANA. Domina las herramientas de conversión, validación de datos y estrategias de migración (Brownfield, Greenfield, Selective).",
     requiredSkills: [
       "System Conversion",
       "New Implementation",
@@ -227,18 +227,18 @@ export const sapProfiles: SAPProfile[] = [
   },
   {
     slug: "ewm_tm",
-    name: "Consultor EWM / TM (Logistica)",
+    name: "Consultor EWM / TM (Logística)",
     nameEn: "EWM/TM Logistics Consultant",
     category: "functional",
     module: "EWM/TM",
     description:
-      "Especialista en gestion avanzada de almacenes (Extended Warehouse Management) y transporte (Transportation Management) dentro del ecosistema SAP.",
+      "Especialista en gestión avanzada de almacenes (Extended Warehouse Management) y transporte (Transportation Management) dentro del ecosistema SAP.",
     requiredSkills: [
       "SAP EWM",
       "SAP TM",
-      "Gestion de almacenes",
-      "Gestion de transporte",
-      "Integracion EWM-MM/SD",
+      "Gestión de almacenes",
+      "Gestión de transporte",
+      "Integración EWM-MM/SD",
       "S/4HANA Logistics",
     ],
     certifications: [
@@ -257,7 +257,7 @@ export const sapProfiles: SAPProfile[] = [
     category: "functional",
     module: "SuccessFactors",
     description:
-      "Especialista en la plataforma de gestion del capital humano de SAP. Configura modulos de Employee Central, reclutamiento, gestion del desempeno, formacion y compensacion.",
+      "Especialista en la plataforma de gestión del capital humano de SAP. Configura módulos de Employee Central, reclutamiento, gestión del desempeño, formación y compensación.",
     requiredSkills: [
       "Employee Central",
       "Recruiting",
@@ -304,12 +304,12 @@ export const sapProfiles: SAPProfile[] = [
   },
   {
     slug: "integration",
-    name: "Consultor Integracion (PI/PO/CPI)",
+    name: "Consultor Integración (PI/PO/CPI)",
     nameEn: "SAP Integration Consultant",
     category: "technical",
     module: "PI/PO/CPI",
     description:
-      "Especialista en integracion de sistemas con SAP. Domina SAP Process Integration (PI/PO) y SAP Cloud Platform Integration (CPI) para conectar SAP con sistemas externos.",
+      "Especialista en integración de sistemas con SAP. Domina SAP Process Integration (PI/PO) y SAP Cloud Platform Integration (CPI) para conectar SAP con sistemas externos.",
     requiredSkills: [
       "SAP PI/PO",
       "SAP CPI (Integration Suite)",
@@ -335,13 +335,13 @@ export const sapProfiles: SAPProfile[] = [
     category: "management",
     module: "Cross-module",
     description:
-      "Lider de proyectos SAP con vision transversal. Gestiona equipos, plazos, presupuestos y stakeholders en implementaciones y migraciones SAP de gran escala.",
+      "Líder de proyectos SAP con visión transversal. Gestiona equipos, plazos, presupuestos y stakeholders en implementaciones y migraciones SAP de gran escala.",
     requiredSkills: [
-      "Gestion de proyectos",
+      "Gestión de proyectos",
       "SAP Activate",
       "Agile/Scrum",
-      "Gestion de stakeholders",
-      "Presupuestacion",
+      "Gestión de stakeholders",
+      "Presupuestación",
       "Risk Management",
       "Conocimiento funcional SAP",
     ],
@@ -363,15 +363,15 @@ export const sapProfiles: SAPProfile[] = [
     category: "management",
     module: "Cross-module",
     description:
-      "Arquitecto de soluciones con vision integral del ecosistema SAP. Disena la arquitectura tecnica y funcional para grandes transformaciones, alineando tecnologia con objetivos de negocio.",
+      "Arquitecto de soluciones con visión integral del ecosistema SAP. Diseña la arquitectura técnica y funcional para grandes transformaciones, alineando tecnología con objetivos de negocio.",
     requiredSkills: [
       "Arquitectura empresarial",
       "S/4HANA Architecture",
       "SAP BTP",
-      "Integracion de sistemas",
+      "Integración de sistemas",
       "Cloud strategy",
       "Design Thinking",
-      "Conocimiento multi-modulo",
+      "Conocimiento multi-módulo",
     ],
     certifications: [
       "SAP Certified Professional - Solution Architect",
@@ -389,12 +389,12 @@ export const sapProfiles: SAPProfile[] = [
     category: "technical",
     module: "Security/GRC",
     description:
-      "Especialista en seguridad de sistemas SAP y gobierno, riesgo y cumplimiento (GRC). Gestiona roles, autorizaciones, segregacion de funciones y auditorias de acceso.",
+      "Especialista en seguridad de sistemas SAP y gobierno, riesgo y cumplimiento (GRC). Gestiona roles, autorizaciones, segregación de funciones y auditorías de acceso.",
     requiredSkills: [
       "Roles y autorizaciones",
       "SAP GRC Access Control",
-      "Segregacion de funciones (SoD)",
-      "Auditoria de accesos",
+      "Segregación de funciones (SoD)",
+      "Auditoría de accesos",
       "SUIM/PFCG",
       "Identity Management",
       "S/4HANA Security",
@@ -428,12 +428,12 @@ export function getProfilesByDemand(
 
 export const profileCategories = {
   functional: "Funcional",
-  technical: "Tecnico",
-  management: "Gestion / Liderazgo",
+  technical: "Técnico",
+  management: "Gestión / Liderazgo",
 };
 
 export const demandLevels = {
-  critical: { label: "Critica", color: "text-red-600 bg-red-50 border-red-200" },
+  critical: { label: "Crítica", color: "text-red-600 bg-red-50 border-red-200" },
   high: { label: "Alta", color: "text-orange-600 bg-orange-50 border-orange-200" },
   medium: { label: "Media", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
   low: { label: "Baja", color: "text-green-600 bg-green-50 border-green-200" },
@@ -447,11 +447,11 @@ export const roleLabels: Record<string, string> = {
   abap_developer: "Desarrollador ABAP",
   basis_admin: "Administrador Basis",
   s4hana_cloud: "Consultor S/4HANA Cloud",
-  s4hana_migration: "Consultor Migracion S/4HANA",
+  s4hana_migration: "Consultor Migración S/4HANA",
   ewm_tm: "Consultor EWM/TM",
   successfactors: "Consultor SuccessFactors",
   btp_developer: "Desarrollador BTP",
-  integration: "Consultor Integracion",
+  integration: "Consultor Integración",
   project_manager: "Project Manager SAP",
   solution_architect: "Solution Architect SAP",
   security_grc: "Consultor Security/GRC",

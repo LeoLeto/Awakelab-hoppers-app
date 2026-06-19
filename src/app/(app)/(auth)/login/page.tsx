@@ -12,7 +12,7 @@ import { loginUser } from "@/lib/auth";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,11 +20,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await loginUser(email, password);
-    setLoading(false);
+    const result = await loginUser(email, name);
     if (result.success) {
-      router.push("/mi-cuenta");
+      if (result.diagnosticResult) {
+        localStorage.setItem("hoppers_diag_result", JSON.stringify(result.diagnosticResult));
+      }
+      setLoading(false);
+      router.push("/diagnostico");
     } else {
+      setLoading(false);
       setError(result.error || "Error al iniciar sesion.");
     }
   };
@@ -56,13 +60,13 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Contrasena</Label>
+            <Label htmlFor="name">Nombre completo</Label>
             <Input
-              id="password"
-              type="password"
-              placeholder="Tu contrasena"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="name"
+              type="text"
+              placeholder="Tu nombre completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
@@ -79,7 +83,7 @@ export default function LoginPage() {
           <p className="text-sm text-hopper-black/50">
             No tienes cuenta?{" "}
             <Link
-              href="/registro"
+              href="/diagnostico"
               className="text-hopper-red hover:text-hopper-red-dark font-medium"
             >
               Registrate gratis
