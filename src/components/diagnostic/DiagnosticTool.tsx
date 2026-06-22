@@ -12,7 +12,7 @@ import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
 import { getSession, registerUser, saveDiagnosticResult, getDiagnosticResult } from "@/lib/auth";
-import { getProfile, saveProfile, buildProfileFromDiagnostic } from "@/lib/profile";
+import { getProfile, saveProfile, saveProfileToDB, buildProfileFromDiagnostic } from "@/lib/profile";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
 
@@ -196,6 +196,8 @@ export function DiagnosticTool() {
       certifications,
       linkedinUrl: userLinkedin,
       targetRole,
+      linkedin: userLinkedin,
+      salary: userSalary,
     });
 
     if (!registerResult.success) {
@@ -227,7 +229,7 @@ export function DiagnosticTool() {
       email: userEmail,
     });
 
-    // Auto-sync profile with diagnostic data
+    // Auto-sync profile with diagnostic data → localStorage + MongoDB
     const sessionNow = getSession();
     if (sessionNow) {
       const existingProfile = getProfile(sessionNow.email);
@@ -235,15 +237,14 @@ export function DiagnosticTool() {
         { name: userName, email: userEmail, country: userCountry },
         diagResultWithMeta as Record<string, unknown>,
       );
+      const nonEmpty = (v: unknown) =>
+        Array.isArray(v) ? (v as unknown[]).length > 0 : typeof v === "string" && (v as string).trim().length > 0;
       const merged = {
         ...existingProfile,
-        ...Object.fromEntries(
-          Object.entries(fromDiag).filter(([, v]) =>
-            Array.isArray(v) ? (v as unknown[]).length > 0 : typeof v === "string" && (v as string).trim().length > 0
-          )
-        ),
-      };
-      saveProfile(userEmail, merged as import("@/lib/profile").HoppersProfileData);
+        ...Object.fromEntries(Object.entries(fromDiag).filter(([, v]) => nonEmpty(v))),
+      } as import("@/lib/profile").HoppersProfileData;
+      saveProfile(userEmail, merged);
+      await saveProfileToDB(merged);
     }
 
     setResult(diagResult);

@@ -107,3 +107,22 @@ export function calculateCompletion(profile: HoppersProfileData): number {
 export function getMissingFields(profile: HoppersProfileData): CompletionField[] {
   return COMPLETION_FIELDS.filter((f) => !fieldHasValue(profile, f.key));
 }
+
+export async function saveProfileToDB(profile: Partial<HoppersProfileData>): Promise<void> {
+  await fetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+}
+
+export async function loadProfileFromDB(): Promise<Partial<HoppersProfileData> | null> {
+  try {
+    const res = await fetch("/api/profile");
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.profile ?? null;
+  } catch {
+    return null;
+  }
+}

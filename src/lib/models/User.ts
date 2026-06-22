@@ -19,6 +19,18 @@ export interface IUser extends Document {
   topProfile?: string;
   skills?: string[];
   diagnosticResult?: Record<string, unknown>;
+  // extended profile fields
+  phone?: string;
+  city?: string;
+  bio?: string;
+  education?: string;
+  languages?: string[];
+  availability?: string;
+  jobPreferences?: string[];
+  portfolio?: string;
+  photo?: string;
+  salary?: string;
+  linkedin?: string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -39,6 +51,18 @@ const UserSchema = new Schema<IUser>(
     topProfile: { type: String },
     skills: { type: [String] },
     diagnosticResult: { type: Schema.Types.Mixed },
+    // extended profile fields
+    phone: { type: String, default: "" },
+    city: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    education: { type: String, default: "" },
+    languages: { type: [String], default: [] },
+    availability: { type: String, default: "" },
+    jobPreferences: { type: [String], default: [] },
+    portfolio: { type: String, default: "" },
+    photo: { type: String, default: "" },
+    salary: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
   },
   { timestamps: true }
 );

@@ -6,8 +6,9 @@ import { Camera, Check, ChevronRight, X, ChevronDown, Search } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth";
 import {
-  getProfile, saveProfile, buildProfileFromDiagnostic,
+  EMPTY_PROFILE, getProfile, saveProfile, buildProfileFromDiagnostic,
   calculateCompletion, getMissingFields, COMPLETION_FIELDS,
+  saveProfileToDB, loadProfileFromDB,
   type HoppersProfileData,
 } from "@/lib/profile";
 import { roleLabels, targetRoleLabels } from "@/lib/data/sapProfiles";
@@ -133,21 +134,35 @@ export default function PerfilPage() {
     const session = getSession();
     if (!session) { router.replace("/login?returnTo=/perfil"); return; }
 
-    const stored = getProfile(session.email);
-    let diagResult: Record<string, unknown> | null = null;
-    try {
-      const raw = localStorage.getItem("hoppers_diag_result");
-      if (raw) diagResult = JSON.parse(raw);
-    } catch {}
-
-    const fromDiag = buildProfileFromDiagnostic(session, diagResult);
     const nonEmpty = (v: unknown) =>
       Array.isArray(v) ? (v as unknown[]).length > 0 : typeof v === "string" && (v as string).trim().length > 0;
-    const merged: HoppersProfileData = {
-      ...Object.fromEntries(Object.entries(fromDiag).filter(([, v]) => nonEmpty(v))),
-      ...Object.fromEntries(Object.entries(stored).filter(([, v]) => nonEmpty(v))),
-    } as HoppersProfileData;
-    setProfile(merged);
+
+    async function loadProfile() {
+      const stored = getProfile(session!.email);
+      let diagResult: Record<string, unknown> | null = null;
+      try {
+        const raw = localStorage.getItem("hoppers_diag_result");
+        if (raw) diagResult = JSON.parse(raw);
+      } catch {}
+
+      const fromDiag = buildProfileFromDiagnostic(session!, diagResult);
+
+      // Try DB — takes priority over localStorage and diagnostic fallback
+      const fromDB = await loadProfileFromDB();
+
+      const merged: HoppersProfileData = {
+        ...EMPTY_PROFILE,
+        ...Object.fromEntries(Object.entries(fromDiag).filter(([, v]) => nonEmpty(v))),
+        ...Object.fromEntries(Object.entries(stored).filter(([, v]) => nonEmpty(v))),
+        ...(fromDB ? Object.fromEntries(Object.entries(fromDB).filter(([, v]) => nonEmpty(v))) : {}),
+      };
+
+      // Sync DB data back to localStorage so Navbar can read it
+      saveProfile(session!.email, merged);
+      setProfile(merged);
+    }
+
+    loadProfile();
   }, [router]);
 
   // Initialize UI state from profile (runs once after profile loads)
@@ -179,11 +194,12 @@ export default function PerfilPage() {
     setSaved(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!profile) return;
     const session = getSession();
     if (!session) return;
-    saveProfile(session.email, profile);
+    saveProfile(session.email, profile);          // localStorage (cache para Navbar)
+    await saveProfileToDB(profile);               // MongoDB (fuente de verdad)
     window.dispatchEvent(new CustomEvent("hoppers:profile-saved"));
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -215,6 +231,7 @@ export default function PerfilPage() {
         const next = { ...prev, photo: photoData };
         if (session) {
           saveProfile(session.email, next);
+          saveProfileToDB({ photo: next.photo });
           setTimeout(() => window.dispatchEvent(new CustomEvent("hoppers:profile-saved")), 0);
         }
         return next;
@@ -231,6 +248,7 @@ export default function PerfilPage() {
       const next = { ...prev, photo: "" };
       if (session) {
         saveProfile(session.email, next);
+        saveProfileToDB({ photo: "" });
         setTimeout(() => window.dispatchEvent(new CustomEvent("hoppers:profile-saved")), 0);
       }
       return next;

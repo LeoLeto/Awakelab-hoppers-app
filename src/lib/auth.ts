@@ -15,6 +15,8 @@ export interface RegisterData {
   certifications: string;
   linkedinUrl: string;
   targetRole: string;
+  linkedin?: string;
+  salary?: string;
 }
 
 const SESSION_KEY = "hoppers_session";
