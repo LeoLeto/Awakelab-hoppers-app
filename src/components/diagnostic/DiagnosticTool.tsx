@@ -12,6 +12,7 @@ import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
 import { getSession, registerUser, saveDiagnosticResult, getDiagnosticResult } from "@/lib/auth";
+import { getProfile, saveProfile, buildProfileFromDiagnostic } from "@/lib/profile";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
 
@@ -206,7 +207,16 @@ export function DiagnosticTool() {
       }));
     }
 
-    const diagResultWithMeta = { ...diagResult, salary: userSalary, linkedinUrl: userLinkedin };
+    const diagResultWithMeta = {
+      ...diagResult,
+      modules,
+      certifications,
+      currentRole,
+      targetRole,
+      yearsExperience,
+      linkedin: userLinkedin,
+      salary: userSalary,
+    };
     localStorage.setItem("hoppers_diag_result", JSON.stringify(diagResultWithMeta));
 
     await saveDiagnosticResult({
@@ -216,6 +226,25 @@ export function DiagnosticTool() {
       fullResult: diagResultWithMeta,
       email: userEmail,
     });
+
+    // Auto-sync profile with diagnostic data
+    const sessionNow = getSession();
+    if (sessionNow) {
+      const existingProfile = getProfile(sessionNow.email);
+      const fromDiag = buildProfileFromDiagnostic(
+        { name: userName, email: userEmail, country: userCountry },
+        diagResultWithMeta as Record<string, unknown>,
+      );
+      const merged = {
+        ...existingProfile,
+        ...Object.fromEntries(
+          Object.entries(fromDiag).filter(([, v]) =>
+            Array.isArray(v) ? (v as unknown[]).length > 0 : typeof v === "string" && (v as string).trim().length > 0
+          )
+        ),
+      };
+      saveProfile(userEmail, merged as import("@/lib/profile").HoppersProfileData);
+    }
 
     setResult(diagResult);
     setPhase("result");
@@ -486,11 +515,11 @@ function PrivacyNoticeScreen({ onContinue }: { onContinue: () => void }) {
 }
 
 const SALARY_OPTIONS = [
-  { value: "<2000", label: "< 2.000 €/mes" },
-  { value: "2000-3000", label: "2.000 – 3.000 €/mes" },
-  { value: "3000-4000", label: "3.000 – 4.000 €/mes" },
-  { value: "4000-5000", label: "4.000 – 5.000 €/mes" },
-  { value: ">5000", label: "> 5.000 €/mes" },
+  "<2.000€",
+  "2.000€ - 3.000€",
+  "3.000€ - 4.000€",
+  "4.000€ - 5.000€",
+  ">5.000€",
 ];
 
 function UserDataScreen({
@@ -578,15 +607,15 @@ function UserDataScreen({
           <div className="grid grid-cols-1 gap-2">
             {SALARY_OPTIONS.map((opt) => (
               <button
-                key={opt.value}
-                onClick={() => setSalary(opt.value)}
+                key={opt}
+                onClick={() => setSalary(opt)}
                 className={`px-4 py-2.5 rounded-lg border text-sm font-medium text-left transition-colors ${
-                  salary === opt.value
+                  salary === opt
                     ? "bg-hopper-red text-white border-hopper-red"
                     : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red hover:bg-hopper-red/5"
                 }`}
               >
-                {opt.label}
+                {opt}
               </button>
             ))}
           </div>

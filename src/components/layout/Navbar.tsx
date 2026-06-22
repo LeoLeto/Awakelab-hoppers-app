@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, UserCircle, LogOut, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { getSession, logoutUser } from "@/lib/auth";
+import { getProfile, calculateCompletion, buildProfileFromDiagnostic } from "@/lib/profile";
 import type { HoppersSession } from "@/lib/auth";
 
 const navLinks = [
@@ -22,22 +23,129 @@ const navLinks = [
   { href: "/sobre-hoppers", label: "Sobre Hoppers" },
 ];
 
+function ProfileAvatar({ name, photo, size = "md" }: { name: string; photo?: string; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-sm";
+  return (
+    <div className={`${dim} rounded-full bg-hopper-red flex items-center justify-center text-white font-bold overflow-hidden shrink-0`}>
+      {photo
+        ? <img src={photo} alt="Foto de perfil" className="w-full h-full object-cover" />
+        : name[0]?.toUpperCase()}
+    </div>
+  );
+}
+
+function ProfileDropdown({
+  session, completion, photo, onLogout, onClose,
+}: {
+  session: HoppersSession;
+  completion: number;
+  photo: string;
+  onLogout: () => void;
+  onClose: () => void;
+}) {
+  const barColor = completion >= 80 ? "#10B981" : completion >= 50 ? "#F59E0B" : "#EF4444";
+  return (
+    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+      <div className="p-4 border-b border-gray-50 space-y-3">
+        <div className="flex items-center gap-3">
+          <ProfileAvatar name={session.name} photo={photo} size="md" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-hopper-black truncate">{session.name}</p>
+            <p className="text-xs text-gray-400 truncate">{session.email}</p>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500">Perfil completado</span>
+            <span className="font-bold" style={{ color: barColor }}>{completion}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${completion}%`, backgroundColor: barColor }} />
+          </div>
+        </div>
+      </div>
+      <div className="p-1">
+        <Link
+          href="/perfil"
+          onClick={onClose}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <User className="w-4 h-4 text-gray-400" />
+          Mi perfil
+        </Link>
+        <button
+          onClick={() => { onLogout(); onClose(); }}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [session, setSession] = useState<HoppersSession | null>(null);
+  const [completion, setCompletion] = useState(0);
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSession(getSession());
-    const onStorage = () => setSession(getSession());
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    function refresh() {
+      const s = getSession();
+      setSession(s);
+      if (s) {
+        const stored = getProfile(s.email);
+        setProfilePhoto(stored.photo ?? "");
+        let diagResult: Record<string, unknown> | null = null;
+        try {
+          const raw = localStorage.getItem("hoppers_diag_result");
+          if (raw) diagResult = JSON.parse(raw);
+        } catch {}
+        const fromDiag = buildProfileFromDiagnostic(
+          { name: s.name, email: s.email, country: s.country },
+          diagResult,
+        );
+        const nonEmpty = (v: unknown) =>
+          Array.isArray(v) ? (v as unknown[]).length > 0 : typeof v === "string" && (v as string).trim().length > 0;
+        const merged = {
+          ...Object.fromEntries(Object.entries(fromDiag).filter(([, v]) => nonEmpty(v))),
+          ...Object.fromEntries(Object.entries(stored).filter(([, v]) => nonEmpty(v))),
+        };
+        setCompletion(calculateCompletion(merged as typeof stored));
+      } else {
+        setCompletion(0);
+        setProfilePhoto("");
+      }
+    }
+    refresh();
+    window.addEventListener("storage", refresh);
+    window.addEventListener("hoppers:profile-saved", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("hoppers:profile-saved", refresh);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   async function handleLogout() {
     await logoutUser();
     setSession(null);
+    setCompletion(0);
     router.push("/login");
   }
 
@@ -65,32 +173,62 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        {/* Desktop right section */}
+        <div className="hidden md:flex items-center gap-2">
           {session ? (
             <>
-              <Link href="/mi-cuenta">
-                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                  {session.name.split(" ")[0]}
-                </Button>
-              </Link>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleLogout}
-                className="text-white/70 border border-white/20 hover:text-white hover:bg-white/10"
-              >
-                Cerrar sesion
-              </Button>
+              {completion < 100 && (
+                <Link href="/perfil" className="group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all mr-1">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium text-white/70 group-hover:text-white transition-colors whitespace-nowrap">Completa tu perfil</span>
+                      <span className="text-xs font-bold text-hopper-red">{completion}%</span>
+                    </div>
+                    <div className="w-32 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-hopper-red transition-all duration-500"
+                        style={{ width: `${completion}%` }}
+                      />
+                    </div>
+                  </div>
+                </Link>
+              )}
+              <div ref={dropdownRef} className="relative">
+                <button
+                  onClick={() => setDropdownOpen((v) => !v)}
+                  className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                >
+                  <ProfileAvatar name={session.name} photo={profilePhoto} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-white/50 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+                {dropdownOpen && (
+                  <ProfileDropdown
+                    session={session}
+                    completion={completion}
+                    photo={profilePhoto}
+                    onLogout={handleLogout}
+                    onClose={() => setDropdownOpen(false)}
+                  />
+                )}
+              </div>
             </>
           ) : (
-            <Link href="/login">
-              <Button size="sm" className="bg-hopper-red hover:bg-hopper-red-dark text-white">
-                Iniciar Sesion
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <button className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
+                  <UserCircle className="w-8 h-8" />
+                </button>
+              </Link>
+              <Link href="/login">
+                <Button size="sm" className="bg-hopper-red hover:bg-hopper-red-dark text-white">
+                  Iniciar Sesion
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 
+        {/* Mobile menu */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white/70 hover:bg-white/10 transition-colors">
             <Menu className="h-5 w-5" />
@@ -111,11 +249,28 @@ export default function Navbar() {
               <div className="border-t border-hopper-beige/30 pt-4 mt-2 flex flex-col gap-2">
                 {session ? (
                   <>
-                    <Link href="/mi-cuenta" onClick={() => setOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        Mi cuenta ({session.name.split(" ")[0]})
-                      </Button>
+                    <div className="flex items-center gap-3 px-3 py-2">
+                      <ProfileAvatar name={session.name} photo={profilePhoto} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-hopper-black truncate">{session.name}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <div className="flex-1 h-1 rounded-full bg-gray-100 overflow-hidden">
+                            <div className="h-full rounded-full bg-hopper-red" style={{ width: `${completion}%` }} />
+                          </div>
+                          <span className="text-xs text-gray-400">{completion}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link href="/perfil" onClick={() => setOpen(false)}>
+                      <Button variant="outline" className="w-full">Mi perfil</Button>
                     </Link>
+                    {completion < 100 && (
+                      <Link href="/perfil" onClick={() => setOpen(false)}>
+                        <Button variant="outline" className="w-full border-amber-200 text-amber-700 hover:bg-amber-50">
+                          Completa tu perfil ({completion}%)
+                        </Button>
+                      </Link>
+                    )}
                     <Button
                       className="w-full"
                       variant="ghost"
