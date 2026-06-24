@@ -7,7 +7,7 @@ import type { HoppersProfileData } from "@/lib/profile";
 const PROFILE_FIELDS = [
   "name", "country", "phone", "city", "bio", "education",
   "languages", "availability", "jobPreferences", "portfolio",
-  "photo", "salary", "linkedin", "sapModules", "certifications",
+  "photo", "salary", "linkedin", "sapModules", "certifications", "targetCertifications",
   "currentRole", "targetRole", "yearsExperience",
 ];
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const allowed = [
       "name", "country", "phone", "city", "bio", "education",
       "languages", "availability", "jobPreferences", "portfolio",
-      "photo", "salary", "linkedin", "sapModules", "certifications",
+      "photo", "salary", "linkedin", "sapModules", "certifications", "targetCertifications",
       "currentRole", "targetRole", "yearsExperience",
     ];
     for (const key of allowed) {

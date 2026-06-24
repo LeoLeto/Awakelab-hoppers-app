@@ -9,6 +9,7 @@ export interface IUser extends Document {
   yearsExperience: string;
   sapModules: string[];
   certifications: string;
+  targetCertifications?: string;
   linkedinUrl: string;
   targetRole: string;
   createdAt: Date;
@@ -43,6 +44,7 @@ const UserSchema = new Schema<IUser>(
     yearsExperience: { type: String, default: "" },
     sapModules: { type: [String], default: [] },
     certifications: { type: String, default: "" },
+    targetCertifications: { type: String, default: "" },
     linkedinUrl: { type: String, default: "" },
     targetRole: { type: String, default: "" },
     diagnosticDone: { type: Boolean, default: false },

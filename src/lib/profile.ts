@@ -4,6 +4,7 @@ export interface HoppersProfileData {
   country: string;
   sapModules: string[];
   certifications: string;
+  targetCertifications: string;
   currentRole: string;
   targetRole: string;
   yearsExperience: string;
@@ -21,7 +22,7 @@ export interface HoppersProfileData {
 }
 
 export const EMPTY_PROFILE: HoppersProfileData = {
-  name: "", email: "", country: "", sapModules: [], certifications: "",
+  name: "", email: "", country: "", sapModules: [], certifications: "", targetCertifications: "",
   currentRole: "", targetRole: "", yearsExperience: "", linkedin: "", salary: "",
   phone: "", city: "", bio: "", education: "", languages: [], availability: "",
   jobPreferences: [], portfolio: "", photo: "",
@@ -57,6 +58,7 @@ export function buildProfileFromDiagnostic(
   const r = diagResult as Record<string, unknown>;
   if (Array.isArray(r.modules)) base.sapModules = r.modules as string[];
   if (typeof r.certifications === "string") base.certifications = r.certifications;
+  if (typeof r.targetCertifications === "string") base.targetCertifications = r.targetCertifications;
   if (typeof r.currentRole === "string") base.currentRole = r.currentRole;
   if (typeof r.targetRole === "string") base.targetRole = r.targetRole;
   if (typeof r.yearsExperience === "string") base.yearsExperience = r.yearsExperience;
