@@ -12,19 +12,15 @@ import {
   type HoppersProfileData,
 } from "@/lib/profile";
 import { roleLabels, targetRoleLabels } from "@/lib/data/sapProfiles";
+import { recommendCertifications, SAP_MODULE_GROUPS } from "@/lib/data/sapCertifications";
 import { countries } from "@/lib/data/countries";
 import type { Country } from "@/lib/data/countries";
 
-const SAP_MODULES = [
-  "FI/CO", "SD", "MM", "PP", "ABAP", "Basis",
-  "S/4HANA Cloud", "S/4HANA Migration", "EWM/TM",
-  "SuccessFactors", "BTP", "PI/PO/CPI", "Security/GRC", "SAC", "Otro",
-];
 
 const AVAILABILITY_OPTIONS = ["Inmediata", "En 1 mes", "En 3 meses", "Negociable"];
 const JOB_PREF_OPTIONS = ["Remoto", "Híbrido", "Presencial"];
 const LANGUAGE_OPTIONS = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano", "Otro"];
-const SALARY_OPTIONS = ["<2.000€", "2.000€ - 3.000€", "3.000€ - 4.000€", "4.000€ - 5.000€", ">5.000€"];
+const SALARY_OPTIONS = ["<25.000€", "25.000€ - 40.000€", "40.000€ - 55.000€", "55.000€ - 75.000€", ">75.000€"];
 const EXPERIENCE_OPTIONS = [
   { label: "Sin experiencia", value: "0" },
   { label: "1-3 años", value: "1-3" },
@@ -529,11 +525,42 @@ export default function PerfilPage() {
           />
         </Field>
         <Field label="Módulos SAP" required>
-          <ToggleChips options={SAP_MODULES} selected={profile.sapModules} onChange={(v) => update("sapModules", v)} />
-        </Field>
-        <Field label="Certificaciones">
-          <input value={profile.certifications} onChange={(e) => update("certifications", e.target.value)}
-            className="field-input" placeholder="SAP S/4HANA Finance, SAP SD..." />
+          <div className="space-y-3">
+            {SAP_MODULE_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs font-semibold text-gray-400 mb-1.5">
+                  {group.emoji} {group.label}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {group.modules.map((mod) => {
+                    const sel = profile.sapModules.includes(mod);
+                    return (
+                      <button
+                        type="button"
+                        key={mod}
+                        onClick={() =>
+                          update(
+                            "sapModules",
+                            sel
+                              ? profile.sapModules.filter((m) => m !== mod)
+                              : [...profile.sapModules, mod],
+                          )
+                        }
+                        className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-colors ${
+                          sel
+                            ? "bg-hopper-red text-white border-hopper-red"
+                            : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                        }`}
+                      >
+                        {sel && <Check className="inline w-3 h-3 mr-1" />}
+                        {mod}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Rol actual" required>
@@ -551,6 +578,64 @@ export default function PerfilPage() {
             </select>
           </Field>
         </div>
+        {(() => {
+          const recs = recommendCertifications(
+            profile.sapModules, profile.currentRole, profile.targetRole, profile.yearsExperience, 16,
+          );
+          const haveNames = profile.certifications
+            ? profile.certifications.split(", ").map((s) => s.trim()).filter(Boolean)
+            : [];
+          const wantNames = profile.targetCertifications
+            ? profile.targetCertifications.split(", ").map((s) => s.trim()).filter(Boolean)
+            : [];
+          const wantRecs = recs.filter((c) => !haveNames.includes(c.name));
+
+          function chipList(
+            items: typeof recs,
+            active: string[],
+            field: "certifications" | "targetCertifications",
+          ) {
+            if (items.length === 0)
+              return <p className="text-sm text-gray-400">Selecciona módulos y rol para ver certificaciones recomendadas.</p>;
+            return (
+              <div className="flex flex-wrap gap-2">
+                {items.map((cert) => {
+                  const short = cert.name.replace(/^SAP Certified [^-]+ - /, "");
+                  const sel = active.includes(cert.name);
+                  return (
+                    <button
+                      type="button"
+                      key={cert.id}
+                      onClick={() => {
+                        const next = sel ? active.filter((n) => n !== cert.name) : [...active, cert.name];
+                        update(field, next.join(", "));
+                      }}
+                      className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-colors ${
+                        sel
+                          ? "bg-hopper-red text-white border-hopper-red"
+                          : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                      }`}
+                    >
+                      {sel && <Check className="inline w-3 h-3 mr-1" />}
+                      {short}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          return (
+            <>
+              <Field label="Certificaciones que ya tengo">
+                {chipList(recs, haveNames, "certifications")}
+              </Field>
+              <Field label="Certificaciones que quiero obtener">
+                {chipList(wantRecs, wantNames, "targetCertifications")}
+              </Field>
+            </>
+          );
+        })()}
       </section>
 
       {/* Presencia online */}
@@ -571,7 +656,7 @@ export default function PerfilPage() {
       {/* Preferencias laborales */}
       <section className="bg-white rounded-2xl border p-6 space-y-5 shadow-sm">
         <SectionHeader title="Preferencias laborales" {...sectionCount("preferencias")} />
-        <Field label="Salario actual bruto mensual" points={5}>
+        <Field label="Salario actual bruto anual" points={5}>
           <ToggleChips options={SALARY_OPTIONS} selected={profile.salary ? [profile.salary] : []} onChange={(v) => update("salary", v[0] ?? "")} single />
         </Field>
         <Field label="Disponibilidad" points={5}>

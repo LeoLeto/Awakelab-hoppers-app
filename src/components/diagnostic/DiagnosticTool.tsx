@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Mail, LogIn, ShieldCheck } from "lucide-react";
 import { countries } from "@/lib/data/countries";
 import { roleLabels, targetRoleLabels } from "@/lib/data/sapProfiles";
+import { recommendCertifications, SAP_CERTIFICATIONS, SAP_MODULE_GROUPS } from "@/lib/data/sapCertifications";
 import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
@@ -21,35 +22,30 @@ type Phase = "chat" | "privacy_notice" | "user_data" | "email_verify" | "process
 type ChatStep =
   | "experience"
   | "modules"
-  | "certifications"
-  | "cert_input"
   | "current_role"
-  | "target_role";
+  | "target_role"
+  | "has_certs"
+  | "want_certs";
 
 interface ChatMessage {
   from: "bot" | "user";
   content: string;
 }
 
-const SAP_MODULES = [
-  "FI/CO", "SD", "MM", "PP", "ABAP", "Basis",
-  "S/4HANA Cloud", "S/4HANA Migration", "EWM/TM",
-  "SuccessFactors", "BTP", "PI/PO/CPI", "Security/GRC", "SAC", "Otro",
-];
 
 const STEP_BOT_MESSAGES: Record<ChatStep, string> = {
   experience: "¡Hola! Soy tu asistente de diagnóstico SAP. Voy a hacerte algunas preguntas para conocer tu perfil. ¿Cuántos años llevas trabajando con SAP?",
   modules: "¿Con qué módulos SAP has trabajado? Selecciona todos los que apliquen.",
-  certifications: "¿Tienes certificaciones SAP?",
-  cert_input: "¿Cuáles son tus certificaciones? Escríbelas a continuación.",
   current_role: "¿Cuál es tu rol actual en el ecosistema SAP?",
   target_role: "¿Y cuál es el rol al que aspiras llegar?",
+  has_certs: "¿Cuáles de estas certificaciones SAP ya tienes? Selecciona las que ya hayas obtenido.",
+  want_certs: "¿Cuáles de estas certificaciones te gustaría obtener? Selecciona las que quieras cursar.",
 };
 
 export function DiagnosticTool() {
   const { setShowNav } = useDiagnosticNav();
 
-  const [phase, setPhase] = useState<Phase>("chat");
+  const [phase, setPhase] = useState<Phase>("privacy_notice");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatStep, setChatStep] = useState<ChatStep>("experience");
   const [textInput, setTextInput] = useState("");
@@ -58,6 +54,9 @@ export function DiagnosticTool() {
   const [yearsExperience, setYearsExperience] = useState("");
   const [modules, setModules] = useState<string[]>([]);
   const [certifications, setCertifications] = useState("");
+  const [targetCertifications, setTargetCertifications] = useState("");
+  const [hasCertIds, setHasCertIds] = useState<string[]>([]);
+  const [wantCertIds, setWantCertIds] = useState<string[]>([]);
   const [currentRole, setCurrentRole] = useState("");
   const [targetRole, setTargetRole] = useState("");
   const [name, setName] = useState("");
@@ -94,7 +93,7 @@ export function DiagnosticTool() {
           return;
         }
       }
-      setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+      // No result — stays at privacy_notice (initial phase)
     }
     init();
   }, []);
@@ -131,25 +130,6 @@ export function DiagnosticTool() {
     setModules(selectedModules);
     setMessages((prev) => [...prev, { from: "user", content: selectedModules.join(", ") }]);
     setSelectedModules([]);
-    advanceToStep("certifications");
-  }
-
-  function handleCertificationsYes() {
-    setMessages((prev) => [...prev, { from: "user", content: "Sí" }]);
-    advanceToStep("cert_input");
-  }
-
-  function handleCertificationsNo() {
-    setCertifications("");
-    setMessages((prev) => [...prev, { from: "user", content: "No" }]);
-    advanceToStep("current_role");
-  }
-
-  function handleCertInputSubmit() {
-    if (!textInput.trim()) return;
-    setCertifications(textInput.trim());
-    setMessages((prev) => [...prev, { from: "user", content: textInput.trim() }]);
-    setTextInput("");
     advanceToStep("current_role");
   }
 
@@ -162,7 +142,37 @@ export function DiagnosticTool() {
   function handleTargetRoleSelect(slug: string, label: string) {
     setTargetRole(slug);
     setMessages((prev) => [...prev, { from: "user", content: label }]);
-    setTimeout(() => setPhase("privacy_notice"), 400);
+    advanceToStep("has_certs");
+  }
+
+  function handleHasCertsConfirm() {
+    const certNames = hasCertIds
+      .map((id) => SAP_CERTIFICATIONS.find((c) => c.id === id)?.name ?? "")
+      .filter(Boolean)
+      .join(", ");
+    setCertifications(certNames);
+    const label =
+      hasCertIds.length > 0
+        ? `${hasCertIds.length} certificación${hasCertIds.length !== 1 ? "es" : ""}`
+        : "Ninguna";
+    setMessages((prev) => [...prev, { from: "user", content: label }]);
+    advanceToStep("want_certs");
+  }
+
+  function handleWantCertsConfirm() {
+    const certNames = wantCertIds
+      .map((id) => SAP_CERTIFICATIONS.find((c) => c.id === id)?.name ?? "")
+      .filter(Boolean)
+      .join(", ");
+    setTargetCertifications(certNames);
+    const label =
+      wantCertIds.length > 0
+        ? `${wantCertIds.length} certificación${wantCertIds.length !== 1 ? "es" : ""}`
+        : "Ninguna";
+    setMessages((prev) => [...prev, { from: "user", content: label }]);
+    setHasCertIds([]);
+    setWantCertIds([]);
+    setTimeout(() => setPhase("user_data"), 400);
   }
 
   function onUserDataContinue(userData: { name: string; email: string; country: string; linkedin: string; salary: string }) {
@@ -213,6 +223,7 @@ export function DiagnosticTool() {
       ...diagResult,
       modules,
       certifications,
+      targetCertifications,
       currentRole,
       targetRole,
       yearsExperience,
@@ -253,14 +264,17 @@ export function DiagnosticTool() {
   }
 
   function handleReset() {
-    setPhase("chat");
-    setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+    setPhase("privacy_notice");
+    setMessages([]);
     setChatStep("experience");
     setTextInput("");
     setSelectedModules([]);
     setYearsExperience("");
     setModules([]);
     setCertifications("");
+    setTargetCertifications("");
+    setHasCertIds([]);
+    setWantCertIds([]);
     setCurrentRole("");
     setTargetRole("");
     setLinkedin("");
@@ -314,7 +328,14 @@ export function DiagnosticTool() {
   }
 
   if (phase === "privacy_notice") {
-    return <PrivacyNoticeScreen onContinue={() => setPhase("user_data")} />;
+    return (
+      <PrivacyNoticeScreen
+        onContinue={() => {
+          setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+          setPhase("chat");
+        }}
+      />
+    );
   }
 
   if (phase === "user_data") {
@@ -383,20 +404,27 @@ export function DiagnosticTool() {
           )}
 
           {chatStep === "modules" && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {SAP_MODULES.map((mod) => (
-                  <button key={mod} onClick={() => toggleModule(mod)}
-                    className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
-                      selectedModules.includes(mod)
-                        ? "bg-hopper-red text-white border-hopper-red"
-                        : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
-                    }`}>
-                    {selectedModules.includes(mod) && <Check className="inline w-3 h-3 mr-1" />}
-                    {mod}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-4">
+              {SAP_MODULE_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="text-xs font-semibold text-gray-400 mb-1.5">
+                    {group.emoji} {group.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.modules.map((mod) => (
+                      <button key={mod} onClick={() => toggleModule(mod)}
+                        className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                          selectedModules.includes(mod)
+                            ? "bg-hopper-red text-white border-hopper-red"
+                            : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                        }`}>
+                        {selectedModules.includes(mod) && <Check className="inline w-3 h-3 mr-1" />}
+                        {mod}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
               <Button onClick={handleModulesConfirm} disabled={selectedModules.length === 0}
                 className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">
                 Confirmar selección ({selectedModules.length})
@@ -404,29 +432,54 @@ export function DiagnosticTool() {
             </div>
           )}
 
-          {chatStep === "certifications" && (
-            <div className="flex gap-3">
-              <button onClick={handleCertificationsYes}
-                className="flex-1 py-3 rounded-lg border-2 border-green-500 text-green-700 font-semibold text-sm hover:bg-green-50 transition-colors">
-                ✓ Sí
-              </button>
-              <button onClick={handleCertificationsNo}
-                className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">
-                ✗ No
-              </button>
-            </div>
-          )}
+          {(chatStep === "has_certs" || chatStep === "want_certs") && (() => {
+            const allRecs = recommendCertifications(modules, currentRole, targetRole, yearsExperience, 14);
+            const isHas = chatStep === "has_certs";
+            const recs = isHas ? allRecs : allRecs.filter((c) => !hasCertIds.includes(c.id));
+            const selected = isHas ? hasCertIds : wantCertIds;
+            const setSelected = isHas ? setHasCertIds : setWantCertIds;
+            const onConfirm = isHas ? handleHasCertsConfirm : handleWantCertsConfirm;
 
-          {chatStep === "cert_input" && (
-            <div className="flex gap-2">
-              <input type="text" value={textInput} onChange={(e) => setTextInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCertInputSubmit()}
-                placeholder="Ej: SAP S/4HANA Finance, SAP SD..."
-                className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-hopper-red" />
-              <Button onClick={handleCertInputSubmit} disabled={!textInput.trim()}
-                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">Enviar</Button>
-            </div>
-          )}
+            if (!isHas && recs.length === 0) {
+              return (
+                <Button onClick={onConfirm} className="bg-hopper-red hover:bg-hopper-red/90 text-white">
+                  Ninguna
+                </Button>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {recs.map((cert) => {
+                    const short = cert.name.replace(/^SAP Certified [^-]+ - /, "");
+                    const sel = selected.includes(cert.id);
+                    return (
+                      <button
+                        key={cert.id}
+                        onClick={() =>
+                          setSelected((prev) =>
+                            prev.includes(cert.id) ? prev.filter((id) => id !== cert.id) : [...prev, cert.id]
+                          )
+                        }
+                        className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors text-left ${
+                          sel
+                            ? "bg-hopper-red text-white border-hopper-red"
+                            : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                        }`}
+                      >
+                        {sel && <Check className="inline w-3 h-3 mr-1" />}
+                        {short}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button onClick={onConfirm} className="bg-hopper-red hover:bg-hopper-red/90 text-white">
+                  {selected.length > 0 ? `Confirmar (${selected.length})` : "Ninguna"}
+                </Button>
+              </div>
+            );
+          })()}
 
           {chatStep === "current_role" && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -516,11 +569,11 @@ function PrivacyNoticeScreen({ onContinue }: { onContinue: () => void }) {
 }
 
 const SALARY_OPTIONS = [
-  "<2.000€",
-  "2.000€ - 3.000€",
-  "3.000€ - 4.000€",
-  "4.000€ - 5.000€",
-  ">5.000€",
+  "<25.000€",
+  "25.000€ - 40.000€",
+  "40.000€ - 55.000€",
+  "55.000€ - 75.000€",
+  ">75.000€",
 ];
 
 function UserDataScreen({
@@ -603,7 +656,7 @@ function UserDataScreen({
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-hopper-black">
-            Salario actual bruto mensual <span className="text-gray-400 font-normal">(opcional)</span>
+            Salario actual bruto anual <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
           <div className="grid grid-cols-1 gap-2">
             {SALARY_OPTIONS.map((opt) => (
