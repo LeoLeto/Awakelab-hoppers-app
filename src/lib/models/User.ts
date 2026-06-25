@@ -9,6 +9,7 @@ export interface IUser extends Document {
   yearsExperience: string;
   sapModules: string[];
   certifications: string;
+  targetCertifications?: string;
   linkedinUrl: string;
   targetRole: string;
   createdAt: Date;
@@ -19,6 +20,18 @@ export interface IUser extends Document {
   topProfile?: string;
   skills?: string[];
   diagnosticResult?: Record<string, unknown>;
+  // extended profile fields
+  phone?: string;
+  city?: string;
+  bio?: string;
+  education?: string;
+  languages?: string[];
+  availability?: string;
+  jobPreferences?: string[];
+  portfolio?: string;
+  photo?: string;
+  salary?: string;
+  linkedin?: string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -31,6 +44,7 @@ const UserSchema = new Schema<IUser>(
     yearsExperience: { type: String, default: "" },
     sapModules: { type: [String], default: [] },
     certifications: { type: String, default: "" },
+    targetCertifications: { type: String, default: "" },
     linkedinUrl: { type: String, default: "" },
     targetRole: { type: String, default: "" },
     diagnosticDone: { type: Boolean, default: false },
@@ -39,6 +53,18 @@ const UserSchema = new Schema<IUser>(
     topProfile: { type: String },
     skills: { type: [String] },
     diagnosticResult: { type: Schema.Types.Mixed },
+    // extended profile fields
+    phone: { type: String, default: "" },
+    city: { type: String, default: "" },
+    bio: { type: String, default: "" },
+    education: { type: String, default: "" },
+    languages: { type: [String], default: [] },
+    availability: { type: String, default: "" },
+    jobPreferences: { type: [String], default: [] },
+    portfolio: { type: String, default: "" },
+    photo: { type: String, default: "" },
+    salary: { type: String, default: "" },
+    linkedin: { type: String, default: "" },
   },
   { timestamps: true }
 );

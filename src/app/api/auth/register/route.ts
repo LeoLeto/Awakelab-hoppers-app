@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const {
       name, email, country, currentRole, yearsExperience,
       sapModules, certifications, linkedinUrl, targetRole,
+      linkedin, salary,
     } = body;
 
     if (!name || !email) {
@@ -39,7 +40,8 @@ export async function POST(request: Request) {
       country: country || "", currentRole: currentRole || "",
       yearsExperience: yearsExperience || "", sapModules: sapModules || [],
       certifications: certifications || "", linkedinUrl: linkedinUrl || "",
-      targetRole: targetRole || "",
+      targetRole: targetRole || "", linkedin: linkedin || "",
+      salary: salary || "",
     });
 
     const token = signToken({ id: user._id.toString(), email: user.email, name: user.name, country: user.country });
