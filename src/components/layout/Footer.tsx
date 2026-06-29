@@ -48,17 +48,17 @@ export default function Footer() {
   }
 
   return (
-    <footer style={{ background: "#EFE8E4", borderTop: "1px solid rgba(60,4,5,0.12)" }}>
+    <footer className="bg-hopper-black text-white/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-1">
             <div className="flex items-center mb-4">
-              <img src="/landingpage/logo-hoppers-negro.svg" alt="Hoppers" className="h-8 w-auto" />
+              <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
             </div>
-            <p className="text-sm leading-relaxed" style={{ color: "rgba(0,10,26,0.55)" }}>
+            <p className="text-sm text-white/50 leading-relaxed">
               Better. Smarter. Hoppers.
             </p>
-            <p className="text-xs mt-4 leading-relaxed" style={{ color: "rgba(0,10,26,0.4)" }}>
+            <p className="text-xs mt-4 text-white/35 leading-relaxed">
               Partner oficial de SAP para Europa y Latinoamerica. Formacion de
               alto nivel para profesionales ambiciosos.
             </p>
@@ -66,7 +66,7 @@ export default function Footer() {
 
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: "#000A1A" }}>
+              <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-white/60">
                 {section.title}
               </h3>
               <ul className="space-y-2.5">
@@ -77,8 +77,7 @@ export default function Footer() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm hover:text-hopper-red transition-colors inline-flex items-center gap-1"
-                        style={{ color: "rgba(0,10,26,0.6)" }}
+                        className="text-sm text-white/50 hover:text-hopper-red transition-colors inline-flex items-center gap-1"
                       >
                         {link.label}
                         <ArrowUpRight className="h-3 w-3" />
@@ -86,8 +85,7 @@ export default function Footer() {
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm hover:text-hopper-red transition-colors"
-                        style={{ color: "rgba(0,10,26,0.6)" }}
+                        className="text-sm text-white/50 hover:text-hopper-red transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -99,16 +97,15 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4" style={{ borderTop: "1px solid rgba(60,4,5,0.12)" }}>
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p
-            className="text-xs cursor-default select-none"
-            style={{ color: "rgba(0,10,26,0.35)" }}
+            className="text-xs text-white/30 cursor-default select-none"
             onClick={handleCopyrightClick}
           >
             &copy; {new Date().getFullYear()} Hoppers Academy. Todos los derechos
             reservados.
           </p>
-          <p className="text-xs" style={{ color: "rgba(0,10,26,0.35)" }}>
+          <p className="text-xs text-white/30">
             Inspirados por Grace Hopper, la madre de la computacion.
           </p>
         </div>
