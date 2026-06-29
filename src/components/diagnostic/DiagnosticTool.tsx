@@ -298,7 +298,7 @@ export function DiagnosticTool() {
     const body = encodeURIComponent(
       `Hola equipo Hoppers Academy,\n\nAcabo de completar mi diagnóstico profesional SAP y me gustaría recibir más información.\n\nPerfil detectado: ${result.matches[0]?.name}\nÍndice de empleabilidad: ${result.empScore}%\nHabilidades: ${result.skills.join(", ")}\n\nQuedo a vuestra disposición.\n\nSaludos`
     );
-    window.location.href = `mailto:info@hoppers.academy?subject=Diagnóstico SAP - Solicito información&body=${body}`;
+    window.location.href = `mailto:contacto@hoppers.academy?subject=Diagnóstico SAP - Solicito información&body=${body}`;
   }
 
   if (phase === "processing") {
@@ -329,7 +329,7 @@ export function DiagnosticTool() {
 
   if (phase === "privacy_notice") {
     return (
-      <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
+      <div className="overflow-y-auto" style={{ height: "calc(100dvh - 130px)" }}>
         <PrivacyNoticeScreen
           onContinue={() => {
             setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
@@ -532,20 +532,20 @@ export function DiagnosticTool() {
 
 function PrivacyNoticeScreen({ onContinue }: { onContinue: () => void }) {
   return (
-    <div className="max-w-lg mx-auto py-4 space-y-4">
-      <div className="text-center space-y-2">
+    <div className="max-w-2xl mx-auto h-full flex flex-col justify-between py-6 gap-6">
+      <div className="text-center space-y-3">
         <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6 text-green-600" />
+          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+            <ShieldCheck className="w-8 h-8 text-green-600" />
           </div>
         </div>
-        <h2 className="text-xl font-black text-hopper-black">Tus datos están seguros</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-3xl font-black text-hopper-black">Tus datos están seguros</h2>
+        <p className="text-base text-gray-500">
           Antes de continuar, queremos que sepas cómo tratamos tu información.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
         {[
           {
             title: "Tratamiento anónimo",
@@ -564,17 +564,17 @@ function PrivacyNoticeScreen({ onContinue }: { onContinue: () => void }) {
             desc: "Nunca vendemos tus datos. Solo tú y Hoppers Academy tenéis acceso a tu diagnóstico.",
           },
         ].map((item) => (
-          <div key={item.title} className="flex gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
-            <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+          <div key={item.title} className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
+            <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-hopper-black">{item.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+              <p className="text-base font-semibold text-hopper-black">{item.title}</p>
+              <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <Button onClick={onContinue} className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white">
+      <Button onClick={onContinue} className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white py-3 text-base">
         Entendido, continuar →
       </Button>
     </div>
