@@ -185,8 +185,8 @@ export default function Navbar() {
                 href={link.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
                   isActive
-                    ? "text-hopper-black border border-black/20 bg-black/5"
-                    : "text-hopper-black/80 hover:text-hopper-red hover:bg-black/5"
+                    ? "text-hopper-black border border-hopper-granate/20 bg-white/30"
+                    : "text-hopper-black/80 hover:text-hopper-red hover:bg-white/30"
                 }`}
               >
                 {link.label}
@@ -200,13 +200,13 @@ export default function Navbar() {
           {session ? (
             <>
               {completion < 100 && (
-                <Link href="/perfil" className="group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-black/15 bg-black/5 hover:bg-black/10 transition-all mr-1">
+                <Link href="/perfil" className="group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border transition-all mr-1" style={{ background: "rgba(255,255,255,0.45)", borderColor: "rgba(60,4,5,0.18)" }} onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.65)")} onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.45)")}>
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-medium text-hopper-black/70 group-hover:text-hopper-black transition-colors whitespace-nowrap">Completa tu perfil</span>
+                      <span className="text-xs font-medium text-hopper-black/75 group-hover:text-hopper-black transition-colors whitespace-nowrap">Completa tu perfil</span>
                       <span className="text-xs font-bold text-hopper-red">{completion}%</span>
                     </div>
-                    <div className="w-32 h-1.5 rounded-full bg-black/15 overflow-hidden">
+                    <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(60,4,5,0.15)" }}>
                       <div
                         className="h-full rounded-full bg-hopper-red transition-all duration-500"
                         style={{ width: `${completion}%` }}
@@ -238,7 +238,7 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="flex items-center gap-1.5 text-hopper-black/40 hover:text-hopper-black/70 transition-colors">
+                <button className="flex items-center gap-1.5 text-hopper-black/55 hover:text-hopper-black/80 transition-colors">
                   <UserCircle className="w-8 h-8" />
                 </button>
               </Link>
@@ -253,7 +253,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-hopper-black/60 hover:bg-black/10 transition-colors">
+          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-hopper-black/60 hover:bg-white/40 transition-colors">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent className="w-[300px] bg-white">

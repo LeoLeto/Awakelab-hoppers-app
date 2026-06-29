@@ -329,12 +329,14 @@ export function DiagnosticTool() {
 
   if (phase === "privacy_notice") {
     return (
-      <PrivacyNoticeScreen
-        onContinue={() => {
-          setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
-          setPhase("chat");
-        }}
-      />
+      <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
+        <PrivacyNoticeScreen
+          onContinue={() => {
+            setMessages([{ from: "bot", content: STEP_BOT_MESSAGES.experience }]);
+            setPhase("chat");
+          }}
+        />
+      </div>
     );
   }
 
@@ -342,22 +344,28 @@ export function DiagnosticTool() {
     const session = getSession();
     const isAdmin = session?.email === "admin@hoppers.es";
     return (
-      <UserDataScreen
-        defaultName={isAdmin ? "" : (session?.name ?? "")}
-        defaultEmail={isAdmin ? "" : (session?.email ?? "")}
-        defaultCountry={isAdmin ? "" : (session?.country ?? "")}
-        onContinue={onUserDataContinue}
-      />
+      <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
+        <UserDataScreen
+          defaultName={isAdmin ? "" : (session?.name ?? "")}
+          defaultEmail={isAdmin ? "" : (session?.email ?? "")}
+          defaultCountry={isAdmin ? "" : (session?.country ?? "")}
+          onContinue={onUserDataContinue}
+        />
+      </div>
     );
   }
 
   if (phase === "email_verify") {
-    return <EmailVerifyScreen email={email} onContinue={onEmailVerifyContinue} />;
+    return (
+      <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
+        <EmailVerifyScreen email={email} onContinue={onEmailVerifyContinue} />
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-3">
-      <div className="flex justify-end">
+    <div className="max-w-2xl mx-auto flex flex-col gap-2" style={{ height: "calc(100dvh - 130px)" }}>
+      <div className="flex justify-end shrink-0">
         <Link
           href="/login?returnTo=/diagnostico"
           className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-hopper-red transition-colors"
@@ -366,13 +374,13 @@ export function DiagnosticTool() {
           Ya tengo cuenta. Entrar
         </Link>
       </div>
-      <div className="border rounded-xl overflow-hidden shadow-sm">
-        <div className="bg-hopper-black text-white px-4 py-3 text-sm font-semibold flex items-center gap-2">
+      <div className="border rounded-xl overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
+        <div className="bg-hopper-black text-white px-4 py-3 text-sm font-semibold flex items-center gap-2 shrink-0">
           <div className="w-6 h-6 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold">H</div>
           Diagnóstico SAP Guiado
         </div>
 
-        <div className="p-4 min-h-[320px] max-h-[440px] overflow-y-auto space-y-4 bg-gray-50">
+        <div className="p-4 flex-1 overflow-y-auto space-y-4 bg-gray-50">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"} gap-2`}>
               {msg.from === "bot" && (
@@ -386,7 +394,7 @@ export function DiagnosticTool() {
           <div ref={chatEndRef} />
         </div>
 
-        <div className="border-t bg-white p-4">
+        <div className="border-t bg-white p-4 shrink-0">
           {chatStep === "experience" && (
             <div className="flex flex-wrap gap-2">
               {[
@@ -405,27 +413,29 @@ export function DiagnosticTool() {
           )}
 
           {chatStep === "modules" && (
-            <div className="space-y-4">
-              {SAP_MODULE_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="text-xs font-semibold text-gray-400 mb-1.5">
-                    {group.emoji} {group.label}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {group.modules.map((mod) => (
-                      <button key={mod} onClick={() => toggleModule(mod)}
-                        className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
-                          selectedModules.includes(mod)
-                            ? "bg-hopper-red text-white border-hopper-red"
-                            : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
-                        }`}>
-                        {selectedModules.includes(mod) && <Check className="inline w-3 h-3 mr-1" />}
-                        {mod}
-                      </button>
-                    ))}
+            <div className="space-y-3">
+              <div className="max-h-[180px] overflow-y-auto space-y-3 pr-1">
+                {SAP_MODULE_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="text-xs font-semibold text-gray-400 mb-1.5">
+                      {group.emoji} {group.label}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.modules.map((mod) => (
+                        <button key={mod} onClick={() => toggleModule(mod)}
+                          className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-colors ${
+                            selectedModules.includes(mod)
+                              ? "bg-hopper-red text-white border-hopper-red"
+                              : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                          }`}>
+                          {selectedModules.includes(mod) && <Check className="inline w-3 h-3 mr-1" />}
+                          {mod}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
               <Button onClick={handleModulesConfirm} disabled={selectedModules.length === 0}
                 className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">
                 Confirmar selección ({selectedModules.length})
@@ -451,29 +461,31 @@ export function DiagnosticTool() {
 
             return (
               <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {recs.map((cert) => {
-                    const short = cert.name.replace(/^SAP Certified [^-]+ - /, "");
-                    const sel = selected.includes(cert.id);
-                    return (
-                      <button
-                        key={cert.id}
-                        onClick={() =>
-                          setSelected((prev) =>
-                            prev.includes(cert.id) ? prev.filter((id) => id !== cert.id) : [...prev, cert.id]
-                          )
-                        }
-                        className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors text-left ${
-                          sel
-                            ? "bg-hopper-red text-white border-hopper-red"
-                            : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
-                        }`}
-                      >
-                        {sel && <Check className="inline w-3 h-3 mr-1" />}
-                        {short}
-                      </button>
-                    );
-                  })}
+                <div className="max-h-[160px] overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-2">
+                    {recs.map((cert) => {
+                      const short = cert.name.replace(/^SAP Certified [^-]+ - /, "");
+                      const sel = selected.includes(cert.id);
+                      return (
+                        <button
+                          key={cert.id}
+                          onClick={() =>
+                            setSelected((prev) =>
+                              prev.includes(cert.id) ? prev.filter((id) => id !== cert.id) : [...prev, cert.id]
+                            )
+                          }
+                          className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors text-left ${
+                            sel
+                              ? "bg-hopper-red text-white border-hopper-red"
+                              : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red"
+                          }`}
+                        >
+                          {sel && <Check className="inline w-3 h-3 mr-1" />}
+                          {short}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <Button onClick={onConfirm} className="bg-hopper-red hover:bg-hopper-red/90 text-white">
                   {selected.length > 0 ? `Confirmar (${selected.length})` : "Ninguna"}
@@ -520,39 +532,39 @@ export function DiagnosticTool() {
 
 function PrivacyNoticeScreen({ onContinue }: { onContinue: () => void }) {
   return (
-    <div className="max-w-lg mx-auto py-10 space-y-6">
-      <div className="text-center space-y-3">
+    <div className="max-w-lg mx-auto py-4 space-y-4">
+      <div className="text-center space-y-2">
         <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
-            <ShieldCheck className="w-8 h-8 text-green-600" />
+          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6 text-green-600" />
           </div>
         </div>
-        <h2 className="text-2xl font-black text-hopper-black">Tus datos están seguros</h2>
+        <h2 className="text-xl font-black text-hopper-black">Tus datos están seguros</h2>
         <p className="text-sm text-gray-500">
           Antes de continuar, queremos que sepas cómo tratamos tu información.
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {[
           {
             title: "Tratamiento anónimo",
-            desc: "Tu información se procesa de forma anónima para generar tu informe. No asociamos tus datos personales con tu perfil técnico.",
+            desc: "Tu información se procesa de forma anónima. No asociamos tus datos personales con tu perfil técnico.",
           },
           {
             title: "Datos confidenciales",
-            desc: "Tu nombre, email y país son datos privados que usamos únicamente para enviarte tu informe personalizado.",
+            desc: "Tu nombre, email y país se usan únicamente para enviarte tu informe personalizado.",
           },
           {
             title: "Datos sensibles protegidos",
-            desc: "Cualquier dato adicional que compartas (como tu perfil de LinkedIn o tu salario) se trata con la máxima confidencialidad y no se cede a terceros sin tu consentimiento explícito.",
+            desc: "LinkedIn o salario se tratan con máxima confidencialidad y no se ceden a terceros sin consentimiento.",
           },
           {
             title: "No compartimos tu información",
-            desc: "Nunca vendemos ni cedemos tus datos a terceros. Solo tú y Hoppers Academy tenéis acceso a tu diagnóstico.",
+            desc: "Nunca vendemos tus datos. Solo tú y Hoppers Academy tenéis acceso a tu diagnóstico.",
           },
         ].map((item) => (
-          <div key={item.title} className="flex gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+          <div key={item.title} className="flex gap-2.5 p-3 rounded-lg bg-gray-50 border border-gray-100">
             <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-hopper-black">{item.title}</p>
@@ -603,8 +615,13 @@ function UserDataScreen({
   );
 
   return (
-    <div className="max-w-lg mx-auto py-8 space-y-5">
-      <div className="text-center space-y-1">
+    <div className="max-w-lg mx-auto py-4 space-y-4">
+      <div className="text-center space-y-2">
+        <div className="flex justify-center">
+          <div className="w-12 h-12 rounded-full bg-hopper-red/10 flex items-center justify-center text-2xl">
+            🚀
+          </div>
+        </div>
         <h2 className="text-2xl font-black text-hopper-black">Casi listo</h2>
         <p className="text-sm text-gray-500">
           Te enviaremos el resultado del análisis a tu email personal.
@@ -659,12 +676,12 @@ function UserDataScreen({
           <label className="text-sm font-semibold text-hopper-black">
             Salario actual bruto anual <span className="text-gray-400 font-normal">(opcional)</span>
           </label>
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SALARY_OPTIONS.map((opt) => (
               <button
                 key={opt}
                 onClick={() => setSalary(opt)}
-                className={`px-4 py-2.5 rounded-lg border text-sm font-medium text-left transition-colors ${
+                className={`px-3 py-2 rounded-lg border text-sm font-medium text-center transition-colors ${
                   salary === opt
                     ? "bg-hopper-red text-white border-hopper-red"
                     : "border-gray-300 text-gray-700 hover:border-hopper-red hover:text-hopper-red hover:bg-hopper-red/5"
@@ -757,7 +774,7 @@ function GdprModal({ onAccept, onClose }: { onAccept: () => void; onClose: () =>
 
 function EmailVerifyScreen({ email, onContinue }: { email: string; onContinue: () => void }) {
   return (
-    <div className="max-w-md mx-auto py-16 text-center space-y-5">
+    <div className="max-w-md mx-auto py-6 text-center space-y-4">
       <div className="flex justify-center">
         <div className="w-16 h-16 rounded-full bg-hopper-red/10 flex items-center justify-center">
           <Mail className="w-8 h-8 text-hopper-red" />

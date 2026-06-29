@@ -1200,6 +1200,11 @@
       }
     }
 
+    // One-time migration: reset old dark default to light
+    if (!localStorage.getItem("hoppers-theme-v2")) {
+      localStorage.setItem("hoppers-theme-v2", "1");
+      localStorage.removeItem("hoppers-theme");
+    }
     const savedTheme = localStorage.getItem("hoppers-theme") || "light";
     setTheme(savedTheme);
 
