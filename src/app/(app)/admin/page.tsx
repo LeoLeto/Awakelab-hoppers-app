@@ -1,194 +1,239 @@
 "use client";
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Trash2, Search, RefreshCw, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ADMIN_PASSWORD } from "@/lib/auth";
+import { Card } from "@/components/ui/card";
+import { ADMIN_PASSWORD, ADMIN_EMAIL, getSession } from "@/lib/auth";
 
-interface MongoUser {
+interface AdminUser {
   _id: string;
   name: string;
   email: string;
   country: string;
-  yearsExperience: string;
   currentRole: string;
   diagnosticDone: boolean;
   empScore?: number;
+  createdAt: string;
 }
 
 export default function AdminPage() {
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(ADMIN_PASSWORD);
   const [authed, setAuthed] = useState(false);
-  const [error, setError] = useState("");
-  const [users, setUsers] = useState<MongoUser[]>([]);
-  const [search, setSearch] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
-  async function handleLogin() {
+  useEffect(() => {
+    const s = getSession();
+    if (s?.email === ADMIN_EMAIL) {
+      setAuthed(true);
+      fetchUsers(ADMIN_PASSWORD);
+    }
+  }, []);
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     if (password !== ADMIN_PASSWORD) {
-      setError("Contraseña incorrecta.");
+      setAuthError("Contraseña incorrecta.");
       return;
     }
+    setAuthed(true);
+    setAuthError("");
+    await fetchUsers(password);
+  }
+
+  async function fetchUsers(pw = password) {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: pw }),
       });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error || "Error al cargar usuarios."); return; }
-      setUsers(json.users);
-      setAuthed(true);
-      setError("");
+      const data = await res.json();
+      if (res.ok) setUsers(data.users ?? []);
+      else showToast(data.error ?? "Error al cargar usuarios.", false);
     } catch {
-      setError("Error de conexion.");
+      showToast("Error de conexión.", false);
     } finally {
       setLoading(false);
     }
   }
 
-  function exportCSV() {
-    const header = "ID,Nombre,Email,Pais,Experiencia,Rol,Diagnostico,Score\n";
-    const rows = users
-      .map((u) =>
-        [u._id, u.name, u.email, u.country, u.yearsExperience, u.currentRole, u.diagnosticDone ? "Si" : "No", u.empScore ?? ""].join(",")
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Hoppers_Usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function handleDelete(email: string) {
+    setDeleting(email);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.email !== email));
+        showToast(`Usuario ${email} eliminado.`, true);
+      } else {
+        showToast(data.error ?? "Error al eliminar.", false);
+      }
+    } catch {
+      showToast("Error de conexión.", false);
+    } finally {
+      setDeleting(null);
+      setConfirmDelete(null);
+    }
   }
 
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.country || "").toLowerCase().includes(search.toLowerCase())
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
 
   if (!authed) {
     return (
-      <main className="min-h-screen bg-hopper-black flex items-center justify-center px-4">
-        <Card className="w-full max-w-sm p-8 text-center">
-          <div className="w-10 h-10 bg-hopper-red rounded flex items-center justify-center text-white font-black text-lg mx-auto mb-4">
-            H
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <Card className="w-full max-w-sm p-8 space-y-5">
+          <div className="text-center space-y-1">
+            <h1 className="text-xl font-black text-hopper-black">Panel de administración</h1>
+            <p className="text-sm text-gray-400">Acceso restringido</p>
           </div>
-          <h1 className="text-xl font-black text-hopper-black mb-1">Panel de Administracion</h1>
-          <p className="text-sm text-gray-500 mb-6">Hoppers Academy</p>
-          <div className="space-y-3 text-left">
-            <Label htmlFor="admin-pw">Contraseña de administrador</Label>
+          <form onSubmit={handleLogin} className="space-y-4">
             <Input
-              id="admin-pw"
               type="password"
+              placeholder="Contraseña de administrador"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              placeholder="Introduce la contraseña"
+              autoFocus
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button
-              className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-60"
-              onClick={handleLogin}
-              disabled={loading}
-            >
-              {loading ? "Cargando..." : "Acceder"}
+            {authError && <p className="text-sm text-red-600">{authError}</p>}
+            <Button type="submit" className="w-full bg-hopper-red hover:bg-hopper-red/90 text-white">
+              <LogIn className="w-4 h-4 mr-2" /> Entrar
             </Button>
-          </div>
+          </form>
         </Card>
-      </main>
+      </div>
     );
   }
 
-  const totalDiag = users.filter((u) => u.diagnosticDone).length;
-  const scored = users.filter((u) => u.empScore != null);
-  const avgScore = scored.length > 0
-    ? Math.round(scored.reduce((a, u) => a + (u.empScore ?? 0), 0) / scored.length)
-    : 0;
-
   return (
-    <main className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black text-hopper-black">Panel de Administracion</h1>
-            <p className="text-sm text-gray-500">Hoppers Academy · MongoDB</p>
-          </div>
-          <Button variant="outline" onClick={() => setAuthed(false)}>Cerrar sesion</Button>
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-5">
+      {toast && (
+        <div className={`fixed top-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${toast.ok ? "bg-green-600" : "bg-red-600"}`}>
+          {toast.msg}
         </div>
+      )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Usuarios registrados", value: users.length },
-            { label: "Diagnosticos realizados", value: totalDiag },
-            { label: "Score medio", value: avgScore ? `${avgScore}%` : "—" },
-            { label: "Tasa conversion", value: users.length > 0 ? `${Math.round((totalDiag / users.length) * 100)}%` : "—" },
-          ].map((s) => (
-            <Card key={s.label} className="p-4 text-center">
-              <p className="text-3xl font-black text-hopper-red">{s.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{s.label}</p>
-            </Card>
-          ))}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-black text-hopper-black">Usuarios registrados</h1>
+          <p className="text-sm text-gray-400">{users.length} usuario{users.length !== 1 ? "s" : ""} en total</p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => fetchUsers()} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Actualizar
+        </Button>
+      </div>
 
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-hopper-black">Usuarios registrados</h2>
-            <Button size="sm" variant="outline" onClick={exportCSV}>
-              Exportar CSV
-            </Button>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          placeholder="Buscar por nombre o email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      <Card className="overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-4 border-hopper-red/20 border-t-hopper-red rounded-full animate-spin" />
           </div>
-          <Input
-            placeholder="Buscar por nombre, email o pais..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mb-4"
-          />
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 text-sm">
+            {search ? "No hay resultados para esa búsqueda." : "No hay usuarios registrados."}
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs text-gray-500">
-                  <th className="pb-2 pr-4">Nombre</th>
-                  <th className="pb-2 pr-4">Email</th>
-                  <th className="pb-2 pr-4">Pais</th>
-                  <th className="pb-2 pr-4">Experiencia</th>
-                  <th className="pb-2 pr-4">Diagnostico</th>
-                  <th className="pb-2">Score</th>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-500">Nombre</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-500">Email</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-500">País</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-500">Diagnóstico</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-500">Registro</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
-                      {users.length === 0 ? "No hay usuarios registrados aun." : "No se encontraron resultados."}
+                {filtered.map((user) => (
+                  <tr key={user._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-hopper-black">{user.name}</td>
+                    <td className="px-4 py-3 text-gray-500">{user.email}</td>
+                    <td className="px-4 py-3 text-gray-500">{user.country || "—"}</td>
+                    <td className="px-4 py-3">
+                      {user.diagnosticDone ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded">
+                          {user.empScore != null ? `${user.empScore}%` : "Hecho"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Pendiente</span>
+                      )}
                     </td>
-                  </tr>
-                )}
-                {filtered.map((u) => (
-                  <tr key={u._id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="py-2 pr-4 font-medium">{u.name}</td>
-                    <td className="py-2 pr-4 text-gray-500">{u.email}</td>
-                    <td className="py-2 pr-4">{u.country || "—"}</td>
-                    <td className="py-2 pr-4">{u.yearsExperience || "—"}</td>
-                    <td className="py-2 pr-4">
-                      <span className={`text-xs px-2 py-0.5 rounded font-semibold ${u.diagnosticDone ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                        {u.diagnosticDone ? "Realizado" : "Pendiente"}
-                      </span>
+                    <td className="px-4 py-3 text-gray-400 text-xs">
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString("es-ES") : "—"}
                     </td>
-                    <td className="py-2 font-bold text-hopper-red">{u.empScore != null ? `${u.empScore}%` : "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      {confirmDelete === user.email ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-xs text-red-600 font-medium">¿Confirmar?</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-gray-500 hover:text-gray-700 px-2 h-7"
+                            onClick={() => setConfirmDelete(null)}
+                          >
+                            No
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 h-7"
+                            onClick={() => handleDelete(user.email)}
+                            disabled={deleting === user.email}
+                          >
+                            {deleting === user.email ? "..." : "Sí, eliminar"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 px-2 h-7"
+                          onClick={() => setConfirmDelete(user.email)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </Card>
-      </div>
-    </main>
+        )}
+      </Card>
+    </div>
   );
 }

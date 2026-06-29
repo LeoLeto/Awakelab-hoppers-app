@@ -22,6 +22,7 @@ export interface RegisterData {
 const SESSION_KEY = "hoppers_session";
 const DIAG_KEY = "hoppers_diag_result";
 export const ADMIN_PASSWORD = "h0pp3rs_2026_adm!n";
+export const ADMIN_EMAIL = "admin@hoppers.es";
 
 function diagBackupKey(email: string) {
   return `hoppers_diag_backup_${email.toLowerCase()}`;

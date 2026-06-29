@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { loginUser } from "@/lib/auth";
+import { loginUser, getSession, ADMIN_EMAIL } from "@/lib/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const s = getSession();
+    if (s) { window.location.href = s.email === ADMIN_EMAIL ? "/admin" : "/dashboard"; }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +28,7 @@ export default function LoginPage() {
       if (result.diagnosticResult) {
         localStorage.setItem("hoppers_diag_result", JSON.stringify(result.diagnosticResult));
       }
-      setLoading(false);
-      router.push("/diagnostico");
+      window.location.href = email.toLowerCase() === ADMIN_EMAIL ? "/admin" : "/dashboard";
     } else {
       setLoading(false);
       setError(result.error || "Error al iniciar sesion.");

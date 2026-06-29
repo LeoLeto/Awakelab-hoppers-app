@@ -24,17 +24,17 @@ export interface SAPCertification {
 }
 
 export const SAP_ROLES: Record<string, string> = {
-  administrator: "Administrador",
-  architect: "Arquitecto",
   business_user: "Usuario de Negocio",
+  sales: "Ventas",
+  presales: "Preventa",
+  support_consultant: "Consultor de Soporte",
   consultant: "Consultor",
   data_analyst: "Analista de Datos",
-  data_scientist: "Científico de Datos",
-  developer: "Desarrollador",
-  presales: "Preventa",
   project_manager: "Jefe de Proyecto",
-  sales: "Ventas",
-  support_consultant: "Consultor de Soporte",
+  developer: "Desarrollador",
+  administrator: "Administrador",
+  data_scientist: "Científico de Datos",
+  architect: "Arquitecto",
 };
 
 export const SAP_CERTIFICATIONS: SAPCertification[] = [

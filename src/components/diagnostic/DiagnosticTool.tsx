@@ -340,11 +340,12 @@ export function DiagnosticTool() {
 
   if (phase === "user_data") {
     const session = getSession();
+    const isAdmin = session?.email === "admin@hoppers.es";
     return (
       <UserDataScreen
-        defaultName={session?.name ?? ""}
-        defaultEmail={session?.email ?? ""}
-        defaultCountry={session?.country ?? ""}
+        defaultName={isAdmin ? "" : (session?.name ?? "")}
+        defaultEmail={isAdmin ? "" : (session?.email ?? "")}
+        defaultCountry={isAdmin ? "" : (session?.country ?? "")}
         onContinue={onUserDataContinue}
       />
     );
