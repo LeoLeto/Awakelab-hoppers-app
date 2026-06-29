@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, UserCircle, LogOut, User, ChevronDown } from "lucide-react";
+import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,7 +11,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getSession, logoutUser } from "@/lib/auth";
+import { getSession, logoutUser, ADMIN_EMAIL } from "@/lib/auth";
 import { getProfile, calculateCompletion, buildProfileFromDiagnostic } from "@/lib/profile";
 import type { HoppersSession } from "@/lib/auth";
 
@@ -35,13 +35,14 @@ function ProfileAvatar({ name, photo, size = "md" }: { name: string; photo?: str
 }
 
 function ProfileDropdown({
-  session, completion, photo, onLogout, onClose,
+  session, completion, photo, onLogout, onClose, isAdmin,
 }: {
   session: HoppersSession;
   completion: number;
   photo: string;
   onLogout: () => void;
   onClose: () => void;
+  isAdmin: boolean;
 }) {
   const barColor = completion >= 80 ? "#10B981" : completion >= 50 ? "#F59E0B" : "#EF4444";
   return (
@@ -65,14 +66,35 @@ function ProfileDropdown({
         </div>
       </div>
       <div className="p-1">
-        <Link
-          href="/perfil"
-          onClick={onClose}
-          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
-        >
-          <User className="w-4 h-4 text-gray-400" />
-          Mi perfil
-        </Link>
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            onClick={onClose}
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-red hover:bg-red-50 rounded-lg transition-colors font-semibold"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Panel Admin
+          </Link>
+        ) : (
+          <>
+            <Link
+              href="/dashboard"
+              onClick={onClose}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4 text-gray-400" />
+              Dashboard
+            </Link>
+            <Link
+              href="/perfil"
+              onClick={onClose}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <User className="w-4 h-4 text-gray-400" />
+              Mi perfil
+            </Link>
+          </>
+        )}
         <button
           onClick={() => { onLogout(); onClose(); }}
           className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -150,9 +172,9 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[rgba(195,175,153,0.08)] bg-[#000A1A]">
+    <header className="sticky top-0 z-50 w-full" style={{ background: "rgba(191,171,149,0.94)", borderBottom: "1px solid rgba(60,4,5,0.12)", backdropFilter: "blur(8px)" }}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-8 w-auto" />
+        <img src="/landingpage/logo-hoppers-negro.svg" alt="Hoppers" className="h-8 w-auto" />
 
         <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
@@ -163,8 +185,8 @@ export default function Navbar() {
                 href={link.href}
                 className={`px-3 py-2 text-sm font-medium transition-colors rounded-md ${
                   isActive
-                    ? "text-white border border-white/30"
-                    : "text-white/70 hover:text-hopper-red hover:bg-white/5"
+                    ? "text-hopper-black border border-black/20 bg-black/5"
+                    : "text-hopper-black/80 hover:text-hopper-red hover:bg-black/5"
                 }`}
               >
                 {link.label}
@@ -178,13 +200,13 @@ export default function Navbar() {
           {session ? (
             <>
               {completion < 100 && (
-                <Link href="/perfil" className="group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all mr-1">
+                <Link href="/perfil" className="group flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-black/15 bg-black/5 hover:bg-black/10 transition-all mr-1">
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-medium text-white/70 group-hover:text-white transition-colors whitespace-nowrap">Completa tu perfil</span>
+                      <span className="text-xs font-medium text-hopper-black/70 group-hover:text-hopper-black transition-colors whitespace-nowrap">Completa tu perfil</span>
                       <span className="text-xs font-bold text-hopper-red">{completion}%</span>
                     </div>
-                    <div className="w-32 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    <div className="w-32 h-1.5 rounded-full bg-black/15 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-hopper-red transition-all duration-500"
                         style={{ width: `${completion}%` }}
@@ -199,7 +221,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                 >
                   <ProfileAvatar name={session.name} photo={profilePhoto} />
-                  <ChevronDown className={`w-3.5 h-3.5 text-white/50 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-hopper-black/40 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
                 </button>
                 {dropdownOpen && (
                   <ProfileDropdown
@@ -208,6 +230,7 @@ export default function Navbar() {
                     photo={profilePhoto}
                     onLogout={handleLogout}
                     onClose={() => setDropdownOpen(false)}
+                    isAdmin={session.email === ADMIN_EMAIL}
                   />
                 )}
               </div>
@@ -215,7 +238,7 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
+                <button className="flex items-center gap-1.5 text-hopper-black/40 hover:text-hopper-black/70 transition-colors">
                   <UserCircle className="w-8 h-8" />
                 </button>
               </Link>
@@ -230,7 +253,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white/70 hover:bg-white/10 transition-colors">
+          <SheetTrigger className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-hopper-black/60 hover:bg-black/10 transition-colors">
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent className="w-[300px] bg-white">
@@ -261,6 +284,9 @@ export default function Navbar() {
                         </div>
                       </div>
                     </div>
+                    <Link href="/dashboard" onClick={() => setOpen(false)}>
+                      <Button variant="outline" className="w-full">Dashboard</Button>
+                    </Link>
                     <Link href="/perfil" onClick={() => setOpen(false)}>
                       <Button variant="outline" className="w-full">Mi perfil</Button>
                     </Link>

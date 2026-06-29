@@ -17,10 +17,10 @@ import { countries } from "@/lib/data/countries";
 import type { Country } from "@/lib/data/countries";
 
 
-const AVAILABILITY_OPTIONS = ["Inmediata", "En 1 mes", "En 3 meses", "Negociable"];
-const JOB_PREF_OPTIONS = ["Remoto", "Híbrido", "Presencial"];
+const STUDY_HOURS_OPTIONS = ["Menos de 5h/semana", "5-10h/semana", "10-20h/semana", "Más de 20h/semana"];
+const COURSE_FORMAT_OPTIONS = ["Online", "Presencial", "Híbrido"];
+const LEARNING_GOAL_OPTIONS = ["Certificarme", "Cambiar de carrera", "Ascender en mi empresa", "Ampliar conocimientos"];
 const LANGUAGE_OPTIONS = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano", "Otro"];
-const SALARY_OPTIONS = ["<25.000€", "25.000€ - 40.000€", "40.000€ - 55.000€", "55.000€ - 75.000€", ">75.000€"];
 const EXPERIENCE_OPTIONS = [
   { label: "Sin experiencia", value: "0" },
   { label: "1-3 años", value: "1-3" },
@@ -653,34 +653,34 @@ export default function PerfilPage() {
         </div>
       </section>
 
-      {/* Preferencias laborales */}
+      {/* Preferencias de formación */}
       <section className="bg-white rounded-2xl border p-6 space-y-5 shadow-sm">
-        <SectionHeader title="Preferencias laborales" {...sectionCount("preferencias")} />
-        <Field label="Salario actual bruto anual" points={5}>
-          <ToggleChips options={SALARY_OPTIONS} selected={profile.salary ? [profile.salary] : []} onChange={(v) => update("salary", v[0] ?? "")} single />
+        <SectionHeader title="Preferencias de formación" {...sectionCount("preferencias")} />
+        <Field label="Disponibilidad de estudio" points={5}>
+          <ToggleChips options={STUDY_HOURS_OPTIONS} selected={profile.availability ? [profile.availability] : []} onChange={(v) => update("availability", v[0] ?? "")} single />
         </Field>
-        <Field label="Disponibilidad" points={5}>
-          <ToggleChips options={AVAILABILITY_OPTIONS} selected={profile.availability ? [profile.availability] : []} onChange={(v) => update("availability", v[0] ?? "")} single />
+        <Field label="Formato de curso preferido" points={5}>
+          <ToggleChips options={COURSE_FORMAT_OPTIONS} selected={profile.jobPreferences} onChange={(v) => update("jobPreferences", v)} />
         </Field>
-        <Field label="Modalidad de trabajo" points={5}>
-          <ToggleChips options={JOB_PREF_OPTIONS} selected={profile.jobPreferences} onChange={(v) => update("jobPreferences", v)} />
+        <Field label="Objetivo principal" points={5}>
+          <ToggleChips options={LEARNING_GOAL_OPTIONS} selected={profile.salary ? [profile.salary] : []} onChange={(v) => update("salary", v[0] ?? "")} single />
         </Field>
       </section>
 
       {/* Sobre mí */}
       <section className="bg-white rounded-2xl border p-6 space-y-5 shadow-sm">
         <SectionHeader title="Sobre mí" {...sectionCount("sobre_mi")} />
-        <Field label="Resumen profesional" points={10}>
+        <Field label="Motivación y objetivos" points={10}>
           <textarea value={profile.bio} onChange={(e) => update("bio", e.target.value)}
             rows={4} className="field-input resize-none"
-            placeholder="Describe tu experiencia, especialidades y lo que buscas profesionalmente..." />
+            placeholder="Cuéntanos por qué quieres formarte en SAP, qué te ha llevado hasta aquí y qué esperas conseguir..." />
         </Field>
         <Field label="Idiomas" points={5}>
           <ToggleChips options={LANGUAGE_OPTIONS} selected={profile.languages} onChange={(v) => update("languages", v)} />
         </Field>
-        <Field label="Educación" points={10}>
+        <Field label="Formación académica" points={10}>
           <input value={profile.education} onChange={(e) => update("education", e.target.value)}
-            className="field-input" placeholder="Grado en Informática, Universidad Complutense..." />
+            className="field-input" placeholder="Grado en ADE, FP en Informática, Bachillerato..." />
         </Field>
       </section>
 
