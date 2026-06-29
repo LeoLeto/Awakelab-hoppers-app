@@ -7,19 +7,15 @@ export const metadata = {
 
 export default function DiagnosticoPage() {
   return (
-    <main className="min-h-screen bg-gray-50 py-16 px-4">
+    <main className="bg-gray-50 px-4 py-3" style={{ minHeight: "100dvh" }}>
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="inline-block bg-hopper-red/10 text-hopper-red text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4">
+        <div className="text-center mb-3">
+          <span className="inline-block bg-hopper-red/10 text-hopper-red text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
             Gratuito y confidencial
           </span>
-          <h1 className="text-4xl font-black text-hopper-black mb-4">
-            Diagnostico de Empleabilidad SAP
+          <h1 className="text-xl font-black text-hopper-black mt-1">
+            Diagnóstico de Empleabilidad SAP
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Analiza tu perfil profesional en el ecosistema SAP y descubre tu potencial de empleabilidad.
-            Resultado inmediato con recomendaciones personalizadas.
-          </p>
         </div>
         <DiagnosticTool />
       </div>
