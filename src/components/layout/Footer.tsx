@@ -1,8 +1,4 @@
-"use client";
-
-import { useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 
 const footerSections = [
@@ -33,20 +29,6 @@ const footerSections = [
 ];
 
 export default function Footer() {
-  const router = useRouter();
-  const clickCount = useRef(0);
-  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleCopyrightClick() {
-    clickCount.current += 1;
-    if (clickTimer.current) clearTimeout(clickTimer.current);
-    clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 2000);
-    if (clickCount.current >= 5) {
-      clickCount.current = 0;
-      router.push("/admin");
-    }
-  }
-
   return (
     <footer className="bg-hopper-black text-white/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
@@ -98,10 +80,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p
-            className="text-xs text-white/30 cursor-default select-none"
-            onClick={handleCopyrightClick}
-          >
+          <p className="text-xs text-white/30">
             &copy; {new Date().getFullYear()} Hoppers Academy. Todos los derechos
             reservados.
           </p>

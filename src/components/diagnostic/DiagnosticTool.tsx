@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
-import { getSession, registerUser, saveDiagnosticResult, getDiagnosticResult } from "@/lib/auth";
+import { getSession, initSession, registerUser, saveDiagnosticResult, getDiagnosticResult } from "@/lib/auth";
 import { getProfile, saveProfile, saveProfileToDB, buildProfileFromDiagnostic } from "@/lib/profile";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
@@ -66,8 +66,12 @@ export function DiagnosticTool() {
   const [salary, setSalary] = useState("");
 
   const [result, setResult] = useState<DiagnosticResult | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState("");
+  const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
+  const [emailVerifyError, setEmailVerifyError] = useState(false);
 
-  const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string } | null>(null);
+  const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string; password?: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -175,18 +179,74 @@ export function DiagnosticTool() {
     setTimeout(() => setPhase("user_data"), 400);
   }
 
-  function onUserDataContinue(userData: { name: string; email: string; country: string; linkedin: string; salary: string }) {
+  async function onUserDataContinue(userData: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string }) {
+    if (registerLoading) return;
     pendingUserData.current = userData;
     setName(userData.name);
     setEmail(userData.email);
     setCountry(userData.country);
     setLinkedin(userData.linkedin);
     setSalary(userData.salary);
-    setPhase("email_verify");
+    setRegisterError("");
+
+    // If already authenticated with this email, skip registration
+    const session = getSession();
+    if (session && session.email.toLowerCase() === userData.email.toLowerCase()) {
+      await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
+      return;
+    }
+
+    setRegisterLoading(true);
+    const regResult = await registerUser({
+      name: userData.name,
+      email: userData.email,
+      country: userData.country,
+      currentRole,
+      yearsExperience,
+      sapModules: modules,
+      certifications,
+      linkedinUrl: userData.linkedin,
+      targetRole,
+      linkedin: userData.linkedin,
+      salary: userData.salary,
+      password: userData.password,
+    });
+    setRegisterLoading(false);
+
+    if (regResult.success) {
+      if (regResult.needsVerification) {
+        setPhase("email_verify");
+      } else {
+        // Existing user re-authenticated — skip email verify
+        await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
+      }
+    } else if (regResult.alreadyExists) {
+      setRegisterError("__login_required__");
+    } else {
+      // Network / DB error — save session locally and continue
+      initSession({ name: userData.name, email: userData.email, country: userData.country, loggedAt: new Date().toISOString() });
+      await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
+    }
   }
 
   async function onEmailVerifyContinue() {
     const ud = pendingUserData.current ?? { name, email, country, linkedin, salary };
+    setEmailVerifyLoading(true);
+    setEmailVerifyError(false);
+    try {
+      const res = await fetch(`/api/auth/check?email=${encodeURIComponent(ud.email)}&checkVerified=true`);
+      const json = await res.json();
+      if (!json.verified) {
+        setEmailVerifyError(true);
+        setEmailVerifyLoading(false);
+        return;
+      }
+    } catch {
+      setEmailVerifyError(true);
+      setEmailVerifyLoading(false);
+      return;
+    }
+    setEmailVerifyLoading(false);
     await runProcessing(ud.name, ud.email, ud.country, ud.linkedin, ud.salary);
   }
 
@@ -195,29 +255,6 @@ export function DiagnosticTool() {
 
     const text = modules.join(" ") + " " + certifications + " " + currentRole + " " + targetRole;
     const diagResult = buildDiagnosticResult(text, yearsExperience);
-
-    const registerResult = await registerUser({
-      name: userName,
-      email: userEmail,
-      country: userCountry,
-      currentRole,
-      yearsExperience,
-      sapModules: modules,
-      certifications,
-      linkedinUrl: userLinkedin,
-      targetRole,
-      linkedin: userLinkedin,
-      salary: userSalary,
-    });
-
-    if (!registerResult.success) {
-      localStorage.setItem("hoppers_session", JSON.stringify({
-        name: userName,
-        email: userEmail,
-        country: userCountry,
-        loggedAt: new Date().toISOString(),
-      }));
-    }
 
     const diagResultWithMeta = {
       ...diagResult,
@@ -342,15 +379,32 @@ export function DiagnosticTool() {
 
   if (phase === "user_data") {
     const session = getSession();
-    const isAdmin = session?.email === "admin@hoppers.es";
     return (
       <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
-        <UserDataScreen
-          defaultName={isAdmin ? "" : (session?.name ?? "")}
-          defaultEmail={isAdmin ? "" : (session?.email ?? "")}
-          defaultCountry={isAdmin ? "" : (session?.country ?? "")}
-          onContinue={onUserDataContinue}
-        />
+        {registerError && (
+          <div className="max-w-md mx-auto mt-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800 text-center space-y-2">
+            <p className="font-semibold">Ya existe una cuenta con ese email.</p>
+            <p className="text-amber-700">Para continuar con el diagnóstico tienes que iniciar sesión primero.</p>
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <a href="/login" className="font-semibold text-hopper-red hover:underline">Iniciar sesión →</a>
+              <span className="text-amber-400">·</span>
+              <a href="/olvidar-contrasena" className="text-amber-700 hover:underline">¿Olvidaste la contraseña?</a>
+            </div>
+          </div>
+        )}
+        {registerLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-4 border-hopper-red/20 border-t-hopper-red rounded-full animate-spin" />
+          </div>
+        ) : (
+          <UserDataScreen
+            defaultName={session?.name ?? ""}
+            defaultEmail={session?.email ?? ""}
+            defaultCountry={session?.country ?? ""}
+            hasSession={!!session}
+            onContinue={onUserDataContinue}
+          />
+        )}
       </div>
     );
   }
@@ -358,7 +412,19 @@ export function DiagnosticTool() {
   if (phase === "email_verify") {
     return (
       <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
-        <EmailVerifyScreen email={email} onContinue={onEmailVerifyContinue} />
+        <EmailVerifyScreen
+          email={email}
+          onContinue={onEmailVerifyContinue}
+          onResend={async () => {
+            await fetch("/api/auth/resend-verification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email }),
+            });
+          }}
+          verifyLoading={emailVerifyLoading}
+          verifyError={emailVerifyError}
+        />
       </div>
     );
   }
@@ -593,12 +659,14 @@ function UserDataScreen({
   defaultName = "",
   defaultEmail = "",
   defaultCountry = "",
+  hasSession = false,
   onContinue,
 }: {
   defaultName?: string;
   defaultEmail?: string;
   defaultCountry?: string;
-  onContinue: (data: { name: string; email: string; country: string; linkedin: string; salary: string }) => void;
+  hasSession?: boolean;
+  onContinue: (data: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string }) => void;
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
@@ -606,9 +674,32 @@ function UserDataScreen({
   const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
   const [linkedin, setLinkedin] = useState("");
   const [salary, setSalary] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showGdpr, setShowGdpr] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
+  const [nameExists, setNameExists] = useState(false);
 
-  const canProceed = name.trim() && email.trim() && selectedCountry;
+  const emailMatchesSession = hasSession && email.trim().toLowerCase() === defaultEmail.trim().toLowerCase();
+  const needsPassword = !emailMatchesSession;
+  const passwordMismatch = needsPassword && confirmPassword.length > 0 && password !== confirmPassword;
+  const passwordTooShort = needsPassword && password.length > 0 && password.length < 8;
+  const canProceed = name.trim() && email.trim() && selectedCountry && !emailExists && !nameExists &&
+    (!needsPassword || (password.length >= 8 && password === confirmPassword));
+
+  async function checkEmail(value: string) {
+    if (!value.trim() || !value.includes("@")) { setEmailExists(false); return; }
+    const res = await fetch(`/api/auth/check?email=${encodeURIComponent(value.trim())}`);
+    const json = await res.json();
+    setEmailExists(json.exists ?? false);
+  }
+
+  async function checkName(value: string) {
+    if (!value.trim()) { setNameExists(false); return; }
+    const res = await fetch(`/api/auth/check?name=${encodeURIComponent(value.trim())}`);
+    const json = await res.json();
+    setNameExists(json.exists ?? false);
+  }
 
   const filteredCountries = countries.filter((c) =>
     c.name.toLowerCase().includes(countrySearch.toLowerCase())
@@ -631,16 +722,40 @@ function UserDataScreen({
       <div className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-hopper-black">Nombre completo</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setNameExists(false); }}
+            onBlur={(e) => { if (!hasSession) checkName(e.target.value); }}
             placeholder="Tu nombre completo"
-            className="w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red" />
+            className={`w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red ${nameExists ? "border-amber-400" : ""}`}
+          />
+          {nameExists && (
+            <p className="text-xs text-amber-600 flex items-center gap-1">
+              <span>⚠</span> Ese nombre ya está registrado. ¿Eres tú?{" "}
+              <a href="/login" className="font-semibold underline hover:no-underline">Inicia sesión</a>
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-hopper-black">Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setEmailExists(false); }}
+            onBlur={(e) => { if (!hasSession) checkEmail(e.target.value); }}
             placeholder="tu@email.com"
-            className="w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red" />
+            className={`w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red ${emailExists ? "border-amber-400" : ""}`}
+          />
+          {emailExists && (
+            <p className="text-xs text-amber-600 flex items-center gap-1">
+              <span>⚠</span> Ese email ya tiene cuenta.{" "}
+              <a href="/login" className="font-semibold underline hover:no-underline">Inicia sesión</a>
+              {" "}o{" "}
+              <a href="/olvidar-contrasena" className="underline hover:no-underline">restablece tu contraseña</a>
+            </p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -671,6 +786,25 @@ function UserDataScreen({
             placeholder="https://linkedin.com/in/tu-perfil"
             className="w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red" />
         </div>
+
+        {needsPassword && (
+          <>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-hopper-black">Contraseña</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red" />
+              {passwordTooShort && <p className="text-xs text-red-500">Mínimo 8 caracteres</p>}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-hopper-black">Confirmar contraseña</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repite tu contraseña"
+                className="w-full border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red" />
+              {passwordMismatch && <p className="text-xs text-red-500">Las contraseñas no coinciden</p>}
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-hopper-black">
@@ -703,7 +837,7 @@ function UserDataScreen({
         <GdprModal
           onAccept={() => {
             setShowGdpr(false);
-            onContinue({ name: name.trim(), email: email.trim(), country: selectedCountry, linkedin: linkedin.trim(), salary });
+            onContinue({ name: name.trim(), email: email.trim(), country: selectedCountry, linkedin: linkedin.trim(), salary, password: needsPassword ? password : undefined });
           }}
           onClose={() => setShowGdpr(false)}
         />
@@ -772,7 +906,33 @@ function GdprModal({ onAccept, onClose }: { onAccept: () => void; onClose: () =>
   );
 }
 
-function EmailVerifyScreen({ email, onContinue }: { email: string; onContinue: () => void }) {
+function EmailVerifyScreen({
+  email,
+  onContinue,
+  onResend,
+  verifyLoading,
+  verifyError,
+}: {
+  email: string;
+  onContinue: () => void;
+  onResend: () => Promise<void>;
+  verifyLoading?: boolean;
+  verifyError?: boolean;
+}) {
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
+
+  async function handleResend() {
+    setResending(true);
+    setResent(false);
+    try {
+      await onResend();
+      setResent(true);
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <div className="max-w-md mx-auto py-6 text-center space-y-4">
       <div className="flex justify-center">
@@ -786,11 +946,33 @@ function EmailVerifyScreen({ email, onContinue }: { email: string; onContinue: (
         <p className="font-bold text-hopper-black">{email}</p>
       </div>
       <p className="text-xs text-gray-400">
-        Revisa tu bandeja de entrada (y la carpeta de spam). Una vez verificado, podrás acceder a tu diagnóstico personalizado.
+        Revisa tu bandeja de entrada (y la carpeta de spam). Haz clic en el enlace del email y luego vuelve aquí para continuar.
       </p>
-      <Button onClick={onContinue} className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8">
-        Continuar →
+      {verifyError && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 text-left space-y-1">
+          <p className="font-semibold">Todavía no hemos recibido la verificación.</p>
+          <p className="text-amber-700">Haz clic en el enlace del email y vuelve a comprobar.</p>
+        </div>
+      )}
+      {resent && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+          Email reenviado. Revisa tu bandeja de entrada.
+        </div>
+      )}
+      <Button
+        onClick={onContinue}
+        disabled={verifyLoading}
+        className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8 disabled:opacity-60"
+      >
+        {verifyLoading ? "Comprobando..." : verifyError ? "Volver a comprobar →" : "Ya he verificado mi email →"}
       </Button>
+      <button
+        onClick={handleResend}
+        disabled={resending}
+        className="block w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-colors"
+      >
+        {resending ? "Enviando..." : "¿No lo recibiste? Reenviar email"}
+      </button>
     </div>
   );
 }
