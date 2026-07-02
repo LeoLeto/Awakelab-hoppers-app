@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Check, ChevronRight, X, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSession } from "@/lib/auth";
+import { getSession, updateSessionName } from "@/lib/auth";
 import {
   EMPTY_PROFILE, getProfile, saveProfile, buildProfileFromDiagnostic,
   calculateCompletion, getMissingFields, COMPLETION_FIELDS,
@@ -194,8 +194,9 @@ export default function PerfilPage() {
     if (!profile) return;
     const session = getSession();
     if (!session) return;
-    saveProfile(session.email, profile);          // localStorage (cache para Navbar)
-    await saveProfileToDB(profile);               // MongoDB (fuente de verdad)
+    saveProfile(session.email, profile);
+    updateSessionName(profile.name);
+    await saveProfileToDB(profile);
     window.dispatchEvent(new CustomEvent("hoppers:profile-saved"));
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);

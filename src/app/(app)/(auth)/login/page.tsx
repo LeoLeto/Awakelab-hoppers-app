@@ -6,29 +6,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { loginUser, getSession, ADMIN_EMAIL } from "@/lib/auth";
+import { loginUser, getSession } from "@/lib/auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const s = getSession();
-    if (s) { window.location.href = s.email === ADMIN_EMAIL ? "/admin" : "/dashboard"; }
+    if (s) { window.location.replace("/dashboard"); }
+    else { setChecking(false); }
   }, []);
+
+  if (checking) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await loginUser(email, name);
+    const result = await loginUser(identifier, password);
     if (result.success) {
-      if (result.diagnosticResult) {
-        localStorage.setItem("hoppers_diag_result", JSON.stringify(result.diagnosticResult));
-      }
-      window.location.href = email.toLowerCase() === ADMIN_EMAIL ? "/admin" : "/dashboard";
+      window.location.href = "/dashboard";
     } else {
       setLoading(false);
       setError(result.error || "Error al iniciar sesion.");
@@ -51,28 +52,45 @@ export default function LoginPage() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="identifier">Email o nombre completo</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              placeholder="tu@email.com o Tu Nombre"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre completo</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Contraseña</Label>
+              <Link href="/olvidar-contrasena" className="text-xs text-hopper-red hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <Input
-              id="name"
-              type="text"
-              placeholder="Tu nombre completo"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="password"
+              type="password"
+              placeholder="Tu contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <div className="space-y-1">
+              <p className="text-sm text-red-600">{error}</p>
+              {error.includes("contrasena") || error.includes("contraseña") ? null : (
+                <p className="text-xs text-gray-400">
+                  ¿Primera vez con contraseña?{" "}
+                  <Link href="/olvidar-contrasena" className="text-hopper-red hover:underline">
+                    Crea tu contraseña aqui
+                  </Link>
+                </p>
+              )}
+            </div>
+          )}
           <Button
             type="submit"
             disabled={loading}
@@ -84,10 +102,7 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-hopper-black/50">
             No tienes cuenta?{" "}
-            <Link
-              href="/diagnostico"
-              className="text-hopper-red hover:text-hopper-red-dark font-medium"
-            >
+            <Link href="/diagnostico" className="text-hopper-red hover:text-hopper-red-dark font-medium">
               Registrate gratis
             </Link>
           </p>

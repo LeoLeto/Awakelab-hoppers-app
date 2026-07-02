@@ -1,42 +1,32 @@
 import { cookies } from "next/headers";
+import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { signToken } from "@/lib/jwt";
 
-const ADMIN_EMAIL = "admin@hoppers.es";
-const ADMIN_PASSWORD = "h0pp3rs_2026_adm!n";
-
 export async function POST(request: Request) {
   try {
-    const { email, name } = await request.json();
+    const { identifier, password } = await request.json();
 
-    if (!email || !name) {
-      return Response.json({ error: "Email y nombre son obligatorios." }, { status: 400 });
-    }
-
-    // Admin account — no DB lookup needed
-    if (email.toLowerCase() === ADMIN_EMAIL) {
-      if (name !== ADMIN_PASSWORD) {
-        return Response.json({ error: "Contraseña de administrador incorrecta." }, { status: 401 });
-      }
-      const token = signToken({ id: "admin", email: ADMIN_EMAIL, name: "Admin", country: "" });
-      const cookieStore = await cookies();
-      cookieStore.set("hoppers_token", token, {
-        httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7,
-      });
-      return Response.json({ user: { name: "Admin", email: ADMIN_EMAIL, country: "" }, diagnosticResult: null });
+    if (!identifier || !password) {
+      return Response.json({ error: "Email y contraseña son obligatorios." }, { status: 400 });
     }
 
     await connectDB();
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const isEmail = identifier.includes("@");
+    const escapedIdentifier = identifier.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const user = isEmail
+      ? await User.findOne({ email: identifier.toLowerCase() })
+      : await User.findOne({ name: { $regex: new RegExp(`^${escapedIdentifier}$`, "i") } });
+
     if (!user) {
-      return Response.json({ error: "No existe una cuenta con ese email." }, { status: 401 });
+      return Response.json({ error: "No existe una cuenta con esas credenciales." }, { status: 401 });
     }
 
-    const nameMatches = user.name.trim().toLowerCase() === name.trim().toLowerCase();
-    if (!nameMatches) {
-      return Response.json({ error: "El nombre no coincide con el registrado." }, { status: 401 });
+    const matches = await bcrypt.compare(password, user.password);
+    if (!matches) {
+      return Response.json({ error: "Contraseña incorrecta." }, { status: 401 });
     }
 
     const token = signToken({ id: user._id.toString(), email: user.email, name: user.name, country: user.country });
@@ -46,11 +36,13 @@ export async function POST(request: Request) {
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production",
     });
 
     return Response.json({
       user: { name: user.name, email: user.email, country: user.country },
-      diagnosticResult: user.diagnosticResult ?? null,
+      isSuperAdmin: user.email.toLowerCase() === (process.env.SUPERADMIN_EMAIL || "").toLowerCase(),
+      emailVerified: user.emailVerified ?? false,
     });
   } catch (err) {
     console.error("[login]", err);

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getSession } from "@/lib/auth";
+import { getSession, markSessionEmailVerified } from "@/lib/auth";
 import {
   getProfile, calculateCompletion, getMissingFields,
   loadProfileFromDB, EMPTY_PROFILE,
@@ -54,6 +54,17 @@ export default function DashboardPage() {
     async function load() {
       const session = getSession();
       if (!session) { router.replace("/login"); return; }
+
+      if (session.emailVerified === false && !session.isSuperAdmin) {
+        const res = await fetch(`/api/auth/check?email=${encodeURIComponent(session.email)}&checkVerified=true`);
+        const data = await res.json();
+        if (data.verified) {
+          markSessionEmailVerified();
+        } else {
+          router.replace("/diagnostico");
+          return;
+        }
+      }
 
       let p = getProfile(session.email);
       const fromDB = await loadProfileFromDB();

@@ -32,6 +32,11 @@ export interface IUser extends Document {
   photo?: string;
   salary?: string;
   linkedin?: string;
+  emailVerified?: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -65,6 +70,11 @@ const UserSchema = new Schema<IUser>(
     photo: { type: String, default: "" },
     salary: { type: String, default: "" },
     linkedin: { type: String, default: "" },
+    emailVerified: { type: Boolean, default: true },
+    verificationToken: { type: String },
+    verificationTokenExpires: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

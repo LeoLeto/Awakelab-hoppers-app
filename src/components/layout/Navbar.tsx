@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,7 +11,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getSession, logoutUser, ADMIN_EMAIL } from "@/lib/auth";
+import { getSession, logoutUser } from "@/lib/auth";
 import { getProfile, calculateCompletion, buildProfileFromDiagnostic } from "@/lib/profile";
 import type { HoppersSession } from "@/lib/auth";
 
@@ -35,14 +35,13 @@ function ProfileAvatar({ name, photo, size = "md" }: { name: string; photo?: str
 }
 
 function ProfileDropdown({
-  session, completion, photo, onLogout, onClose, isAdmin,
+  session, completion, photo, onLogout, onClose,
 }: {
   session: HoppersSession;
   completion: number;
   photo: string;
   onLogout: () => void;
   onClose: () => void;
-  isAdmin: boolean;
 }) {
   const barColor = completion >= 80 ? "#10B981" : completion >= 50 ? "#F59E0B" : "#EF4444";
   return (
@@ -66,32 +65,32 @@ function ProfileDropdown({
         </div>
       </div>
       <div className="p-1">
-        {isAdmin ? (
-          <Link
-            href="/admin"
-            onClick={onClose}
-            className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-red hover:bg-red-50 rounded-lg transition-colors font-semibold"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            Panel Admin
-          </Link>
-        ) : (
+        <Link
+          href="/dashboard"
+          onClick={onClose}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <LayoutDashboard className="w-4 h-4 text-gray-400" />
+          Dashboard
+        </Link>
+        <Link
+          href="/perfil"
+          onClick={onClose}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <User className="w-4 h-4 text-gray-400" />
+          Mi perfil
+        </Link>
+        {session.isSuperAdmin && (
           <>
+            <div className="my-1 border-t border-gray-50" />
             <Link
-              href="/dashboard"
+              href="/configuracion"
               onClick={onClose}
               className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
             >
-              <LayoutDashboard className="w-4 h-4 text-gray-400" />
-              Dashboard
-            </Link>
-            <Link
-              href="/perfil"
-              onClick={onClose}
-              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              <User className="w-4 h-4 text-gray-400" />
-              Mi perfil
+              <Settings className="w-4 h-4 text-gray-400" />
+              Configuraciones del sitio
             </Link>
           </>
         )}
@@ -230,7 +229,6 @@ export default function Navbar() {
                     photo={profilePhoto}
                     onLogout={handleLogout}
                     onClose={() => setDropdownOpen(false)}
-                    isAdmin={session.email === ADMIN_EMAIL}
                   />
                 )}
               </div>
@@ -290,6 +288,13 @@ export default function Navbar() {
                     <Link href="/perfil" onClick={() => setOpen(false)}>
                       <Button variant="outline" className="w-full">Mi perfil</Button>
                     </Link>
+                    {session.isSuperAdmin && (
+                      <Link href="/configuracion" onClick={() => setOpen(false)}>
+                        <Button variant="outline" className="w-full border-gray-200 text-hopper-black">
+                          Configuraciones del sitio
+                        </Button>
+                      </Link>
+                    )}
                     {completion < 100 && (
                       <Link href="/perfil" onClick={() => setOpen(false)}>
                         <Button variant="outline" className="w-full border-amber-200 text-amber-700 hover:bg-amber-50">

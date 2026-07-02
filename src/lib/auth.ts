@@ -3,6 +3,8 @@ export interface HoppersSession {
   name: string;
   country: string;
   loggedAt: string;
+  isSuperAdmin?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface RegisterData {
@@ -17,12 +19,11 @@ export interface RegisterData {
   targetRole: string;
   linkedin?: string;
   salary?: string;
+  password?: string;
 }
 
 const SESSION_KEY = "hoppers_session";
 const DIAG_KEY = "hoppers_diag_result";
-export const ADMIN_PASSWORD = "h0pp3rs_2026_adm!n";
-export const ADMIN_EMAIL = "admin@hoppers.es";
 
 function diagBackupKey(email: string) {
   return `hoppers_diag_backup_${email.toLowerCase()}`;
@@ -39,6 +40,10 @@ export function getSession(): HoppersSession | null {
   }
 }
 
+export function initSession(session: HoppersSession): void {
+  saveSession(session);
+}
+
 function saveSession(session: HoppersSession | null): void {
   if (session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -51,7 +56,7 @@ function saveSession(session: HoppersSession | null): void {
 
 export async function registerUser(
   data: RegisterData
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; alreadyExists?: boolean; needsVerification?: boolean }> {
   try {
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -59,28 +64,30 @@ export async function registerUser(
       body: JSON.stringify(data),
     });
     const json = await res.json();
-    if (!res.ok) return { success: false, error: json.error };
+    if (!res.ok) return { success: false, error: json.error, alreadyExists: json.alreadyExists };
     saveSession({
       email: json.user.email,
       name: json.user.name,
       country: json.user.country || "",
       loggedAt: new Date().toISOString(),
+      isSuperAdmin: json.isSuperAdmin ?? false,
+      emailVerified: json.emailVerified ?? false,
     });
-    return { success: true };
+    return { success: true, needsVerification: json.needsVerification ?? false };
   } catch {
     return { success: false, error: "Error de conexion." };
   }
 }
 
 export async function loginUser(
-  email: string,
-  name: string
-): Promise<{ success: boolean; error?: string; diagnosticResult?: unknown }> {
+  identifier: string,
+  password: string
+): Promise<{ success: boolean; error?: string; needsVerification?: boolean; email?: string }> {
   try {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify({ identifier, password }),
     });
     const json = await res.json();
     if (res.ok) {
@@ -89,53 +96,34 @@ export async function loginUser(
         name: json.user.name,
         country: json.user.country || "",
         loggedAt: new Date().toISOString(),
+        isSuperAdmin: json.isSuperAdmin ?? false,
+        emailVerified: json.emailVerified ?? true,
       });
-      return { success: true, diagnosticResult: json.diagnosticResult ?? null };
+      // Restore diagnostic backup to active key (client-side only, no sensitive data in API response)
+      try {
+        const backup = localStorage.getItem(diagBackupKey(json.user.email));
+        if (backup) localStorage.setItem(DIAG_KEY, backup);
+      } catch {}
+      return { success: true };
     }
-    if (res.status >= 500) {
-      return loginUserLocal(email, name);
+    if (json.needsVerification) {
+      return { success: false, error: json.error, needsVerification: true, email: json.email };
     }
     return { success: false, error: json.error };
   } catch {
-    return loginUserLocal(email, name);
+    return { success: false, error: "Error de conexion. Comprueba tu internet." };
   }
 }
 
-function loginUserLocal(email: string, name: string): { success: boolean; error?: string; diagnosticResult?: unknown } {
-  try {
-    const stored = localStorage.getItem(SESSION_KEY);
-    if (stored) {
-      const session: HoppersSession = JSON.parse(stored);
-      if (session.email.toLowerCase() === email.toLowerCase()) {
-        if (session.name.trim().toLowerCase() !== name.trim().toLowerCase()) {
-          return { success: false, error: "El nombre no coincide con el registrado." };
-        }
-        saveSession({ ...session, loggedAt: new Date().toISOString() });
-        // Restaurar resultado desde backup local si existe
-        const backup = localStorage.getItem(diagBackupKey(email));
-        if (backup) {
-          localStorage.setItem(DIAG_KEY, backup);
-          return { success: true, diagnosticResult: JSON.parse(backup) };
-        }
-        return { success: true };
-      }
-    }
-    saveSession({
-      email: email.toLowerCase(),
-      name: name.trim(),
-      country: "",
-      loggedAt: new Date().toISOString(),
-    });
-    // Intentar restaurar backup de un diagnóstico previo
-    const backup = localStorage.getItem(diagBackupKey(email));
-    if (backup) {
-      localStorage.setItem(DIAG_KEY, backup);
-      return { success: true, diagnosticResult: JSON.parse(backup) };
-    }
-    return { success: true };
-  } catch {
-    return { success: false, error: "Error al acceder al almacenamiento local." };
-  }
+
+export function updateSessionName(name: string): void {
+  const session = getSession();
+  if (session) saveSession({ ...session, name: name.trim() });
+}
+
+export function markSessionEmailVerified(): void {
+  const session = getSession();
+  if (session) saveSession({ ...session, emailVerified: true });
 }
 
 export async function logoutUser(): Promise<void> {
