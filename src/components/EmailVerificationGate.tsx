@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { markSessionEmailVerified } from "@/lib/auth";
 
 interface Props {
   email: string;
@@ -14,19 +15,34 @@ interface Props {
 export default function EmailVerificationGate({ email, children, verified, isSuperAdmin }: Props) {
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [resolvedVerified, setResolvedVerified] = useState(verified);
 
-  if (verified !== false || isSuperAdmin) return <>{children}</>;
+  // On mount, check the real DB status in case localStorage is stale
+  useEffect(() => {
+    if (verified !== false || isSuperAdmin) return;
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.user?.emailVerified === true) {
+          markSessionEmailVerified();
+          setResolvedVerified(true);
+        }
+      })
+      .catch(() => {});
+  }, [verified, isSuperAdmin]);
+
+  if (resolvedVerified !== false || isSuperAdmin) return <>{children}</>;
 
   async function handleResend() {
     setResending(true);
     setResent(false);
     try {
-      await fetch("/api/auth/resend-verification", {
+      const res = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      setResent(true);
+      if (res.ok) setResent(true);
     } finally {
       setResending(false);
     }

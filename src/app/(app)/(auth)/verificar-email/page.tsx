@@ -1,10 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { markSessionEmailVerified } from "@/lib/auth";
 
 function VerifyContent() {
   const params = useSearchParams();
@@ -27,6 +28,10 @@ function VerifyContent() {
       setResending(false);
     }
   }
+
+  useEffect(() => {
+    if (status === "success") markSessionEmailVerified();
+  }, [status]);
 
   if (status === "success") {
     return (
