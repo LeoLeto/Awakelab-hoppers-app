@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Check, ChevronRight, X, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSession, updateSessionName } from "@/lib/auth";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import {
   EMPTY_PROFILE, getProfile, saveProfile, buildProfileFromDiagnostic,
   calculateCompletion, getMissingFields, COMPLETION_FIELDS,
@@ -307,7 +308,10 @@ export default function PerfilPage() {
     return { completed: done, total: fields.length };
   };
 
+  const session = getSession();
+
   return (
+    <EmailVerificationGate email={session?.email ?? ""} verified={session?.emailVerified} isSuperAdmin={session?.isSuperAdmin}>
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
       {/* Header */}
       <div className="bg-white rounded-2xl border p-6 space-y-5 shadow-sm">
@@ -713,6 +717,7 @@ export default function PerfilPage() {
         }
       `}</style>
     </div>
+    </EmailVerificationGate>
   );
 }
 

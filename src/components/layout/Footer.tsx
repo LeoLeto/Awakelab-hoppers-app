@@ -21,9 +21,8 @@ const footerSections = [
   {
     title: "Legal",
     links: [
-      { href: "/privacidad", label: "Politica de Privacidad" },
-      { href: "/terminos", label: "Terminos de Uso" },
-      { href: "/cookies", label: "Cookies" },
+      { href: "https://hoppers.academy/politica-de-privacidad", label: "Política de Privacidad", external: true },
+      { href: "https://hoppers.academy/politica-de-cookies", label: "Cookies", external: true },
     ],
   },
 ];

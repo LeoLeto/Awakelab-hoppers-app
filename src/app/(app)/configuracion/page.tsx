@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, CheckCircle, XCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, CheckCircle, XCircle, Loader2, Eye, EyeOff, Users, Trash2, Search } from "lucide-react";
 
 interface SmtpSettings {
   smtpFrom: string;
@@ -14,6 +14,17 @@ interface SmtpSettings {
   smtpUser: string;
   smtpPassSet: boolean;
   smtpSecure: boolean;
+}
+
+interface UserRow {
+  _id: string;
+  name: string;
+  email: string;
+  country: string;
+  emailVerified: boolean;
+  diagnosticDone: boolean;
+  empScore?: number;
+  createdAt: string;
 }
 
 export default function ConfiguracionPage() {
@@ -34,6 +45,12 @@ export default function ConfiguracionPage() {
   const [smtpPassSet, setSmtpPassSet] = useState(false);
   const [smtpSecure, setSmtpSecure] = useState(false);
 
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [userSearch, setUserSearch] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+
   useEffect(() => {
     const session = getSession();
     if (!session?.isSuperAdmin) {
@@ -52,6 +69,12 @@ export default function ConfiguracionPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch("/api/admin/users")
+      .then((r) => r.json())
+      .then((data) => setUsers(data.users || []))
+      .catch(() => {})
+      .finally(() => setUsersLoading(false));
   }, [router]);
 
   async function handleSave(e: React.FormEvent) {
@@ -101,6 +124,26 @@ export default function ConfiguracionPage() {
       setTimeout(() => { setTestStatus("idle"); setTestMessage(""); }, 8000);
     }
   }
+
+  async function handleDelete(user: UserRow) {
+    setDeletingId(user._id);
+    try {
+      await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user._id }),
+      });
+      setUsers((prev) => prev.filter((u) => u._id !== user._id));
+    } finally {
+      setDeletingId(null);
+      setConfirmDelete(null);
+    }
+  }
+
+  const filteredUsers = users.filter((u) => {
+    const q = userSearch.toLowerCase();
+    return !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+  });
 
   if (loading) {
     return (
@@ -250,6 +293,113 @@ export default function ConfiguracionPage() {
           </div>
         </form>
       </Card>
+
+      {/* ── Gestión de usuarios ─────────────────────────── */}
+      <Card className="overflow-hidden">
+        <div className="bg-hopper-black px-6 py-4 flex items-center gap-3">
+          <Users className="w-5 h-5 text-hopper-red shrink-0" />
+          <div>
+            <h2 className="text-base font-bold text-white">Gestión de usuarios</h2>
+            <p className="text-xs text-white/50 mt-0.5">{users.length} cuenta{users.length !== 1 ? "s" : ""} registrada{users.length !== 1 ? "s" : ""}</p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              placeholder="Buscar por nombre o email..."
+              className="w-full border rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red"
+            />
+          </div>
+
+          {usersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-hopper-red" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">
+              {userSearch ? "No se encontraron resultados." : "No hay usuarios registrados."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-gray-400 uppercase tracking-wide">
+                    <th className="pb-2 pr-4 font-medium">Nombre</th>
+                    <th className="pb-2 pr-4 font-medium">Email</th>
+                    <th className="pb-2 pr-4 font-medium">País</th>
+                    <th className="pb-2 pr-4 font-medium">Verificado</th>
+                    <th className="pb-2 pr-4 font-medium">Diagnóstico</th>
+                    <th className="pb-2 pr-4 font-medium">Registro</th>
+                    <th className="pb-2 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredUsers.map((u) => (
+                    <tr key={u._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-3 pr-4 font-medium text-hopper-black">{u.name}</td>
+                      <td className="py-3 pr-4 text-gray-500">{u.email}</td>
+                      <td className="py-3 pr-4 text-gray-500">{u.country || "—"}</td>
+                      <td className="py-3 pr-4">
+                        {u.emailVerified
+                          ? <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded text-xs font-medium"><CheckCircle className="w-3 h-3" />Sí</span>
+                          : <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-medium"><XCircle className="w-3 h-3" />No</span>
+                        }
+                      </td>
+                      <td className="py-3 pr-4">
+                        {u.diagnosticDone
+                          ? <span className="text-xs text-gray-700">{u.empScore ?? "—"}%</span>
+                          : <span className="text-xs text-gray-400">Pendiente</span>
+                        }
+                      </td>
+                      <td className="py-3 pr-4 text-gray-400 text-xs">
+                        {new Date(u.createdAt).toLocaleDateString("es-ES")}
+                      </td>
+                      <td className="py-3">
+                        <button
+                          onClick={() => setConfirmDelete(u)}
+                          className="text-gray-300 hover:text-red-500 transition-colors"
+                          title="Eliminar cuenta"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Modal de confirmación de eliminación */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <h3 className="text-lg font-black text-hopper-black">¿Eliminar cuenta?</h3>
+            <p className="text-sm text-gray-500">
+              Vas a eliminar la cuenta de <strong>{confirmDelete.name}</strong> ({confirmDelete.email}). Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => setConfirmDelete(null)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleDelete(confirmDelete)}
+                disabled={deletingId === confirmDelete._id}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deletingId === confirmDelete._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Eliminar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
