@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, Key, Mail, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { User, Key, Shield, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function MiCuentaPage() {
   const [session, setSession] = useState<HoppersSession | null>(null);
 
   const [name, setName] = useState("");
+  const [namePw, setNamePw] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMsg, setNameMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
@@ -37,11 +38,6 @@ export default function MiCuentaPage() {
   const [confirmPw, setConfirmPw] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [emailPw, setEmailPw] = useState("");
-  const [emailSaving, setEmailSaving] = useState(false);
-  const [emailMsg, setEmailMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     const s = getSession();
@@ -61,15 +57,27 @@ export default function MiCuentaPage() {
   async function handleName() {
     setNameSaving(true);
     setNameMsg(null);
-    const json = await patch({ action: "name", name });
+    const json = await patch({ action: "name", name, currentPassword: namePw });
     setNameSaving(false);
     if (json.success) {
       updateSessionName(json.name);
       setSession((s) => s ? { ...s, name: json.name } : s);
       setNameMsg({ type: "ok", text: "Nombre actualizado correctamente." });
+      setNamePw("");
     } else {
       setNameMsg({ type: "err", text: json.error || "Error al actualizar." });
     }
+  }
+
+  async function handleForgotPassword() {
+    if (!session) return;
+    setPwMsg(null);
+    await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: session.email }),
+    });
+    setPwMsg({ type: "ok", text: `Te hemos enviado un enlace de recuperación a ${session.email}.` });
   }
 
   async function handlePassword() {
@@ -86,25 +94,6 @@ export default function MiCuentaPage() {
       setCurrentPw(""); setNewPw(""); setConfirmPw("");
     } else {
       setPwMsg({ type: "err", text: json.error || "Error al actualizar." });
-    }
-  }
-
-  async function handleEmail() {
-    setEmailSaving(true);
-    setEmailMsg(null);
-    const json = await patch({ action: "email", currentPassword: emailPw, newEmail });
-    setEmailSaving(false);
-    if (json.success) {
-      const s = getSession();
-      if (s) {
-        const updated = { ...s, email: json.newEmail, emailVerified: false };
-        localStorage.setItem("hoppers_session", JSON.stringify(updated));
-        setSession(updated);
-      }
-      setEmailMsg({ type: "ok", text: `Email actualizado. Hemos enviado verificación a ${json.newEmail}.` });
-      setNewEmail(""); setEmailPw("");
-    } else {
-      setEmailMsg({ type: "err", text: json.error || "Error al actualizar." });
     }
   }
 
@@ -151,7 +140,7 @@ export default function MiCuentaPage() {
         </div>
         <div className="space-y-3 max-w-sm">
           <div>
-            <Label htmlFor="name">Nombre completo</Label>
+            <Label htmlFor="name">Nuevo nombre completo</Label>
             <Input
               id="name"
               value={name}
@@ -159,10 +148,19 @@ export default function MiCuentaPage() {
               placeholder="Tu nombre"
             />
           </div>
+          <div>
+            <Label htmlFor="name-pw">Confirma tu contraseña</Label>
+            <PasswordInput
+              id="name-pw"
+              value={namePw}
+              onChange={(e) => setNamePw(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
           {nameMsg && <StatusMsg {...nameMsg} />}
           <Button
             onClick={handleName}
-            disabled={nameSaving || !name.trim() || name.trim() === session.name}
+            disabled={nameSaving || !name.trim() || name.trim() === session.name || !namePw}
             className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
           >
             {nameSaving ? "Guardando..." : "Guardar nombre"}
@@ -178,7 +176,16 @@ export default function MiCuentaPage() {
         </div>
         <div className="space-y-3 max-w-sm">
           <div>
-            <Label htmlFor="current-pw">Contraseña actual</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label htmlFor="current-pw">Contraseña actual</Label>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs text-hopper-red hover:underline"
+              >
+                ¿La olvidaste?
+              </button>
+            </div>
             <PasswordInput
               id="current-pw"
               value={currentPw}
@@ -211,50 +218,6 @@ export default function MiCuentaPage() {
             className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
           >
             {pwSaving ? "Actualizando..." : "Cambiar contraseña"}
-          </Button>
-        </div>
-      </Card>
-
-      {/* Cambiar email */}
-      <Card className="p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Mail className="w-4 h-4 text-hopper-red" />
-          <h2 className="font-bold text-hopper-black">Dirección de email</h2>
-        </div>
-        <p className="text-sm text-gray-500">
-          Email actual:{" "}
-          <span className="font-medium text-hopper-black">{session.email}</span>
-        </p>
-        <div className="space-y-3 max-w-sm">
-          <div>
-            <Label htmlFor="new-email">Nuevo email</Label>
-            <Input
-              id="new-email"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="nuevo@ejemplo.com"
-            />
-          </div>
-          <div>
-            <Label htmlFor="email-pw">Confirma tu contraseña</Label>
-            <PasswordInput
-              id="email-pw"
-              value={emailPw}
-              onChange={(e) => setEmailPw(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-          <p className="text-xs text-gray-400">
-            Recibirás un email de verificación en la nueva dirección.
-          </p>
-          {emailMsg && <StatusMsg {...emailMsg} />}
-          <Button
-            onClick={handleEmail}
-            disabled={emailSaving || !newEmail || !emailPw}
-            className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50"
-          >
-            {emailSaving ? "Actualizando..." : "Cambiar email"}
           </Button>
         </div>
       </Card>

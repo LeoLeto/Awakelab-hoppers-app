@@ -1,10 +1,8 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
-import { sendVerificationEmail } from "@/lib/email";
 
 export async function PATCH(request: Request) {
   try {
@@ -24,7 +22,11 @@ export async function PATCH(request: Request) {
 
     if (action === "name") {
       const name = body.name?.trim();
+      const { currentPassword } = body;
       if (!name) return Response.json({ error: "El nombre no puede estar vacío." }, { status: 400 });
+      if (!currentPassword) return Response.json({ error: "Debes confirmar tu contraseña." }, { status: 400 });
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) return Response.json({ error: "La contraseña es incorrecta." }, { status: 400 });
       user.name = name;
       await user.save();
       return Response.json({ success: true, name });
@@ -44,33 +46,6 @@ export async function PATCH(request: Request) {
       user.password = await bcrypt.hash(newPassword, 10);
       await user.save();
       return Response.json({ success: true });
-    }
-
-    if (action === "email") {
-      const { currentPassword, newEmail } = body;
-      if (!currentPassword || !newEmail)
-        return Response.json({ error: "Datos incompletos." }, { status: 400 });
-      const valid = await bcrypt.compare(currentPassword, user.password);
-      if (!valid)
-        return Response.json({ error: "La contraseña es incorrecta." }, { status: 400 });
-      const emailNorm = newEmail.toLowerCase().trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNorm))
-        return Response.json({ error: "Email inválido." }, { status: 400 });
-      if (emailNorm === user.email)
-        return Response.json({ error: "El nuevo email debe ser diferente al actual." }, { status: 400 });
-      const taken = await User.findOne({ email: emailNorm });
-      if (taken) return Response.json({ error: "Ese email ya está en uso." }, { status: 400 });
-      user.email = emailNorm;
-      user.emailVerified = false;
-      user.verificationToken = crypto.randomBytes(32).toString("hex");
-      user.verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await user.save();
-      try {
-        await sendVerificationEmail(emailNorm, user.name, user.verificationToken);
-      } catch (err) {
-        console.error("[update-account/email] SMTP:", err);
-      }
-      return Response.json({ success: true, newEmail: emailNorm });
     }
 
     return Response.json({ error: "Acción no reconocida." }, { status: 400 });
