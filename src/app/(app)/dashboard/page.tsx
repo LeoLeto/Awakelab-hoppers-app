@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getSession, markSessionEmailVerified } from "@/lib/auth";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import {
   getProfile, calculateCompletion, getMissingFields,
   loadProfileFromDB, EMPTY_PROFILE,
@@ -55,16 +56,6 @@ export default function DashboardPage() {
       const session = getSession();
       if (!session) { router.replace("/login"); return; }
 
-      if (session.emailVerified === false && !session.isSuperAdmin) {
-        const res = await fetch(`/api/auth/check?email=${encodeURIComponent(session.email)}&checkVerified=true`);
-        const data = await res.json();
-        if (data.verified) {
-          markSessionEmailVerified();
-        } else {
-          router.replace("/diagnostico");
-          return;
-        }
-      }
 
       let p = getProfile(session.email);
       const fromDB = await loadProfileFromDB();
@@ -112,6 +103,7 @@ export default function DashboardPage() {
   const salaries = diag?.salaryExpectations?.filter((s) => s.salary !== "N/D").slice(0, 2) ?? [];
 
   return (
+    <EmailVerificationGate email={session?.email ?? ""} verified={session?.emailVerified} isSuperAdmin={session?.isSuperAdmin}>
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-5">
 
       {/* ── Cabecera de perfil ─────────────────────────────── */}
@@ -299,5 +291,6 @@ export default function DashboardPage() {
         ))}
       </div>
     </div>
+    </EmailVerificationGate>
   );
 }

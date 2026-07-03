@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, Settings } from "lucide-react";
+import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, Settings, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -80,6 +80,14 @@ function ProfileDropdown({
         >
           <User className="w-4 h-4 text-gray-400" />
           Mi perfil
+        </Link>
+        <Link
+          href="/mi-cuenta"
+          onClick={onClose}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <Shield className="w-4 h-4 text-gray-400" />
+          Seguridad y cuenta
         </Link>
         {session.isSuperAdmin && (
           <>
@@ -287,6 +295,9 @@ export default function Navbar() {
                     </Link>
                     <Link href="/perfil" onClick={() => setOpen(false)}>
                       <Button variant="outline" className="w-full">Mi perfil</Button>
+                    </Link>
+                    <Link href="/mi-cuenta" onClick={() => setOpen(false)}>
+                      <Button variant="outline" className="w-full">Seguridad y cuenta</Button>
                     </Link>
                     {session.isSuperAdmin && (
                       <Link href="/configuracion" onClick={() => setOpen(false)}>

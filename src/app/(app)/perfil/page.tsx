@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Check, ChevronRight, X, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSession, updateSessionName } from "@/lib/auth";
+import EmailVerificationGate from "@/components/EmailVerificationGate";
 import {
   EMPTY_PROFILE, getProfile, saveProfile, buildProfileFromDiagnostic,
   calculateCompletion, getMissingFields, COMPLETION_FIELDS,
@@ -104,6 +105,7 @@ export default function PerfilPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<HoppersProfileData | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -307,7 +309,10 @@ export default function PerfilPage() {
     return { completed: done, total: fields.length };
   };
 
+  const session = getSession();
+
   return (
+    <EmailVerificationGate email={session?.email ?? ""} verified={session?.emailVerified} isSuperAdmin={session?.isSuperAdmin}>
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
       {/* Header */}
       <div className="bg-white rounded-2xl border p-6 space-y-5 shadow-sm">
@@ -368,8 +373,12 @@ export default function PerfilPage() {
         <SectionHeader title="Información básica" {...sectionCount("básica")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nombre completo" required>
-            <input value={profile.name} onChange={(e) => update("name", e.target.value)}
-              className="field-input" placeholder="Tu nombre completo" />
+            <input value={profile.name} readOnly
+              className="field-input bg-gray-50 cursor-not-allowed text-gray-500" />
+            <p className="text-xs text-gray-400 mt-1">
+              Para cambiar tu nombre ve a{" "}
+              <a href="/mi-cuenta" className="text-hopper-red hover:underline">Seguridad y cuenta</a>.
+            </p>
           </Field>
           <Field label="Email" required>
             <input value={profile.email} readOnly
@@ -688,13 +697,37 @@ export default function PerfilPage() {
       {/* Guardar */}
       <div className="flex justify-end">
         <Button
-          onClick={handleSave}
+          onClick={() => setShowConfirm(true)}
           disabled={!!phoneError}
           className="bg-hopper-red hover:bg-hopper-red/90 text-white px-8 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saved ? <><Check className="w-4 h-4 mr-1.5" /> Guardado</> : "Guardar cambios"}
         </Button>
       </div>
+
+      {/* Modal de confirmación */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-4">
+            <h2 className="text-lg font-black text-hopper-black">¿Guardar cambios?</h2>
+            <p className="text-sm text-gray-500">Se actualizarán todos los datos de tu perfil. ¿Estás seguro?</p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white"
+                onClick={() => { setShowConfirm(false); handleSave(); }}
+              >
+                Sí, guardar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .field-input {
@@ -713,6 +746,7 @@ export default function PerfilPage() {
         }
       `}</style>
     </div>
+    </EmailVerificationGate>
   );
 }
 
