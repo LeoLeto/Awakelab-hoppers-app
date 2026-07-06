@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       }
       const matches = await bcrypt.compare(password, existing.password);
       if (!matches) {
-        return Response.json({ error: "Contraseña incorrecta.", alreadyExists: true }, { status: 401 });
+        return Response.json({ error: "Contraseña incorrecta. Inténtalo de nuevo.", alreadyExists: true, wrongPassword: true }, { status: 401 });
       }
 
       const token = signToken({ id: existing._id.toString(), email: existing.email, name: existing.name, country: existing.country });

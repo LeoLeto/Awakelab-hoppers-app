@@ -120,7 +120,11 @@ export function DiagnosticTool() {
   function handleExperienceSelect(value: string, label: string) {
     setYearsExperience(value);
     setMessages((prev) => [...prev, { from: "user", content: label }]);
-    advanceToStep("modules");
+    if (value === "0") {
+      advanceToStep("current_role");
+    } else {
+      advanceToStep("modules");
+    }
   }
 
   function toggleModule(mod: string) {
@@ -129,10 +133,10 @@ export function DiagnosticTool() {
     );
   }
 
-  function handleModulesConfirm() {
-    if (selectedModules.length === 0) return;
-    setModules(selectedModules);
-    setMessages((prev) => [...prev, { from: "user", content: selectedModules.join(", ") }]);
+  function handleModulesConfirm(none?: boolean) {
+    const chosen = none ? [] : selectedModules;
+    setModules(chosen);
+    setMessages((prev) => [...prev, { from: "user", content: chosen.length > 0 ? chosen.join(", ") : "Ninguno" }]);
     setSelectedModules([]);
     advanceToStep("current_role");
   }
@@ -146,7 +150,11 @@ export function DiagnosticTool() {
   function handleTargetRoleSelect(slug: string, label: string) {
     setTargetRole(slug);
     setMessages((prev) => [...prev, { from: "user", content: label }]);
-    advanceToStep("has_certs");
+    if (yearsExperience === "0") {
+      advanceToStep("want_certs");
+    } else {
+      advanceToStep("has_certs");
+    }
   }
 
   function handleHasCertsConfirm() {
@@ -502,10 +510,16 @@ export function DiagnosticTool() {
                   </div>
                 ))}
               </div>
-              <Button onClick={handleModulesConfirm} disabled={selectedModules.length === 0}
-                className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">
-                Confirmar selección ({selectedModules.length})
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => handleModulesConfirm()}  disabled={selectedModules.length === 0}
+                  className="bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">
+                  Confirmar selección ({selectedModules.length})
+                </Button>
+                <Button onClick={() => handleModulesConfirm(true)} variant="outline"
+                  className="border-gray-300 text-gray-600 hover:border-hopper-red hover:text-hopper-red">
+                  No he trabajado en módulos SAP
+                </Button>
+              </div>
             </div>
           )}
 
@@ -517,7 +531,7 @@ export function DiagnosticTool() {
             const setSelected = isHas ? setHasCertIds : setWantCertIds;
             const onConfirm = isHas ? handleHasCertsConfirm : handleWantCertsConfirm;
 
-            if (!isHas && recs.length === 0) {
+            if (recs.length === 0) {
               return (
                 <Button onClick={onConfirm} className="bg-hopper-red hover:bg-hopper-red/90 text-white">
                   Ninguna
