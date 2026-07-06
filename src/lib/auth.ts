@@ -97,7 +97,7 @@ export async function loginUser(
         country: json.user.country || "",
         loggedAt: new Date().toISOString(),
         isSuperAdmin: json.isSuperAdmin ?? false,
-        emailVerified: json.emailVerified ?? true,
+        emailVerified: json.emailVerified ?? false,
       });
       // Restore diagnostic backup to active key (client-side only, no sensitive data in API response)
       try {
