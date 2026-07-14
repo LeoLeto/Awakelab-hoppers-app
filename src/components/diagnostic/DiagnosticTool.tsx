@@ -450,7 +450,7 @@ export function DiagnosticTool() {
       </div>
       <div className="border rounded-xl overflow-hidden shadow-sm flex flex-col flex-1 min-h-0">
         <div className="bg-hopper-black text-white px-4 py-3 text-sm font-semibold flex items-center gap-2 shrink-0">
-          <div className="w-6 h-6 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold">H</div>
+          <img src="/landingpage/logo-hoppers1.svg" alt="Hoppers" className="h-5 w-auto" />
           Diagnóstico SAP Guiado
         </div>
 
@@ -458,7 +458,7 @@ export function DiagnosticTool() {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"} gap-2`}>
               {msg.from === "bot" && (
-                <div className="w-7 h-7 bg-hopper-red rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">H</div>
+                <img src="/landingpage/logo-hoppers-isotipo.svg" alt="Hoppers" className="w-7 h-7 shrink-0 mt-0.5" />
               )}
               <div className={`rounded-lg px-3 py-2 text-sm max-w-xs lg:max-w-sm ${msg.from === "user" ? "bg-hopper-black text-white" : "bg-white border text-hopper-black"}`}>
                 {msg.content}

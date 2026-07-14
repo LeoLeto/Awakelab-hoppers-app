@@ -24,23 +24,55 @@ async function getJsPDF() {
   return { jsPDF, autoTable };
 }
 
+async function loadLogoDataUrl(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/landingpage/logo-hoppers1.svg");
+    const svgText = await res.text();
+    const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    return await new Promise<string | null>((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 600;
+        canvas.height = 120;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0, 600, 120);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  } catch {
+    return null;
+  }
+}
+
 const RED: [number, number, number] = [255, 24, 0];
 const BLACK: [number, number, number] = [0, 10, 26];
 const WHITE: [number, number, number] = [255, 255, 255];
 const BEIGE: [number, number, number] = [221, 201, 179];
 const GREY: [number, number, number] = [150, 150, 150];
 
-function addHeader(doc: InstanceType<typeof import("jspdf")["default"]>, subtitle: string) {
+function addHeader(doc: InstanceType<typeof import("jspdf")["default"]>, subtitle: string, logoDataUrl: string | null = null) {
   doc.setFillColor(...BLACK);
   doc.rect(0, 0, 210, 45, "F");
-  doc.setFillColor(...RED);
-  doc.rect(15, 12, 8, 8, "F");
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, "PNG", 15, 10, 60, 12);
+  } else {
+    doc.setFillColor(...RED);
+    doc.rect(15, 12, 8, 8, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("H", 17.8, 18.5);
+    doc.setFontSize(18);
+    doc.text("HOPPERS", 27, 19);
+  }
   doc.setTextColor(...WHITE);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("H", 17.8, 18.5);
-  doc.setFontSize(18);
-  doc.text("HOPPERS", 27, 19);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text(subtitle, 15, 30);
@@ -75,7 +107,8 @@ export async function downloadDiagnosticPDF(
   const CW = 210 - 2 * M;
   let y = M;
 
-  addHeader(doc, `Diagnostico Profesional SAP | ${new Date().toLocaleDateString("es-ES")}`);
+  const logoDataUrl = await loadLogoDataUrl();
+  addHeader(doc, `Diagnostico Profesional SAP | ${new Date().toLocaleDateString("es-ES")}`, logoDataUrl);
   y = 55;
 
   doc.setTextColor(...BLACK);
@@ -234,7 +267,8 @@ export async function downloadMarketReportPDF() {
   const CW = 210 - 2 * M;
   let y = M;
 
-  addHeader(doc, "Informe de Mercado SAP - Abril 2026");
+  const logoDataUrl = await loadLogoDataUrl();
+  addHeader(doc, "Informe de Mercado SAP - Abril 2026", logoDataUrl);
   y = 55;
 
   doc.setTextColor(...BLACK);
@@ -365,15 +399,24 @@ export async function downloadProfileInfographicPDF(slug: string) {
   doc.setFillColor(...BLACK);
   doc.rect(0, 0, 210, 297, "F");
 
-  doc.setFillColor(...RED);
-  doc.rect(M, M, 7, 7, "F");
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text("H", M + 2.2, M + 5.5);
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.text("HOPPERS ACADEMY | Infografia de Perfil SAP", M + 10, M + 5);
+  const logoDataUrl = await loadLogoDataUrl();
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, "PNG", M, M, 45, 9);
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("| Infografia de Perfil SAP", M + 47, M + 6.5);
+  } else {
+    doc.setFillColor(...RED);
+    doc.rect(M, M, 7, 7, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("H", M + 2.2, M + 5.5);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("HOPPERS ACADEMY | Infografia de Perfil SAP", M + 10, M + 5);
+  }
   y = M + 15;
 
   doc.setFontSize(20);

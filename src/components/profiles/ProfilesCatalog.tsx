@@ -76,13 +76,13 @@ function InfographicModal({ profile, onClose }: { profile: SAPProfile; onClose: 
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-5 h-5 bg-hopper-red rounded flex items-center justify-center text-white text-[10px] font-black">H</div>
+              <img src="/landingpage/logo-hoppers-isotipo.svg" alt="Hoppers" className="h-5 w-5" />
               <span className="text-xs text-white/40 uppercase tracking-wider">Hoppers Academy | Infografia de Perfil</span>
             </div>
             <h2 className="text-2xl font-black">{profile.name}</h2>
             <p className="text-sm text-white/50">{profile.module}</p>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -181,9 +181,9 @@ function InfographicModal({ profile, onClose }: { profile: SAPProfile; onClose: 
             <Download className="h-4 w-4" />
             Descargar infografia PDF
           </Button>
-          <Button variant="outline" className="border-white/20 text-white/60 hover:bg-white/10 hover:text-white" onClick={onClose}>
+          <button onClick={onClose} className="px-4 py-2 rounded-md border border-white/50 text-white text-sm font-medium hover:bg-white/10 transition-colors">
             Cerrar
-          </Button>
+          </button>
         </div>
       </div>
     </div>
