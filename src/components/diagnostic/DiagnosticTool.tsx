@@ -70,6 +70,12 @@ export function DiagnosticTool() {
   const [registerError, setRegisterError] = useState("");
   const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
   const [emailVerifyError, setEmailVerifyError] = useState(false);
+  const [advisoryModal, setAdvisoryModal] = useState(false);
+  const [advisorySubject, setAdvisorySubject] = useState("");
+  const [advisoryBody, setAdvisoryBody] = useState("");
+  const [advisorySending, setAdvisorySending] = useState(false);
+  const [advisoryDone, setAdvisoryDone] = useState(false);
+  const [advisoryError, setAdvisoryError] = useState("");
 
   const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string; password?: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -340,10 +346,46 @@ export function DiagnosticTool() {
 
   function handleEmailSend() {
     if (!result) return;
-    const body = encodeURIComponent(
-      `Hola equipo Hoppers Academy,\n\nAcabo de completar mi diagnóstico profesional SAP y me gustaría recibir más información.\n\nPerfil detectado: ${result.matches[0]?.name}\nÍndice de empleabilidad: ${result.empScore}%\nHabilidades: ${result.skills.join(", ")}\n\nQuedo a vuestra disposición.\n\nSaludos`
-    );
-    window.location.href = `mailto:contacto@hoppers.academy?subject=Diagnóstico SAP - Solicito información&body=${body}`;
+    const session = getSession();
+    const userName = session?.name ?? name;
+    const userEmail = session?.email ?? email;
+    const defaultBody = `Hola equipo Hoppers Academy,
+
+Acabo de completar mi diagnóstico profesional SAP y me gustaría recibir más información sobre vuestros programas formativos.
+
+Perfil detectado: ${result.matches[0]?.name ?? "—"}
+Índice de empleabilidad: ${result.empScore}%
+Habilidades: ${result.skills.join(", ") || "—"}
+
+Quedo a vuestra disposición.
+
+Saludos,
+${userName}
+${userEmail}`;
+    setAdvisorySubject("Diagnóstico SAP - Solicito asesoría gratuita");
+    setAdvisoryBody(defaultBody);
+    setAdvisoryDone(false);
+    setAdvisoryError("");
+    setAdvisoryModal(true);
+  }
+
+  async function handleAdvisorySend() {
+    setAdvisorySending(true);
+    setAdvisoryError("");
+    try {
+      const res = await fetch("/api/contact/advisory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: advisorySubject, body: advisoryBody }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al enviar");
+      setAdvisoryDone(true);
+    } catch (err: unknown) {
+      setAdvisoryError(err instanceof Error ? err.message : "Error al enviar el email.");
+    } finally {
+      setAdvisorySending(false);
+    }
   }
 
   if (phase === "processing") {
@@ -363,12 +405,50 @@ export function DiagnosticTool() {
 
   if (phase === "result" && result) {
     return (
-      <DiagnosticResults
-        result={result}
-        onReset={handleReset}
-        onDownload={handleDownloadPDF}
-        onEmail={handleEmailSend}
-      />
+      <>
+        <DiagnosticResults
+          result={result}
+          onReset={handleReset}
+          onDownload={handleDownloadPDF}
+          onEmail={handleEmailSend}
+        />
+
+        {advisoryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col">
+              {advisoryDone ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-12 px-6">
+                  <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                    <Check className="w-7 h-7 text-green-600" />
+                  </div>
+                  <p className="font-bold text-hopper-black text-lg">¡Solicitud enviada!</p>
+                  <p className="text-sm text-gray-500 text-center">El equipo de Hoppers Academy se pondrá en contacto contigo.</p>
+                  <Button onClick={() => setAdvisoryModal(false)} className="mt-2 bg-hopper-red hover:bg-hopper-red/90 text-white">Cerrar</Button>
+                </div>
+              ) : (
+                <div className="px-6 py-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-hopper-red shrink-0" />
+                    <span className="font-bold text-hopper-black">Solicitar asesoría gratuita</span>
+                  </div>
+                  <p className="text-sm text-gray-600">Se enviará tu perfil SAP, puntuación de empleabilidad y datos de contacto al equipo de Hoppers Academy para que se pongan en contacto contigo.</p>
+                  {advisoryError && <p className="text-sm text-red-600">{advisoryError}</p>}
+                  <div className="flex gap-3 pt-1">
+                    <Button
+                      onClick={handleAdvisorySend}
+                      disabled={advisorySending}
+                      className="flex-1 bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-60"
+                    >
+                      {advisorySending ? "Enviando..." : "Sí, solicitar"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setAdvisoryModal(false)}>Cancelar</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
