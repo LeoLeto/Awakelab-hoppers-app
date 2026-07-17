@@ -12,12 +12,12 @@ import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
-import { getSession, initSession, registerUser, saveDiagnosticResult, getDiagnosticResult } from "@/lib/auth";
+import { getSession, initSession, saveSession, registerUser, saveDiagnosticResult, getDiagnosticResult, markSessionEmailVerified } from "@/lib/auth";
 import { getProfile, saveProfile, saveProfileToDB, buildProfileFromDiagnostic } from "@/lib/profile";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
 
-type Phase = "chat" | "privacy_notice" | "user_data" | "email_verify" | "processing" | "result";
+type Phase = "chat" | "privacy_notice" | "user_data" | "processing" | "email_verify" | "result";
 
 type ChatStep =
   | "experience"
@@ -70,6 +70,7 @@ export function DiagnosticTool() {
   const [registerError, setRegisterError] = useState("");
   const [emailVerifyLoading, setEmailVerifyLoading] = useState(false);
   const [emailVerifyError, setEmailVerifyError] = useState(false);
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
   const [advisoryModal, setAdvisoryModal] = useState(false);
   const [advisorySubject, setAdvisorySubject] = useState("");
   const [advisoryBody, setAdvisoryBody] = useState("");
@@ -78,6 +79,7 @@ export function DiagnosticTool() {
   const [advisoryError, setAdvisoryError] = useState("");
 
   const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string; password?: string } | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -202,69 +204,17 @@ export function DiagnosticTool() {
     setLinkedin(userData.linkedin);
     setSalary(userData.salary);
     setRegisterError("");
-
-    // If already authenticated with this email, skip registration
-    const session = getSession();
-    if (session && session.email.toLowerCase() === userData.email.toLowerCase()) {
-      await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
-      return;
-    }
-
-    setRegisterLoading(true);
-    const regResult = await registerUser({
-      name: userData.name,
-      email: userData.email,
-      country: userData.country,
-      currentRole,
-      yearsExperience,
-      sapModules: modules,
-      certifications,
-      linkedinUrl: userData.linkedin,
-      targetRole,
-      linkedin: userData.linkedin,
-      salary: userData.salary,
-      password: userData.password,
-    });
-    setRegisterLoading(false);
-
-    if (regResult.success) {
-      if (regResult.needsVerification) {
-        setPhase("email_verify");
-      } else {
-        // Existing user re-authenticated — skip email verify
-        await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
-      }
-    } else if (regResult.alreadyExists) {
-      setRegisterError("__login_required__");
-    } else {
-      // Network / DB error — save session locally and continue
-      initSession({ name: userData.name, email: userData.email, country: userData.country, loggedAt: new Date().toISOString() });
-      await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
-    }
+    // La cuenta se crea al final del diagnóstico, no aquí
+    await runProcessing(userData.name, userData.email, userData.country, userData.linkedin, userData.salary);
   }
 
-  async function onEmailVerifyContinue() {
-    const ud = pendingUserData.current ?? { name, email, country, linkedin, salary };
-    setEmailVerifyLoading(true);
-    setEmailVerifyError(false);
-    try {
-      const res = await fetch(`/api/auth/check?email=${encodeURIComponent(ud.email)}&checkVerified=true`);
-      const json = await res.json();
-      if (!json.verified) {
-        setEmailVerifyError(true);
-        setEmailVerifyLoading(false);
-        return;
-      }
-    } catch {
-      setEmailVerifyError(true);
-      setEmailVerifyLoading(false);
-      return;
-    }
-    setEmailVerifyLoading(false);
-    await runProcessing(ud.name, ud.email, ud.country, ud.linkedin, ud.salary);
-  }
-
-  async function runProcessing(userName: string, userEmail: string, userCountry: string, userLinkedin: string, userSalary: string) {
+  async function runProcessing(
+    userName: string,
+    userEmail: string,
+    userCountry: string,
+    userLinkedin: string,
+    userSalary: string,
+  ) {
     setPhase("processing");
 
     const text = modules.join(" ") + " " + certifications + " " + currentRole + " " + targetRole;
@@ -282,6 +232,33 @@ export function DiagnosticTool() {
       salary: userSalary,
     };
     localStorage.setItem("hoppers_diag_result", JSON.stringify(diagResultWithMeta));
+
+    // Crear cuenta al finalizar el diagnóstico (Opción A)
+    let needsEmailVerif = false;
+    const existingSession = getSession();
+    if (!existingSession || existingSession.email.toLowerCase() !== userEmail.toLowerCase()) {
+      const regResult = await registerUser({
+        name: userName,
+        email: userEmail,
+        country: userCountry,
+        currentRole,
+        yearsExperience,
+        sapModules: modules,
+        certifications,
+        linkedinUrl: userLinkedin,
+        targetRole,
+        linkedin: userLinkedin,
+        salary: userSalary,
+        password: pendingUserData.current?.password,
+      }, true);
+
+      if (regResult.success && regResult.user) {
+        saveSession({ ...regResult.user, loggedAt: new Date().toISOString() });
+        needsEmailVerif = regResult.needsVerification ?? false;
+      } else if (regResult.alreadyExists) {
+        setRegisterError("__login_required__");
+      }
+    }
 
     await saveDiagnosticResult({
       empScore: diagResult.empScore,
@@ -310,6 +287,28 @@ export function DiagnosticTool() {
     }
 
     setResult(diagResult);
+
+    if (needsEmailVerif) {
+      setPhase("email_verify");
+      // No activar nav hasta que verifique
+    } else {
+      setPhase("result");
+      setShowNav(true);
+    }
+  }
+
+  async function onEmailVerifyContinue() {
+    setEmailVerifyLoading(true);
+    setEmailVerifyError(false);
+    try {
+      const res = await fetch(`/api/auth/check?email=${encodeURIComponent(email)}&checkVerified=true`);
+      const json = await res.json();
+      if (!json.verified) { setEmailVerifyError(true); setEmailVerifyLoading(false); return; }
+    } catch {
+      setEmailVerifyError(true); setEmailVerifyLoading(false); return;
+    }
+    markSessionEmailVerified();
+    setEmailVerifyLoading(false);
     setPhase("result");
     setShowNav(true);
   }
@@ -400,6 +399,25 @@ ${userEmail}`;
           <p className="text-sm text-gray-500">Analizando tu experiencia con 14.000+ ofertas de empleo</p>
         </div>
       </div>
+    );
+  }
+
+  if (phase === "email_verify") {
+    async function handleResendVerification() {
+      await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    }
+    return (
+      <EmailVerifyScreen
+        email={email}
+        onContinue={onEmailVerifyContinue}
+        onResend={handleResendVerification}
+        verifyLoading={emailVerifyLoading}
+        verifyError={emailVerifyError}
+      />
     );
   }
 
@@ -497,25 +515,7 @@ ${userEmail}`;
     );
   }
 
-  if (phase === "email_verify") {
-    return (
-      <div className="overflow-y-auto" style={{ maxHeight: "calc(100dvh - 130px)" }}>
-        <EmailVerifyScreen
-          email={email}
-          onContinue={onEmailVerifyContinue}
-          onResend={async () => {
-            await fetch("/api/auth/resend-verification", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email }),
-            });
-          }}
-          verifyLoading={emailVerifyLoading}
-          verifyError={emailVerifyError}
-        />
-      </div>
-    );
-  }
+
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-2" style={{ height: "calc(100dvh - 130px)" }}>

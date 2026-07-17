@@ -49,6 +49,7 @@ type DbSettings = {
   smtpUser?: string;
   smtpPass?: string;
   smtpSecure?: boolean;
+  adminEmails?: string[];
 };
 
 export async function getTransporterForTest(): Promise<{ transporter: ReturnType<typeof nodemailer.createTransport>; configured: boolean }> {
@@ -72,12 +73,13 @@ export async function getTransporterForTest(): Promise<{ transporter: ReturnType
   return { configured: false, transporter: nodemailer.createTransport({}) };
 }
 
-async function getTransporter(): Promise<{ transporter: ReturnType<typeof nodemailer.createTransport>; from: string }> {
+async function getTransporter(): Promise<{ transporter: ReturnType<typeof nodemailer.createTransport>; from: string; bcc?: string }> {
   try {
     await connectDB();
     const s = await Settings.findOne().lean() as DbSettings | null;
     if (s?.smtpHost && s?.smtpUser && s?.smtpPass) {
       const pass = isEncrypted(s.smtpPass) ? decrypt(s.smtpPass) : s.smtpPass;
+      const bcc = s.adminEmails?.length ? s.adminEmails.join(",") : undefined;
       return {
         transporter: nodemailer.createTransport({
           host: s.smtpHost,
@@ -87,6 +89,7 @@ async function getTransporter(): Promise<{ transporter: ReturnType<typeof nodema
           tls: { minVersion: "TLSv1.2" },
         }),
         from: s.smtpFrom || `"Hoppers Academy" <${s.smtpUser}>`,
+        bcc,
       };
     }
   } catch {}
@@ -103,7 +106,7 @@ async function getTransporter(): Promise<{ transporter: ReturnType<typeof nodema
 }
 
 export async function sendVerificationEmail(to: string, name: string, token: string) {
-  const { transporter, from } = await getTransporter();
+  const { transporter, from, bcc } = await getTransporter();
   const url = `${process.env.APP_URL}/api/auth/verify-email?token=${token}`;
   const firstName = name.split(" ")[0];
 
@@ -125,8 +128,8 @@ export async function sendVerificationEmail(to: string, name: string, token: str
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
           <tr>
-            <td style="background:#000A1A;padding:32px 40px;text-align:center;">
-              <img src="https://hoppers.academy/landingpage/logo-hoppers1.svg" alt="Hoppers" height="36" style="display:block;margin:0 auto;" />
+            <td style="background:#000A1A;padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:1px;">HOPPERS <span style="color:#c0392b;">ACADEMY</span></p>
             </td>
           </tr>
           <tr>
@@ -170,7 +173,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
 }
 
 export async function sendPasswordResetEmail(to: string, name: string, token: string) {
-  const { transporter, from } = await getTransporter();
+  const { transporter, from, bcc } = await getTransporter();
   const url = `${process.env.APP_URL}/nueva-contrasena?token=${token}`;
   const firstName = name.split(" ")[0];
 
@@ -186,8 +189,8 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:40px 20px;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
-        <tr><td style="background:#000A1A;padding:32px 40px;text-align:center;">
-          <img src="https://hoppers.academy/landingpage/logo-hoppers1.svg" alt="Hoppers" height="36" style="display:block;margin:0 auto;" />
+        <tr><td style="background:#000A1A;padding:24px 40px;text-align:center;">
+          <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:1px;">HOPPERS <span style="color:#c0392b;">ACADEMY</span></p>
         </td></tr>
         <tr><td style="padding:40px 40px 32px;">
           <h1 style="margin:0 0 12px;font-size:24px;color:#0a0a0a;font-weight:700;">Hola, ${firstName}</h1>

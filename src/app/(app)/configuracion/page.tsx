@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, CheckCircle, XCircle, Loader2, Eye, EyeOff, Users, Trash2, Search } from "lucide-react";
+import { Mail, CheckCircle, XCircle, Loader2, Eye, EyeOff, Users, Trash2, Search, X } from "lucide-react";
 
 interface SmtpSettings {
   smtpFrom: string;
@@ -14,6 +14,7 @@ interface SmtpSettings {
   smtpUser: string;
   smtpPassSet: boolean;
   smtpSecure: boolean;
+  adminEmails: string[];
 }
 
 interface UserRow {
@@ -25,6 +26,7 @@ interface UserRow {
   diagnosticDone: boolean;
   empScore?: number;
   createdAt: string;
+  isAdmin?: boolean;
 }
 
 export default function ConfiguracionPage() {
@@ -44,6 +46,10 @@ export default function ConfiguracionPage() {
   const [smtpPass, setSmtpPass] = useState("");
   const [smtpPassSet, setSmtpPassSet] = useState(false);
   const [smtpSecure, setSmtpSecure] = useState(false);
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  const [adminEmailInput, setAdminEmailInput] = useState("");
+  const [adminEmailsSaving, setAdminEmailsSaving] = useState(false);
+  const [adminEmailsStatus, setAdminEmailsStatus] = useState<"idle" | "ok" | "error">("idle");
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -66,6 +72,7 @@ export default function ConfiguracionPage() {
         setSmtpUser(data.smtpUser || "");
         setSmtpPassSet(data.smtpPassSet || false);
         setSmtpSecure(data.smtpSecure || false);
+        setAdminEmails(data.adminEmails || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -77,6 +84,24 @@ export default function ConfiguracionPage() {
       .finally(() => setUsersLoading(false));
   }, [router]);
 
+  async function handleSaveAdminEmails() {
+    setAdminEmailsSaving(true);
+    setAdminEmailsStatus("idle");
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ smtpFrom, smtpHost, smtpPort: Number(smtpPort), smtpUser, smtpSecure, adminEmails }),
+      });
+      setAdminEmailsStatus(res.ok ? "ok" : "error");
+      setTimeout(() => setAdminEmailsStatus("idle"), 3000);
+    } catch {
+      setAdminEmailsStatus("error");
+    } finally {
+      setAdminEmailsSaving(false);
+    }
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -85,7 +110,7 @@ export default function ConfiguracionPage() {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ smtpFrom, smtpHost, smtpPort: Number(smtpPort), smtpUser, smtpPass: smtpPass || undefined, smtpSecure }),
+        body: JSON.stringify({ smtpFrom, smtpHost, smtpPort: Number(smtpPort), smtpUser, smtpPass: smtpPass || undefined, smtpSecure, adminEmails }),
       });
       if (res.ok) {
         setSaveStatus("ok");
@@ -123,6 +148,16 @@ export default function ConfiguracionPage() {
       setTesting(false);
       setTimeout(() => { setTestStatus("idle"); setTestMessage(""); }, 8000);
     }
+  }
+
+  async function handleToggleAdmin(user: UserRow) {
+    const newVal = !user.isAdmin;
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user._id, isAdmin: newVal }),
+    });
+    setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isAdmin: newVal } : u));
   }
 
   async function handleDelete(user: UserRow) {
@@ -294,6 +329,83 @@ export default function ConfiguracionPage() {
         </form>
       </Card>
 
+      {/* ── Correos administradores ─────────────────────── */}
+      <Card className="overflow-hidden">
+        <div className="bg-hopper-black px-6 py-4 flex items-center gap-3">
+          <Mail className="w-5 h-5 text-hopper-red shrink-0" />
+          <div>
+            <h2 className="text-base font-bold text-white">Correos Administradores</h2>
+            <p className="text-xs text-white/50 mt-0.5">Correos de administradores que reciben copia de todos los emails del sistema.</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex flex-wrap gap-2 min-h-[36px]">
+            {adminEmails.map((em) => (
+              <span key={em} className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-sm text-hopper-black px-3 py-1 rounded-full">
+                {em}
+                <button
+                  type="button"
+                  onClick={() => setAdminEmails((prev) => prev.filter((e) => e !== em))}
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+            {adminEmails.length === 0 && (
+              <p className="text-sm text-gray-400">No hay correos añadidos.</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={adminEmailInput}
+              onChange={(e) => setAdminEmailInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const val = adminEmailInput.trim().toLowerCase();
+                  if (val && val.includes("@") && !adminEmails.includes(val)) {
+                    setAdminEmails((prev) => [...prev, val]);
+                    setAdminEmailInput("");
+                  }
+                }
+              }}
+              placeholder="admin@ejemplo.com"
+              className="flex-1 border rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-hopper-red/30 focus:border-hopper-red"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const val = adminEmailInput.trim().toLowerCase();
+                if (val && val.includes("@") && !adminEmails.includes(val)) {
+                  setAdminEmails((prev) => [...prev, val]);
+                  setAdminEmailInput("");
+                }
+              }}
+            >
+              + Añadir
+            </Button>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs text-gray-400">Pulsa Enter o el botón para añadir un correo.</p>
+            <div className="flex items-center gap-3">
+              {adminEmailsStatus === "ok" && <span className="text-xs text-green-600 font-medium">Guardado</span>}
+              {adminEmailsStatus === "error" && <span className="text-xs text-red-500 font-medium">Error al guardar</span>}
+              <Button
+                type="button"
+                onClick={handleSaveAdminEmails}
+                disabled={adminEmailsSaving}
+                className="bg-hopper-red hover:bg-hopper-red/90 text-white"
+              >
+                {adminEmailsSaving ? "Guardando..." : "Guardar correos"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* ── Gestión de usuarios ─────────────────────────── */}
       <Card className="overflow-hidden">
         <div className="bg-hopper-black px-6 py-4 flex items-center gap-3">
@@ -334,6 +446,7 @@ export default function ConfiguracionPage() {
                     <th className="pb-2 pr-4 font-medium">País</th>
                     <th className="pb-2 pr-4 font-medium">Verificado</th>
                     <th className="pb-2 pr-4 font-medium">Diagnóstico</th>
+                    <th className="pb-2 pr-4 font-medium">Admin</th>
                     <th className="pb-2 pr-4 font-medium">Registro</th>
                     <th className="pb-2 font-medium"></th>
                   </tr>
@@ -355,6 +468,14 @@ export default function ConfiguracionPage() {
                           ? <span className="text-xs text-gray-700">{u.empScore ?? "—"}%</span>
                           : <span className="text-xs text-gray-400">Pendiente</span>
                         }
+                      </td>
+                      <td className="py-3 pr-4">
+                        <button
+                          onClick={() => handleToggleAdmin(u)}
+                          className={`text-xs px-2 py-0.5 rounded border font-medium transition-colors ${u.isAdmin ? "bg-hopper-black text-white border-hopper-black" : "bg-white text-gray-400 border-gray-200 hover:border-hopper-black/40"}`}
+                        >
+                          {u.isAdmin ? "Admin" : "Usuario"}
+                        </button>
                       </td>
                       <td className="py-3 pr-4 text-gray-400 text-xs">
                         {new Date(u.createdAt).toLocaleDateString("es-ES")}

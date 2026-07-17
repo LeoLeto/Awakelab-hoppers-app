@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Mail } from "lucide-react";
@@ -9,6 +9,7 @@ import { markSessionEmailVerified } from "@/lib/auth";
 
 function VerifyContent() {
   const params = useSearchParams();
+  const router = useRouter();
   const status = params.get("status");
   const email = params.get("email") || "";
   const [resent, setResent] = useState(false);
@@ -17,7 +18,16 @@ function VerifyContent() {
   async function handleResend() {
     if (!email || resending) return;
     setResending(true);
+    setResent(false);
     try {
+      // Check first if already verified
+      const checkRes = await fetch(`/api/auth/check?email=${encodeURIComponent(email)}&checkVerified=true`);
+      const checkJson = await checkRes.json();
+      if (checkJson.verified) {
+        markSessionEmailVerified();
+        router.replace("/dashboard");
+        return;
+      }
       await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -30,8 +40,23 @@ function VerifyContent() {
   }
 
   useEffect(() => {
-    if (status === "success") markSessionEmailVerified();
-  }, [status]);
+    if (status === "success") {
+      markSessionEmailVerified();
+      return;
+    }
+    // No status — check if already verified in DB and auto-redirect
+    if (!status && email) {
+      fetch(`/api/auth/check?email=${encodeURIComponent(email)}&checkVerified=true`)
+        .then(r => r.json())
+        .then(json => {
+          if (json.verified) {
+            markSessionEmailVerified();
+            router.replace("/dashboard");
+          }
+        })
+        .catch(() => {});
+    }
+  }, [status, email, router]);
 
   if (status === "success") {
     return (

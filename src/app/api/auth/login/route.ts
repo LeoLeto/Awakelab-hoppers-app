@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     return Response.json({
       user: { name: user.name, email: user.email, country: user.country },
       isSuperAdmin: user.email.toLowerCase() === (process.env.SUPERADMIN_EMAIL || "").toLowerCase(),
+      isAdmin: user.isAdmin ?? false,
       emailVerified: user.emailVerified ?? false,
     });
   } catch (err) {

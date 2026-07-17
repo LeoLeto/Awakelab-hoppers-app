@@ -37,6 +37,9 @@ export interface IUser extends Document {
   verificationTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  isAdmin?: boolean;
+  advisoryRequested?: boolean;
+  advisoryDate?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -75,6 +78,9 @@ const UserSchema = new Schema<IUser>(
     verificationTokenExpires: { type: Date },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    isAdmin: { type: Boolean, default: false },
+    advisoryRequested: { type: Boolean, default: false },
+    advisoryDate: { type: Date },
   },
   { timestamps: true }
 );
