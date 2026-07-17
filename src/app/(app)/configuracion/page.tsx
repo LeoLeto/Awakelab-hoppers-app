@@ -472,9 +472,11 @@ export default function ConfiguracionPage() {
                       <td className="py-3 pr-4">
                         <button
                           onClick={() => handleToggleAdmin(u)}
-                          className={`text-xs px-2 py-0.5 rounded border font-medium transition-colors ${u.isAdmin ? "bg-hopper-black text-white border-hopper-black" : "bg-white text-gray-400 border-gray-200 hover:border-hopper-black/40"}`}
+                          title={u.isAdmin ? "Quitar acceso de administrador" : "Dar acceso de administrador"}
+                          className={`relative inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${u.isAdmin ? "bg-hopper-black text-white border-hopper-black hover:bg-red-700 hover:border-red-700" : "bg-white text-gray-500 border-gray-200 hover:border-hopper-black hover:text-hopper-black"}`}
                         >
-                          {u.isAdmin ? "Admin" : "Usuario"}
+                          <span className={`w-2 h-2 rounded-full ${u.isAdmin ? "bg-green-400" : "bg-gray-300"}`} />
+                          {u.isAdmin ? "Administrador" : "Dar admin"}
                         </button>
                       </td>
                       <td className="py-3 pr-4 text-gray-400 text-xs">
