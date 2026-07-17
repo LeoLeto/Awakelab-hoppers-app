@@ -531,7 +531,7 @@ function ScrapingSimulation() {
         )}
         <div className="bg-hopper-black rounded-lg p-4 min-h-[140px] font-mono text-xs">
           {log.length === 0 ? (
-            <p className="text-white/20">Presiona &quot;Iniciar simulacion&quot; para ver el proceso de recoleccion de datos en tiempo real...</p>
+            <p className="text-white/50">Presiona &quot;Iniciar simulacion&quot; para ver el proceso de recoleccion de datos en tiempo real...</p>
           ) : (
             log.map((line, i) => (
               <p
@@ -549,7 +549,7 @@ function ScrapingSimulation() {
             ))
           )}
         </div>
-        <p className="text-xs text-hopper-black/30 mt-2">
+        <p className="text-xs text-hopper-black/60 mt-2">
           Esta es una simulacion educativa del proceso de recoleccion. Los datos reales se actualizan periodicamente.
         </p>
       </CardContent>

@@ -2,6 +2,7 @@
 
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
+import EmailVerificationGuard from "@/components/layout/EmailVerificationGuard";
 import { DiagnosticNavProvider, useDiagnosticNav } from "./DiagnosticNavContext";
 
 function ConditionalLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ function ConditionalLayout({ children }: { children: React.ReactNode }) {
 export default function DiagnosticoLayout({ children }: { children: React.ReactNode }) {
   return (
     <DiagnosticNavProvider>
+      <EmailVerificationGuard />
       <ConditionalLayout>{children}</ConditionalLayout>
     </DiagnosticNavProvider>
   );

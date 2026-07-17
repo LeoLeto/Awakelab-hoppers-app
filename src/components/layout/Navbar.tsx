@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, Settings, Shield } from "lucide-react";
+import { Menu, UserCircle, LogOut, User, ChevronDown, LayoutDashboard, Settings, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -19,7 +19,7 @@ const navLinks = [
   { href: "/salarios", label: "Salarios SAP" },
   { href: "/mercado", label: "Mercado Laboral" },
   { href: "/perfiles", label: "Perfiles SAP" },
-  { href: "/diagnostico", label: "Diagnostico" },
+  { href: "/diagnostico", label: "Diagnóstico" },
   { href: "/sobre-hoppers", label: "Sobre Hoppers" },
 ];
 
@@ -89,6 +89,19 @@ function ProfileDropdown({
           <Shield className="w-4 h-4 text-gray-400" />
           Seguridad y cuenta
         </Link>
+        {(session.isAdmin || session.isSuperAdmin) && (
+          <>
+            <div className="my-1 border-t border-gray-50" />
+            <Link
+              href="/panel-admin"
+              onClick={onClose}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <Users className="w-4 h-4 text-gray-400" />
+              Panel de administración
+            </Link>
+          </>
+        )}
         {session.isSuperAdmin && (
           <>
             <div className="my-1 border-t border-gray-50" />

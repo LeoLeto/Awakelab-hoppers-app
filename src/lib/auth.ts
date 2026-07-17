@@ -4,6 +4,7 @@ export interface HoppersSession {
   country: string;
   loggedAt: string;
   isSuperAdmin?: boolean;
+  isAdmin?: boolean;
   emailVerified?: boolean;
 }
 
@@ -44,7 +45,7 @@ export function initSession(session: HoppersSession): void {
   saveSession(session);
 }
 
-function saveSession(session: HoppersSession | null): void {
+export function saveSession(session: HoppersSession | null): void {
   if (session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } else {
@@ -55,8 +56,9 @@ function saveSession(session: HoppersSession | null): void {
 // ─── Auth API calls ───────────────────────────────────────────────────────────
 
 export async function registerUser(
-  data: RegisterData
-): Promise<{ success: boolean; error?: string; alreadyExists?: boolean; needsVerification?: boolean }> {
+  data: RegisterData,
+  skipSession = false
+): Promise<{ success: boolean; error?: string; alreadyExists?: boolean; needsVerification?: boolean; user?: { email: string; name: string; country: string; isSuperAdmin: boolean; emailVerified: boolean } }> {
   try {
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -65,15 +67,17 @@ export async function registerUser(
     });
     const json = await res.json();
     if (!res.ok) return { success: false, error: json.error, alreadyExists: json.alreadyExists };
-    saveSession({
+    const user = {
       email: json.user.email,
       name: json.user.name,
       country: json.user.country || "",
-      loggedAt: new Date().toISOString(),
       isSuperAdmin: json.isSuperAdmin ?? false,
       emailVerified: json.emailVerified ?? false,
-    });
-    return { success: true, needsVerification: json.needsVerification ?? false };
+    };
+    if (!skipSession) {
+      saveSession({ ...user, loggedAt: new Date().toISOString() });
+    }
+    return { success: true, needsVerification: json.needsVerification ?? false, user };
   } catch {
     return { success: false, error: "Error de conexion." };
   }
@@ -97,6 +101,7 @@ export async function loginUser(
         country: json.user.country || "",
         loggedAt: new Date().toISOString(),
         isSuperAdmin: json.isSuperAdmin ?? false,
+        isAdmin: json.isAdmin ?? false,
         emailVerified: json.emailVerified ?? false,
       });
       // Restore diagnostic backup to active key (client-side only, no sensitive data in API response)
@@ -123,7 +128,12 @@ export function updateSessionName(name: string): void {
 
 export function markSessionEmailVerified(): void {
   const session = getSession();
-  if (session) saveSession({ ...session, emailVerified: true });
+  if (session) {
+    saveSession({ ...session, emailVerified: true });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("hoppers:email-verified"));
+    }
+  }
 }
 
 export async function logoutUser(): Promise<void> {

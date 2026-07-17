@@ -21,12 +21,13 @@ export async function GET() {
   await connectDB();
   const s = await Settings.findOne().lean() as Record<string, unknown> | null;
   return Response.json({
-    smtpFrom:   (s?.smtpFrom as string) ?? "",
-    smtpHost:   (s?.smtpHost as string) ?? "",
-    smtpPort:   (s?.smtpPort as number) ?? 587,
-    smtpUser:   (s?.smtpUser as string) ?? "",
+    smtpFrom:    (s?.smtpFrom as string) ?? "",
+    smtpHost:    (s?.smtpHost as string) ?? "",
+    smtpPort:    (s?.smtpPort as number) ?? 587,
+    smtpUser:    (s?.smtpUser as string) ?? "",
     smtpPassSet: !!s?.smtpPass,
-    smtpSecure: (s?.smtpSecure as boolean) ?? false,
+    smtpSecure:  (s?.smtpSecure as boolean) ?? false,
+    adminEmails: (s?.adminEmails as string[]) ?? [],
   });
 }
 
@@ -34,14 +35,15 @@ export async function POST(request: NextRequest) {
   if (!(await checkSuperAdmin())) {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });
   }
-  const { smtpFrom, smtpHost, smtpPort, smtpUser, smtpPass, smtpSecure } = await request.json();
+  const { smtpFrom, smtpHost, smtpPort, smtpUser, smtpPass, smtpSecure, adminEmails } = await request.json();
   await connectDB();
   const update: Record<string, unknown> = {
-    smtpFrom: smtpFrom ?? "",
-    smtpHost: smtpHost ?? "",
-    smtpPort: Number(smtpPort) || 587,
-    smtpUser: smtpUser ?? "",
-    smtpSecure: !!smtpSecure,
+    smtpFrom:    smtpFrom ?? "",
+    smtpHost:    smtpHost ?? "",
+    smtpPort:    Number(smtpPort) || 587,
+    smtpUser:    smtpUser ?? "",
+    smtpSecure:  !!smtpSecure,
+    adminEmails: Array.isArray(adminEmails) ? adminEmails.filter((e: string) => typeof e === "string" && e.includes("@")) : [],
   };
   if (smtpPass) update.smtpPass = encrypt(smtpPass);
   await Settings.findOneAndUpdate({}, update, { upsert: true, new: true });
