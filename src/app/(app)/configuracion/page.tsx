@@ -437,38 +437,27 @@ export default function ConfiguracionPage() {
               {userSearch ? "No se encontraron resultados." : "No hay usuarios registrados."}
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div>
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[28%]" />
+                  <col className="w-[36%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[12%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b text-left text-xs text-gray-400 uppercase tracking-wide">
                     <th className="pb-2 pr-4 font-medium">Nombre</th>
                     <th className="pb-2 pr-4 font-medium">Email</th>
-                    <th className="pb-2 pr-4 font-medium">País</th>
-                    <th className="pb-2 pr-4 font-medium">Verificado</th>
-                    <th className="pb-2 pr-4 font-medium">Diagnóstico</th>
-                    <th className="pb-2 pr-4 font-medium">Admin</th>
-                    <th className="pb-2 pr-4 font-medium">Registro</th>
+                    <th className="pb-2 pr-4 font-medium">Acceso admin</th>
                     <th className="pb-2 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredUsers.map((u) => (
                     <tr key={u._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 pr-4 font-medium text-hopper-black">{u.name}</td>
-                      <td className="py-3 pr-4 text-gray-500">{u.email}</td>
-                      <td className="py-3 pr-4 text-gray-500">{u.country || "—"}</td>
-                      <td className="py-3 pr-4">
-                        {u.emailVerified
-                          ? <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded text-xs font-medium"><CheckCircle className="w-3 h-3" />Sí</span>
-                          : <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-medium"><XCircle className="w-3 h-3" />No</span>
-                        }
-                      </td>
-                      <td className="py-3 pr-4">
-                        {u.diagnosticDone
-                          ? <span className="text-xs text-gray-700">{u.empScore ?? "—"}%</span>
-                          : <span className="text-xs text-gray-400">Pendiente</span>
-                        }
-                      </td>
+                      <td className="py-3 pr-4 font-medium text-hopper-black truncate">{u.name}</td>
+                      <td className="py-3 pr-4 text-gray-500 truncate">{u.email}</td>
                       <td className="py-3 pr-4">
                         <button
                           onClick={() => handleToggleAdmin(u)}
@@ -478,9 +467,6 @@ export default function ConfiguracionPage() {
                           <span className={`w-2 h-2 rounded-full ${u.isAdmin ? "bg-green-400" : "bg-gray-300"}`} />
                           {u.isAdmin ? "Administrador" : "Dar admin"}
                         </button>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-400 text-xs">
-                        {new Date(u.createdAt).toLocaleDateString("es-ES")}
                       </td>
                       <td className="py-3">
                         <button
