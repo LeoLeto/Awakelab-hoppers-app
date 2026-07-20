@@ -51,6 +51,15 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, []);
+
+  useEffect(() => {
     fetch(`/api/admin/users/${id}`)
       .then(r => r.json())
       .then(d => setDetail(d.user ?? null))
@@ -59,7 +68,7 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   }, [id]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+    <div className="fixed flex items-center justify-center p-4 bg-black/85" onClick={onClose} style={{zIndex:9999, top:0, left:0, right:0, bottom:0, width:"100vw", height:"100vh", backdropFilter:"blur(2px)"}}>
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
@@ -201,8 +210,8 @@ export default function PanelAdminPage() {
       {detailId && <DetailModal id={detailId} onClose={() => setDetailId(null)} />}
 
       <div>
-        <h1 className="text-2xl font-black text-hopper-black">Panel de Administración</h1>
-        <p className="text-sm text-gray-500 mt-1">Gestión y seguimiento de alumnos.</p>
+        <h1 className="text-2xl font-black text-hopper-black">Alumnos</h1>
+        <p className="text-sm text-gray-500 mt-1">Seguimiento y detalle de todos los alumnos registrados.</p>
       </div>
 
       {/* Stats */}

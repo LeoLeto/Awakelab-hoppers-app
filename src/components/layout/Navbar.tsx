@@ -98,7 +98,7 @@ function ProfileDropdown({
               className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-hopper-black hover:bg-gray-50 rounded-lg transition-colors"
             >
               <Users className="w-4 h-4 text-gray-400" />
-              Panel de administración
+              Alumnos
             </Link>
           </>
         )}
