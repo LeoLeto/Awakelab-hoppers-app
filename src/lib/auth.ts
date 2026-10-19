@@ -8,6 +8,12 @@ export interface HoppersSession {
   emailVerified?: boolean;
 }
 
+export interface Consents {
+  treatment: boolean;
+  communications: boolean;
+  sharing: boolean;
+}
+
 export interface RegisterData {
   name: string;
   email: string;
@@ -168,6 +174,7 @@ export async function saveDiagnosticResult(result: {
   skills: string[];
   fullResult?: unknown;
   email?: string;
+  consents?: Consents;
 }): Promise<void> {
   // Guardar backup local keyed por email para funcionar sin MongoDB
   if (result.email && result.fullResult) {

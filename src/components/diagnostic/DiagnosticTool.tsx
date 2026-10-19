@@ -12,7 +12,7 @@ import { buildDiagnosticResult } from "@/lib/diagnostic";
 import type { DiagnosticResult } from "@/lib/diagnostic";
 import { nextEdition } from "@/lib/data/courses";
 import { downloadDiagnosticPDF } from "@/lib/pdf";
-import { getSession, initSession, saveSession, registerUser, saveDiagnosticResult, getDiagnosticResult, markSessionEmailVerified } from "@/lib/auth";
+import { getSession, initSession, saveSession, registerUser, saveDiagnosticResult, getDiagnosticResult, markSessionEmailVerified, type Consents } from "@/lib/auth";
 import { getProfile, saveProfile, saveProfileToDB, buildProfileFromDiagnostic } from "@/lib/profile";
 import { useDiagnosticNav } from "@/app/diagnostico/DiagnosticNavContext";
 import Link from "next/link";
@@ -78,7 +78,7 @@ export function DiagnosticTool() {
   const [advisoryDone, setAdvisoryDone] = useState(false);
   const [advisoryError, setAdvisoryError] = useState("");
 
-  const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string; password?: string } | null>(null);
+  const pendingUserData = useRef<{ name: string; email: string; country: string; linkedin: string; salary: string; password?: string; consents?: Consents } | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -195,7 +195,7 @@ export function DiagnosticTool() {
     setTimeout(() => setPhase("user_data"), 400);
   }
 
-  async function onUserDataContinue(userData: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string }) {
+  async function onUserDataContinue(userData: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string; consents?: Consents }) {
     if (registerLoading) return;
     pendingUserData.current = userData;
     setName(userData.name);
@@ -266,6 +266,7 @@ export function DiagnosticTool() {
       skills: diagResult.skills,
       fullResult: diagResultWithMeta,
       email: userEmail,
+      consents: pendingUserData.current?.consents,
     });
 
     // Auto-sync profile with diagnostic data → localStorage + MongoDB
@@ -760,7 +761,7 @@ function UserDataScreen({
   defaultEmail?: string;
   defaultCountry?: string;
   hasSession?: boolean;
-  onContinue: (data: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string }) => void;
+  onContinue: (data: { name: string; email: string; country: string; linkedin: string; salary: string; password?: string; consents?: Consents }) => void;
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
@@ -929,9 +930,9 @@ function UserDataScreen({
 
       {showGdpr && (
         <GdprModal
-          onAccept={() => {
+          onAccept={(consents) => {
             setShowGdpr(false);
-            onContinue({ name: name.trim(), email: email.trim(), country: selectedCountry, linkedin: linkedin.trim(), salary, password: needsPassword ? password : undefined });
+            onContinue({ name: name.trim(), email: email.trim(), country: selectedCountry, linkedin: linkedin.trim(), salary, password: needsPassword ? password : undefined, consents });
           }}
           onClose={() => setShowGdpr(false)}
         />
@@ -940,7 +941,7 @@ function UserDataScreen({
   );
 }
 
-function GdprModal({ onAccept, onClose }: { onAccept: () => void; onClose: () => void }) {
+function GdprModal({ onAccept, onClose }: { onAccept: (consents: Consents) => void; onClose: () => void }) {
   const [tratamiento, setTratamiento] = useState(false);
   const [comunicaciones, setComunicaciones] = useState(false);
   const [comparticion, setComparticion] = useState(false);
@@ -990,7 +991,7 @@ function GdprModal({ onAccept, onClose }: { onAccept: () => void; onClose: () =>
 
         <div className="flex gap-3">
           <Button variant="ghost" onClick={onClose} className="flex-1 text-gray-500">Cancelar</Button>
-          <Button onClick={onAccept} disabled={!canAccept}
+          <Button onClick={() => onAccept({ treatment: tratamiento, communications: comunicaciones, sharing: comparticion })} disabled={!canAccept}
             className="flex-1 bg-hopper-red hover:bg-hopper-red/90 text-white disabled:opacity-50">
             Aceptar y continuar
           </Button>

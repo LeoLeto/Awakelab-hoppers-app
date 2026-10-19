@@ -1,3 +1,6 @@
+// Options for "Objetivo principal" on the profile page (stored in the salary field)
+export const LEARNING_GOAL_OPTIONS = ["Certificarme", "Cambiar de carrera", "Ascender en mi empresa", "Ampliar conocimientos"];
+
 export interface HoppersProfileData {
   name: string;
   email: string;

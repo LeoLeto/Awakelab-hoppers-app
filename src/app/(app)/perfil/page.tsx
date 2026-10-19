@@ -9,7 +9,7 @@ import EmailVerificationGate from "@/components/EmailVerificationGate";
 import {
   EMPTY_PROFILE, getProfile, saveProfile, buildProfileFromDiagnostic,
   calculateCompletion, getMissingFields, COMPLETION_FIELDS,
-  saveProfileToDB, loadProfileFromDB,
+  saveProfileToDB, loadProfileFromDB, LEARNING_GOAL_OPTIONS,
   type HoppersProfileData,
 } from "@/lib/profile";
 import { roleLabels, targetRoleLabels } from "@/lib/data/sapProfiles";
@@ -20,7 +20,6 @@ import type { Country } from "@/lib/data/countries";
 
 const STUDY_HOURS_OPTIONS = ["Menos de 5h/semana", "5-10h/semana", "10-20h/semana", "Más de 20h/semana"];
 const COURSE_FORMAT_OPTIONS = ["Online", "Presencial", "Híbrido"];
-const LEARNING_GOAL_OPTIONS = ["Certificarme", "Cambiar de carrera", "Ascender en mi empresa", "Ampliar conocimientos"];
 const LANGUAGE_OPTIONS = ["Español", "Inglés", "Francés", "Alemán", "Portugués", "Italiano", "Otro"];
 const EXPERIENCE_OPTIONS = [
   { label: "Sin experiencia", value: "0" },

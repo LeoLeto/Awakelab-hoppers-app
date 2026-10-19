@@ -40,6 +40,11 @@ export interface IUser extends Document {
   isAdmin?: boolean;
   advisoryRequested?: boolean;
   advisoryDate?: Date;
+  // RGPD consents as accepted in the diagnostic (undefined = never recorded)
+  consentTreatment?: boolean;
+  consentCommunications?: boolean;
+  consentSharing?: boolean;
+  consentDate?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -81,6 +86,10 @@ const UserSchema = new Schema<IUser>(
     isAdmin: { type: Boolean, default: false },
     advisoryRequested: { type: Boolean, default: false },
     advisoryDate: { type: Date },
+    consentTreatment: { type: Boolean },
+    consentCommunications: { type: Boolean },
+    consentSharing: { type: Boolean },
+    consentDate: { type: Date },
   },
   { timestamps: true }
 );

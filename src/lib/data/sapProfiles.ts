@@ -454,3 +454,10 @@ export const roleLabels: Record<string, string> = {
 };
 
 export const targetRoleLabels: Record<string, string> = { ...roleLabels };
+
+// Legible name for a stored role value: role label, "sin_rol", or a legacy profile slug.
+export function getRoleLabel(value?: string): string {
+  if (!value) return "";
+  if (value === "sin_rol") return "Sin rol definido";
+  return roleLabels[value] ?? getProfileBySlug(value)?.name ?? value;
+}
