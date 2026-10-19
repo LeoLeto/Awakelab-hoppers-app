@@ -4,6 +4,11 @@ import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
 
+// Nivel de acceso de quien hace la petición:
+// - superadmin: email igual a SUPERADMIN_EMAIL. Puede ver, dar/quitar admin y eliminar.
+// - admin: isAdmin en BD. Solo puede ver el listado (GET).
+// Un admin no puede nombrar a otros admins: quien da acceso a datos personales
+// debe ser una única persona responsable.
 async function getAdminLevel(): Promise<"superadmin" | "admin" | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get("hoppers_token")?.value;
@@ -30,6 +35,7 @@ export async function GET() {
   return Response.json({ users });
 }
 
+// Dar o quitar permiso de admin a un usuario. Solo superadmin.
 export async function PATCH(request: NextRequest) {
   if ((await getAdminLevel()) !== "superadmin") {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });
@@ -41,6 +47,7 @@ export async function PATCH(request: NextRequest) {
   return Response.json({ success: true });
 }
 
+// Eliminar un usuario (p. ej. derecho de supresión RGPD). Solo superadmin.
 export async function DELETE(request: NextRequest) {
   if ((await getAdminLevel()) !== "superadmin") {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });

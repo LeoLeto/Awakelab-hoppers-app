@@ -8,6 +8,8 @@ export interface HoppersSession {
   emailVerified?: boolean;
 }
 
+// Casillas del modal RGPD del diagnóstico. treatment y sharing son obligatorias para
+// continuar; communications (recibir publicidad) es opcional.
 export interface Consents {
   treatment: boolean;
   communications: boolean;

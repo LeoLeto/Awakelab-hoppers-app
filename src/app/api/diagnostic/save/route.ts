@@ -13,6 +13,9 @@ export async function POST(request: Request) {
     if (!payload) return Response.json({ error: "Token invalido." }, { status: 401 });
 
     const { empScore, topProfile, skills, fullResult, consents } = await request.json();
+    // Consentimientos RGPD marcados en el modal del diagnóstico. Solo se guardan si llegan
+    // completos (las 3 casillas como boolean); consentDate sirve como prueba de cuándo se dieron.
+    // Si el alumno repite el diagnóstico, se sobrescriben con su última elección.
     const hasConsents = consents && typeof consents.treatment === "boolean" && typeof consents.communications === "boolean" && typeof consents.sharing === "boolean";
 
     await connectDB();

@@ -941,6 +941,8 @@ function UserDataScreen({
   );
 }
 
+// Modal RGPD previo a crear la cuenta. Devuelve las 3 casillas marcadas para que se
+// guarden en BD junto al diagnóstico (ver /api/diagnostic/save).
 function GdprModal({ onAccept, onClose }: { onAccept: (consents: Consents) => void; onClose: () => void }) {
   const [tratamiento, setTratamiento] = useState(false);
   const [comunicaciones, setComunicaciones] = useState(false);

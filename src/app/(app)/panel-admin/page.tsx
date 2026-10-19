@@ -214,6 +214,8 @@ export default function PanelAdminPage() {
           <h1 className="text-2xl font-black text-hopper-black">Alumnos</h1>
           <p className="text-sm text-gray-500 mt-1">Seguimiento y detalle de todos los alumnos registrados.</p>
         </div>
+        {/* Enlace directo (no fetch): el navegador envía la cookie de sesión y descarga el .xlsx.
+            El permiso de admin se comprueba en /api/admin/export. */}
         <a
           href="/api/admin/export"
           download

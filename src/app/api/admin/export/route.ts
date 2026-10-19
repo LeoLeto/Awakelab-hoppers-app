@@ -7,6 +7,14 @@ import { getProfileBySlug, getRoleLabel } from "@/lib/data/sapProfiles";
 import { seniorityLabels } from "@/lib/data/salaryData";
 import { LEARNING_GOAL_OPTIONS } from "@/lib/profile";
 
+// GET /api/admin/export
+// Genera un Excel (.xlsx) con todos los inscritos y todo lo que ha dejado cada uno:
+// contacto, perfil SAP, perfil ampliado, resultado del diagnóstico, asesoría y consentimientos RGPD.
+// Lo usa el botón "Exportar a Excel" del panel Alumnos. Contiene datos personales,
+// por eso solo pueden descargarlo admins y superadmin.
+
+// Admin = superadmin (por email en SUPERADMIN_EMAIL) o usuario con isAdmin en BD.
+// La comprobación se hace siempre en servidor: ocultar el botón no basta.
 async function checkAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get("hoppers_token")?.value;
@@ -20,6 +28,7 @@ async function checkAdmin(): Promise<boolean> {
   return user?.isAdmin === true;
 }
 
+// Campos del usuario que se exportan (subconjunto de IUser, sin password ni tokens).
 interface ExportUser {
   name: string;
   email: string;
@@ -53,8 +62,9 @@ interface ExportUser {
   availability?: string;
   jobPreferences?: string[];
   portfolio?: string;
-  photo?: string;
-  linkedinUrl?: string;
+  photo?: string; // imagen en base64: solo se exporta si existe, no la imagen
+  linkedinUrl?: string; // campo antiguo; se fusiona con linkedin en una sola columna
+  // Resultado completo calculado por el diagnóstico (solo las partes que se exportan)
   diagnosticResult?: {
     salary?: string;
     seniority?: string;
@@ -66,10 +76,13 @@ interface ExportUser {
 }
 
 const yesNo = (v?: boolean) => (v ? "Sí" : "No");
+// Une valores sin repetir ni vacíos (p. ej. linkedin y linkedinUrl cuando difieren).
 const joinUnique = (values: (string | undefined)[]) => [...new Set(values.filter(Boolean))].join(" | ");
 
-// The profile page stores "Objetivo principal" in the salary field, overwriting the salary
-// range given in the diagnostic; that range survives in diagnosticResult.salary.
+// Bug conocido: la página "Mi perfil" guarda "Objetivo principal" en el campo salary,
+// machacando el rango salarial que el alumno indicó en el diagnóstico. Ese rango se
+// conserva en diagnosticResult.salary, así que aquí se separan los dos datos:
+// si salary contiene un objetivo, el salario se recupera del diagnóstico.
 function salaryAndGoal(u: ExportUser) {
   const isGoal = !!u.salary && LEARNING_GOAL_OPTIONS.includes(u.salary);
   return {
@@ -78,10 +91,19 @@ function salaryAndGoal(u: ExportUser) {
   };
 }
 
-// The RGPD modal (treatment and sharing required, communications optional) has gated
-// account creation since this commit; choices were only stored from consentDate onwards.
+// Fecha del commit 932c731, desde el que el modal RGPD es obligatorio antes de crear la cuenta
+// (tratamiento y compartición obligatorios, comunicaciones opcional).
+// Las casillas marcadas solo se guardan en BD desde que existe consentDate.
+// Si producción se desplegó más tarde, ajustar esta fecha.
 const CONSENT_MODAL_SINCE = new Date("2026-06-19T12:03:26Z");
 
+// Columnas de consentimiento RGPD. Hay tres casos:
+// 1. "Registrado": el alumno pasó por el modal con el guardado ya activo -> valores reales.
+// 2. "Deducido": alta posterior al modal pero anterior al guardado. Tratamiento y
+//    compartición eran obligatorios para darse de alta, así que fueron aceptados;
+//    comunicaciones era opcional y no se guardó -> "Desconocido".
+// 3. "Sin registro": alta anterior al modal -> no se sabe nada.
+// Nota RGPD: "Deducido" no es prueba de consentimiento; no usar para enviar publicidad.
 function consentColumns(u: ExportUser) {
   if (u.consentDate) {
     return {
@@ -115,6 +137,7 @@ export async function GET() {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });
   }
   await connectDB();
+  // Se excluye la cuenta superadmin (no es un alumno), igual que en el listado del panel.
   const superadminEmail = (process.env.SUPERADMIN_EMAIL || "").toLowerCase();
   const users = await User.find({ email: { $ne: superadminEmail } })
     .select("name email country createdAt emailVerified yearsExperience currentRole targetRole salary linkedin sapModules certifications targetCertifications diagnosticDone diagnosticDate empScore topProfile skills advisoryRequested advisoryDate consentTreatment consentCommunications consentSharing consentDate phone city bio education languages availability jobPreferences portfolio photo linkedinUrl diagnosticResult")
@@ -123,8 +146,12 @@ export async function GET() {
 
   const workbook = new ExcelJS.Workbook();
   workbook.created = new Date();
+  // ySplit: 1 deja fija la fila de cabecera al hacer scroll.
   const sheet = workbook.addWorksheet("Inscritos", { views: [{ state: "frozen", ySplit: 1 }] });
 
+  // Orden de columnas por bloques: contacto, perfil profesional, perfil ampliado,
+  // diagnóstico, asesoría y consentimientos. "key" enlaza cada columna con el addRow de abajo.
+  // Las fechas se guardan como Date con formato dd/mm/yyyy para que Excel pueda ordenarlas.
   sheet.columns = [
     { header: "Nombre", key: "name", width: 28 },
     { header: "Email", key: "email", width: 34 },
@@ -179,6 +206,8 @@ export async function GET() {
       createdAt: u.createdAt ?? null,
       emailVerified: yesNo(u.emailVerified),
       yearsExperience: u.yearsExperience || "",
+      // Roles y perfiles se guardan como identificadores (p. ej. "sin_rol", "consultant_fi_co");
+      // se traducen a nombres legibles para quien lea el Excel.
       currentRole: getRoleLabel(u.currentRole),
       targetRole: getRoleLabel(u.targetRole),
       ...salaryAndGoal(u),
@@ -195,7 +224,7 @@ export async function GET() {
       hasPhoto: yesNo(!!u.photo),
       diagnosticDone: yesNo(u.diagnosticDone),
       diagnosticDate: u.diagnosticDate ?? null,
-      empScore: u.empScore ?? null,
+      empScore: u.empScore ?? null, // número (no texto) para poder filtrar y ordenar en Excel
       seniority: diag?.seniority ? seniorityLabels[diag.seniority as keyof typeof seniorityLabels] ?? diag.seniority : "",
       topProfile: u.topProfile ? getProfileBySlug(u.topProfile)?.name ?? u.topProfile : "",
       matches: diag?.matches?.map(m => m.matchPct !== undefined ? `${m.name} (${m.matchPct}%)` : m.name).join(", ") ?? "",
@@ -209,15 +238,20 @@ export async function GET() {
     });
   }
 
+  // Cabecera en negrita blanca sobre fondo oscuro.
   const header = sheet.getRow(1);
   header.font = { bold: true, color: { argb: "FFFFFFFF" } };
   header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A1A1A" } };
   header.alignment = { vertical: "middle" };
+  // El filtro cubre toda la tabla (no solo la cabecera) para que funcione igual
+  // en Excel, LibreOffice y Google Sheets.
   sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: sheet.rowCount, column: sheet.columns.length } };
 
   const buffer = await workbook.xlsx.writeBuffer();
   const date = new Date().toISOString().slice(0, 10);
   return new Response(buffer, {
+    // "attachment" fuerza la descarga con nombre hoppers-inscritos-AAAA-MM-DD.xlsx;
+    // "no-store" evita que navegadores o proxies guarden en caché datos personales.
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="hoppers-inscritos-${date}.xlsx"`,

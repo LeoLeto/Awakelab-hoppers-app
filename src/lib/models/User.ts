@@ -40,7 +40,9 @@ export interface IUser extends Document {
   isAdmin?: boolean;
   advisoryRequested?: boolean;
   advisoryDate?: Date;
-  // RGPD consents as accepted in the diagnostic (undefined = never recorded)
+  // Consentimientos RGPD aceptados en el diagnóstico (ver GdprModal en DiagnosticTool).
+  // Sin default a propósito: undefined = nunca registrado (usuarios anteriores a este campo),
+  // que no es lo mismo que false = rechazado.
   consentTreatment?: boolean;
   consentCommunications?: boolean;
   consentSharing?: boolean;
