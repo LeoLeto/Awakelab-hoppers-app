@@ -1,3 +1,8 @@
+// Opciones de "Objetivo principal" en la página Mi perfil.
+// OJO: se guardan en el campo salary y sobrescriben el salario del diagnóstico (bug conocido).
+// La exportación a Excel usa esta lista para distinguir un objetivo de un salario.
+export const LEARNING_GOAL_OPTIONS = ["Certificarme", "Cambiar de carrera", "Ascender en mi empresa", "Ampliar conocimientos"];
+
 export interface HoppersProfileData {
   name: string;
   email: string;

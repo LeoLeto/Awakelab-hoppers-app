@@ -454,3 +454,13 @@ export const roleLabels: Record<string, string> = {
 };
 
 export const targetRoleLabels: Record<string, string> = { ...roleLabels };
+
+// Nombre legible de un rol guardado en BD. Cubre tres casos: claves de roleLabels,
+// "sin_rol" (opción "Sin rol definido" del diagnóstico, que no está en roleLabels para no
+// aparecer en los desplegables) e identificadores de perfil de versiones antiguas del formulario.
+// Si no se reconoce, devuelve el valor tal cual (p. ej. texto libre escrito por el alumno).
+export function getRoleLabel(value?: string): string {
+  if (!value) return "";
+  if (value === "sin_rol") return "Sin rol definido";
+  return roleLabels[value] ?? getProfileBySlug(value)?.name ?? value;
+}

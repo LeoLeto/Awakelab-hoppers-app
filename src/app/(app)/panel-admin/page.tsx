@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { CheckCircle, XCircle, Loader2, Search, Mail, X } from "lucide-react";
-import { roleLabels, targetRoleLabels } from "@/lib/data/sapProfiles";
+import { CheckCircle, XCircle, Loader2, Search, Mail, X, Download } from "lucide-react";
+import { getProfileBySlug, getRoleLabel } from "@/lib/data/sapProfiles";
 
 interface StudentRow {
   _id: string;
@@ -68,7 +68,7 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   }, [id]);
 
   return (
-    <div className="fixed flex items-center justify-center p-4 bg-black/85" onClick={onClose} style={{zIndex:9999, top:0, left:0, right:0, bottom:0, width:"100vw", height:"100vh", backdropFilter:"blur(2px)"}}>
+    <div className="flex items-center justify-center p-4 bg-black/85" onClick={onClose} style={{zIndex:9999, position:"fixed", top:0, left:0, right:0, bottom:0, width:"100vw", height:"100vh", backdropFilter:"blur(2px)"}}>
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
@@ -102,8 +102,8 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
             {/* Diagnóstico — formulario */}
             <Section title="Formulario de diagnóstico">
               <Row label="Años de experiencia SAP" value={detail.yearsExperience || "—"} />
-              <Row label="Rol actual" value={roleLabels[detail.currentRole ?? ""] ?? detail.currentRole ?? "—"} />
-              <Row label="Rol objetivo" value={targetRoleLabels[detail.targetRole ?? ""] ?? detail.targetRole ?? "—"} />
+              <Row label="Rol actual" value={getRoleLabel(detail.currentRole) || "—"} />
+              <Row label="Rol objetivo" value={getRoleLabel(detail.targetRole) || "—"} />
               <Row label="Salario actual" value={detail.salary || "—"} />
               <Row label="LinkedIn" value={detail.linkedin || "—"} />
               <Row label="Módulos SAP" value={detail.sapModules?.length ? detail.sapModules.join(", ") : "—"} />
@@ -117,7 +117,7 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
                 <>
                   <Row label="Fecha diagnóstico" value={detail.diagnosticDate ? new Date(detail.diagnosticDate).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }) : "—"} />
                   <Row label="Puntuación empleabilidad" value={detail.empScore !== undefined ? `${detail.empScore}%` : "—"} />
-                  <Row label="Perfil top" value={detail.topProfile || "—"} />
+                  <Row label="Perfil top" value={detail.topProfile ? getProfileBySlug(detail.topProfile)?.name ?? detail.topProfile : "—"} />
                   <Row label="Skills identificadas" value={detail.skills?.length ? detail.skills.join(", ") : "—"} />
                 </>
               ) : (
@@ -209,9 +209,21 @@ export default function PanelAdminPage() {
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-6">
       {detailId && <DetailModal id={detailId} onClose={() => setDetailId(null)} />}
 
-      <div>
-        <h1 className="text-2xl font-black text-hopper-black">Alumnos</h1>
-        <p className="text-sm text-gray-500 mt-1">Seguimiento y detalle de todos los alumnos registrados.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-hopper-black">Alumnos</h1>
+          <p className="text-sm text-gray-500 mt-1">Seguimiento y detalle de todos los alumnos registrados.</p>
+        </div>
+        {/* Enlace directo (no fetch): el navegador envía la cookie de sesión y descarga el .xlsx.
+            El permiso de admin se comprueba en /api/admin/export. */}
+        <a
+          href="/api/admin/export"
+          download
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-hopper-black text-white text-sm font-medium hover:bg-hopper-black/90 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Exportar a Excel
+        </a>
       </div>
 
       {/* Stats */}
@@ -282,7 +294,7 @@ export default function PanelAdminPage() {
                     <p className="text-xs text-gray-400">{u.email}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-500">{u.country || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{roleLabels[u.currentRole ?? ""] ?? u.currentRole ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{getRoleLabel(u.currentRole) || "—"}</td>
                   <td className="px-4 py-3">
                     {u.emailVerified
                       ? <span className="inline-flex items-center gap-1 text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded text-xs"><CheckCircle className="w-3 h-3" />Verificado</span>

@@ -8,6 +8,14 @@ export interface HoppersSession {
   emailVerified?: boolean;
 }
 
+// Casillas del modal RGPD del diagnóstico. treatment y sharing son obligatorias para
+// continuar; communications (recibir publicidad) es opcional.
+export interface Consents {
+  treatment: boolean;
+  communications: boolean;
+  sharing: boolean;
+}
+
 export interface RegisterData {
   name: string;
   email: string;
@@ -168,6 +176,7 @@ export async function saveDiagnosticResult(result: {
   skills: string[];
   fullResult?: unknown;
   email?: string;
+  consents?: Consents;
 }): Promise<void> {
   // Guardar backup local keyed por email para funcionar sin MongoDB
   if (result.email && result.fullResult) {

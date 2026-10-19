@@ -17,10 +17,10 @@ export interface SalaryEntry {
 }
 
 export const seniorityLabels: Record<Seniority, string> = {
-  junior: "Junior (0-3 anos)",
-  mid: "Intermedio (3-5 anos)",
-  senior: "Senior (5-7+ anos)",
-  architect: "Arquitecto / Lead (8+ anos)",
+  junior: "Junior (0-3 años)",
+  mid: "Intermedio (3-5 años)",
+  senior: "Senior (5-7+ años)",
+  architect: "Arquitecto / Lead (8+ años)",
 };
 
 export const seniorityYears: Record<Seniority, string> = {
