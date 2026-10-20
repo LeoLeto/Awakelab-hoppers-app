@@ -3,12 +3,13 @@ import ExcelJS from "exceljs";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
+import { studentsFilter } from "@/lib/students";
 import { getProfileBySlug, getRoleLabel } from "@/lib/data/sapProfiles";
 import { seniorityLabels } from "@/lib/data/salaryData";
 import { isLearningGoal } from "@/lib/profile";
 
 // GET /api/admin/export
-// Genera un Excel (.xlsx) con todos los inscritos y todo lo que ha dejado cada uno:
+// Genera un Excel (.xlsx) con todos los alumnos (sin admins ni cuentas de prueba) y todo lo que ha dejado cada uno:
 // contacto, perfil SAP, perfil ampliado, resultado del diagnóstico, asesoría y consentimientos RGPD.
 // Lo usa el botón "Exportar a Excel" del panel Alumnos. Contiene datos personales,
 // por eso solo pueden descargarlo admins y superadmin.
@@ -137,9 +138,8 @@ export async function GET() {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });
   }
   await connectDB();
-  // Se excluye la cuenta superadmin (no es un alumno), igual que en el listado del panel.
-  const superadminEmail = (process.env.SUPERADMIN_EMAIL || "").toLowerCase();
-  const users = await User.find({ email: { $ne: superadminEmail } })
+  // Solo alumnos reales: sin superadmin, admins ni cuentas de prueba (mismo filtro que el panel).
+  const users = await User.find(studentsFilter())
     .select("name email country createdAt emailVerified yearsExperience currentRole targetRole salary learningGoal linkedin sapModules certifications targetCertifications diagnosticDone diagnosticDate empScore topProfile skills advisoryRequested advisoryDate consentTreatment consentCommunications consentSharing consentDate phone city bio education languages availability jobPreferences portfolio photo linkedinUrl diagnosticResult")
     .sort({ createdAt: -1 })
     .lean() as unknown as ExportUser[];

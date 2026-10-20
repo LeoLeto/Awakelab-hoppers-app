@@ -39,6 +39,8 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   isAdmin?: boolean;
+  // Cuenta de prueba marcada por el superadmin: no cuenta como alumno (panel, cifras, Excel).
+  isTestAccount?: boolean;
   advisoryRequested?: boolean;
   advisoryDate?: Date;
   // Consentimientos RGPD aceptados en el diagnóstico (ver GdprModal en DiagnosticTool).
@@ -88,6 +90,7 @@ const UserSchema = new Schema<IUser>(
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
     isAdmin: { type: Boolean, default: false },
+    isTestAccount: { type: Boolean, default: false },
     advisoryRequested: { type: Boolean, default: false },
     advisoryDate: { type: Date },
     consentTreatment: { type: Boolean },

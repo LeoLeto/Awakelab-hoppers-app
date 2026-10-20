@@ -27,6 +27,7 @@ interface UserRow {
   empScore?: number;
   createdAt: string;
   isAdmin?: boolean;
+  isTestAccount?: boolean;
 }
 
 export default function ConfiguracionPage() {
@@ -77,7 +78,8 @@ export default function ConfiguracionPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
-    fetch("/api/admin/users")
+    // all=1: todas las cuentas (también admins y pruebas) para poder gestionarlas
+    fetch("/api/admin/users?all=1")
       .then((r) => r.json())
       .then((data) => setUsers(data.users || []))
       .catch(() => {})
@@ -158,6 +160,18 @@ export default function ConfiguracionPage() {
       body: JSON.stringify({ id: user._id, isAdmin: newVal }),
     });
     setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isAdmin: newVal } : u));
+  }
+
+  // Las cuentas de prueba no salen en el panel Alumnos, sus cifras ni el Excel.
+  // Es reversible: a diferencia de eliminar, no se pierde ningún dato.
+  async function handleToggleTest(user: UserRow) {
+    const newVal = !user.isTestAccount;
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user._id, isTestAccount: newVal }),
+    });
+    setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isTestAccount: newVal } : u));
   }
 
   async function handleDelete(user: UserRow) {
@@ -440,16 +454,18 @@ export default function ConfiguracionPage() {
             <div>
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[28%]" />
-                  <col className="w-[36%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[12%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[30%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[8%]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b text-left text-xs text-gray-400 uppercase tracking-wide">
                     <th className="pb-2 pr-4 font-medium">Nombre</th>
                     <th className="pb-2 pr-4 font-medium">Email</th>
                     <th className="pb-2 pr-4 font-medium">Acceso admin</th>
+                    <th className="pb-2 pr-4 font-medium">Cuenta de prueba</th>
                     <th className="pb-2 font-medium"></th>
                   </tr>
                 </thead>
@@ -466,6 +482,16 @@ export default function ConfiguracionPage() {
                         >
                           <span className={`w-2 h-2 rounded-full ${u.isAdmin ? "bg-green-400" : "bg-gray-300"}`} />
                           {u.isAdmin ? "Administrador" : "Dar admin"}
+                        </button>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <button
+                          onClick={() => handleToggleTest(u)}
+                          title={u.isTestAccount ? "Volver a contar como alumno" : "Excluir del panel Alumnos y del Excel"}
+                          className={`relative inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${u.isTestAccount ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200" : "bg-white text-gray-500 border-gray-200 hover:border-amber-400 hover:text-amber-700"}`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${u.isTestAccount ? "bg-amber-500" : "bg-gray-300"}`} />
+                          {u.isTestAccount ? "Prueba" : "Marcar prueba"}
                         </button>
                       </td>
                       <td className="py-3">
