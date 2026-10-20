@@ -6,6 +6,15 @@ import { getSession } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, CheckCircle, XCircle, Loader2, Eye, EyeOff, Users, Trash2, Search, X } from "lucide-react";
+import { ROLES, ROLE_LABELS, type Role } from "@/lib/roles";
+
+// Color del selector según el rol, para distinguir de un vistazo quién cuenta como alumno.
+const ROLE_STYLES: Record<Role, string> = {
+  student: "bg-white text-gray-700 border-gray-200",
+  staff: "bg-sky-50 text-sky-800 border-sky-200",
+  admin: "bg-hopper-black text-white border-hopper-black",
+  test: "bg-amber-50 text-amber-800 border-amber-300",
+};
 
 interface SmtpSettings {
   smtpFrom: string;
@@ -27,7 +36,7 @@ interface UserRow {
   empScore?: number;
   createdAt: string;
   isAdmin?: boolean;
-  isTestAccount?: boolean;
+  role?: Role;
 }
 
 export default function ConfiguracionPage() {
@@ -152,26 +161,20 @@ export default function ConfiguracionPage() {
     }
   }
 
-  async function handleToggleAdmin(user: UserRow) {
-    const newVal = !user.isAdmin;
-    await fetch("/api/admin/users", {
+  // Cambia el rol de un usuario (ver src/lib/roles.ts). Solo "Alumno" cuenta en el panel
+  // Alumnos, sus cifras y el Excel; "Admin" además da acceso a ese panel.
+  // Si el servidor rechaza el cambio, se vuelve al rol anterior.
+  async function handleRoleChange(user: UserRow, role: Role) {
+    const previous = user.role;
+    setUsers(prev => prev.map(u => u._id === user._id ? { ...u, role, isAdmin: role === "admin" } : u));
+    const res = await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: user._id, isAdmin: newVal }),
-    });
-    setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isAdmin: newVal } : u));
-  }
-
-  // Las cuentas de prueba no salen en el panel Alumnos, sus cifras ni el Excel.
-  // Es reversible: a diferencia de eliminar, no se pierde ningún dato.
-  async function handleToggleTest(user: UserRow) {
-    const newVal = !user.isTestAccount;
-    await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: user._id, isTestAccount: newVal }),
-    });
-    setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isTestAccount: newVal } : u));
+      body: JSON.stringify({ id: user._id, role }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setUsers(prev => prev.map(u => u._id === user._id ? { ...u, role: previous, isAdmin: previous === "admin" } : u));
+    }
   }
 
   async function handleDelete(user: UserRow) {
@@ -426,7 +429,7 @@ export default function ConfiguracionPage() {
           <Users className="w-5 h-5 text-hopper-red shrink-0" />
           <div>
             <h2 className="text-base font-bold text-white">Gestión de usuarios</h2>
-            <p className="text-xs text-white/50 mt-0.5">{users.length} cuenta{users.length !== 1 ? "s" : ""} registrada{users.length !== 1 ? "s" : ""}</p>
+            <p className="text-xs text-white/50 mt-0.5">{users.length} cuenta{users.length !== 1 ? "s" : ""} registrada{users.length !== 1 ? "s" : ""}. Solo el rol «Alumno» cuenta en el panel Alumnos y el Excel; «Admin» además puede verlos.</p>
           </div>
         </div>
 
@@ -454,18 +457,16 @@ export default function ConfiguracionPage() {
             <div>
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[22%]" />
-                  <col className="w-[30%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[8%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[36%]" />
+                  <col className="w-[26%]" />
+                  <col className="w-[10%]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b text-left text-xs text-gray-400 uppercase tracking-wide">
                     <th className="pb-2 pr-4 font-medium">Nombre</th>
                     <th className="pb-2 pr-4 font-medium">Email</th>
-                    <th className="pb-2 pr-4 font-medium">Acceso admin</th>
-                    <th className="pb-2 pr-4 font-medium">Cuenta de prueba</th>
+                    <th className="pb-2 pr-4 font-medium">Rol</th>
                     <th className="pb-2 font-medium"></th>
                   </tr>
                 </thead>
@@ -475,24 +476,14 @@ export default function ConfiguracionPage() {
                       <td className="py-3 pr-4 font-medium text-hopper-black truncate">{u.name}</td>
                       <td className="py-3 pr-4 text-gray-500 truncate">{u.email}</td>
                       <td className="py-3 pr-4">
-                        <button
-                          onClick={() => handleToggleAdmin(u)}
-                          title={u.isAdmin ? "Quitar acceso de administrador" : "Dar acceso de administrador"}
-                          className={`relative inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${u.isAdmin ? "bg-hopper-black text-white border-hopper-black hover:bg-red-700 hover:border-red-700" : "bg-white text-gray-500 border-gray-200 hover:border-hopper-black hover:text-hopper-black"}`}
+                        <select
+                          value={u.role ?? (u.isAdmin ? "admin" : "student")}
+                          onChange={(e) => handleRoleChange(u, e.target.value as Role)}
+                          aria-label={`Rol de ${u.name}`}
+                          className={`w-full text-xs font-medium px-2 py-1.5 rounded-lg border outline-none cursor-pointer focus:ring-2 focus:ring-hopper-red/30 ${ROLE_STYLES[u.role ?? (u.isAdmin ? "admin" : "student")]}`}
                         >
-                          <span className={`w-2 h-2 rounded-full ${u.isAdmin ? "bg-green-400" : "bg-gray-300"}`} />
-                          {u.isAdmin ? "Administrador" : "Dar admin"}
-                        </button>
-                      </td>
-                      <td className="py-3 pr-4">
-                        <button
-                          onClick={() => handleToggleTest(u)}
-                          title={u.isTestAccount ? "Volver a contar como alumno" : "Excluir del panel Alumnos y del Excel"}
-                          className={`relative inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${u.isTestAccount ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200" : "bg-white text-gray-500 border-gray-200 hover:border-amber-400 hover:text-amber-700"}`}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${u.isTestAccount ? "bg-amber-500" : "bg-gray-300"}`} />
-                          {u.isTestAccount ? "Prueba" : "Marcar prueba"}
-                        </button>
+                          {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                        </select>
                       </td>
                       <td className="py-3">
                         <button

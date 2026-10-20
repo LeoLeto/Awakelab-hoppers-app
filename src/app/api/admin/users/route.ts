@@ -4,10 +4,11 @@ import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
 import { studentsFilter } from "@/lib/students";
+import { isRole } from "@/lib/roles";
 
 // Nivel de acceso de quien hace la petición:
-// - superadmin: email igual a SUPERADMIN_EMAIL. Puede ver, dar/quitar admin y eliminar.
-// - admin: isAdmin en BD. Solo puede ver el listado (GET).
+// - superadmin: email igual a SUPERADMIN_EMAIL. Puede ver, asignar roles y eliminar.
+// - admin: rol "admin" (isAdmin en BD). Solo puede ver el listado (GET).
 // Un admin no puede nombrar a otros admins: quien da acceso a datos personales
 // debe ser una única persona responsable.
 async function getAdminLevel(): Promise<"superadmin" | "admin" | null> {
@@ -23,9 +24,9 @@ async function getAdminLevel(): Promise<"superadmin" | "admin" | null> {
 }
 
 // Listado de usuarios.
-// - Por defecto (panel Alumnos): solo alumnos reales, sin admins ni cuentas de prueba.
+// - Por defecto (panel Alumnos): solo cuentas con rol "student".
 // - ?all=1 (Configuración, solo superadmin): todas las cuentas salvo el superadmin,
-//   para poder gestionar permisos y marcar cuentas de prueba.
+//   para poder asignar roles.
 export async function GET(request: NextRequest) {
   const level = await getAdminLevel();
   if (!level) {
@@ -38,28 +39,23 @@ export async function GET(request: NextRequest) {
   await connectDB();
   const superadminEmail = (process.env.SUPERADMIN_EMAIL || "").toLowerCase();
   const users = await User.find(all ? { email: { $ne: superadminEmail } } : studentsFilter())
-    .select("name email country emailVerified diagnosticDone empScore createdAt isAdmin isTestAccount advisoryRequested advisoryDate currentRole topProfile")
+    .select("name email country emailVerified diagnosticDone empScore createdAt isAdmin role advisoryRequested advisoryDate currentRole topProfile")
     .sort({ createdAt: -1 })
     .lean();
   return Response.json({ users });
 }
 
-// Dar o quitar permiso de admin y marcar o desmarcar cuenta de prueba. Solo superadmin.
-// Solo se actualizan los campos que llegan como boolean en el body.
+// Cambiar el rol de un usuario (student, staff, admin, test). Solo superadmin.
+// isAdmin se actualiza a la vez para que login, menú y endpoints de admin lo respeten.
 export async function PATCH(request: NextRequest) {
   if ((await getAdminLevel()) !== "superadmin") {
     return Response.json({ error: "Acceso denegado." }, { status: 403 });
   }
-  const { id, isAdmin, isTestAccount } = await request.json();
+  const { id, role } = await request.json();
   if (!id) return Response.json({ error: "ID requerido." }, { status: 400 });
-  const update: { isAdmin?: boolean; isTestAccount?: boolean } = {};
-  if (typeof isAdmin === "boolean") update.isAdmin = isAdmin;
-  if (typeof isTestAccount === "boolean") update.isTestAccount = isTestAccount;
-  if (Object.keys(update).length === 0) {
-    return Response.json({ error: "Nada que actualizar." }, { status: 400 });
-  }
+  if (!isRole(role)) return Response.json({ error: "Rol no válido." }, { status: 400 });
   await connectDB();
-  await User.findByIdAndUpdate(id, update);
+  await User.findByIdAndUpdate(id, { role, isAdmin: role === "admin" });
   return Response.json({ success: true });
 }
 

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import { ROLES, type Role } from "@/lib/roles";
 
 export interface IUser extends Document {
   name: string;
@@ -38,9 +39,10 @@ export interface IUser extends Document {
   verificationTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  // Sincronizado con role (isAdmin = role === "admin"); lo comprueban login, menú y endpoints.
   isAdmin?: boolean;
-  // Cuenta de prueba marcada por el superadmin: no cuenta como alumno (panel, cifras, Excel).
-  isTestAccount?: boolean;
+  // Rol asignado por el superadmin en Configuración (ver src/lib/roles.ts).
+  role?: Role;
   advisoryRequested?: boolean;
   advisoryDate?: Date;
   // Consentimientos RGPD aceptados en el diagnóstico (ver GdprModal en DiagnosticTool).
@@ -90,7 +92,7 @@ const UserSchema = new Schema<IUser>(
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
     isAdmin: { type: Boolean, default: false },
-    isTestAccount: { type: Boolean, default: false },
+    role: { type: String, enum: ROLES, default: "student" },
     advisoryRequested: { type: Boolean, default: false },
     advisoryDate: { type: Date },
     consentTreatment: { type: Boolean },
