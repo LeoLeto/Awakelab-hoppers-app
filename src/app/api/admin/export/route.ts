@@ -5,7 +5,7 @@ import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
 import { getProfileBySlug, getRoleLabel } from "@/lib/data/sapProfiles";
 import { seniorityLabels } from "@/lib/data/salaryData";
-import { LEARNING_GOAL_OPTIONS } from "@/lib/profile";
+import { isLearningGoal } from "@/lib/profile";
 
 // GET /api/admin/export
 // Genera un Excel (.xlsx) con todos los inscritos y todo lo que ha dejado cada uno:
@@ -39,6 +39,7 @@ interface ExportUser {
   currentRole?: string;
   targetRole?: string;
   salary?: string;
+  learningGoal?: string;
   linkedin?: string;
   sapModules?: string[];
   certifications?: string;
@@ -79,15 +80,14 @@ const yesNo = (v?: boolean) => (v ? "Sí" : "No");
 // Une valores sin repetir ni vacíos (p. ej. linkedin y linkedinUrl cuando difieren).
 const joinUnique = (values: (string | undefined)[]) => [...new Set(values.filter(Boolean))].join(" | ");
 
-// Bug conocido: la página "Mi perfil" guarda "Objetivo principal" en el campo salary,
-// machacando el rango salarial que el alumno indicó en el diagnóstico. Ese rango se
-// conserva en diagnosticResult.salary, así que aquí se separan los dos datos:
-// si salary contiene un objetivo, el salario se recupera del diagnóstico.
+// Hasta octubre de 2026 "Mi perfil" guardaba "Objetivo principal" en salary, machacando
+// el rango salarial del diagnóstico (que se conserva en diagnosticResult.salary).
+// Ya se guarda en learningGoal; esto cubre los registros antiguos sin reparar.
 function salaryAndGoal(u: ExportUser) {
-  const isGoal = !!u.salary && LEARNING_GOAL_OPTIONS.includes(u.salary);
+  const isGoal = isLearningGoal(u.salary);
   return {
     salary: (isGoal ? "" : u.salary) || u.diagnosticResult?.salary || "",
-    learningGoal: isGoal ? u.salary : "",
+    learningGoal: u.learningGoal || (isGoal ? u.salary : ""),
   };
 }
 
@@ -140,7 +140,7 @@ export async function GET() {
   // Se excluye la cuenta superadmin (no es un alumno), igual que en el listado del panel.
   const superadminEmail = (process.env.SUPERADMIN_EMAIL || "").toLowerCase();
   const users = await User.find({ email: { $ne: superadminEmail } })
-    .select("name email country createdAt emailVerified yearsExperience currentRole targetRole salary linkedin sapModules certifications targetCertifications diagnosticDone diagnosticDate empScore topProfile skills advisoryRequested advisoryDate consentTreatment consentCommunications consentSharing consentDate phone city bio education languages availability jobPreferences portfolio photo linkedinUrl diagnosticResult")
+    .select("name email country createdAt emailVerified yearsExperience currentRole targetRole salary learningGoal linkedin sapModules certifications targetCertifications diagnosticDone diagnosticDate empScore topProfile skills advisoryRequested advisoryDate consentTreatment consentCommunications consentSharing consentDate phone city bio education languages availability jobPreferences portfolio photo linkedinUrl diagnosticResult")
     .sort({ createdAt: -1 })
     .lean() as unknown as ExportUser[];
 

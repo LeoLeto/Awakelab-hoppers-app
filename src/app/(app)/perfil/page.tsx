@@ -672,7 +672,7 @@ export default function PerfilPage() {
           <ToggleChips options={COURSE_FORMAT_OPTIONS} selected={profile.jobPreferences} onChange={(v) => update("jobPreferences", v)} />
         </Field>
         <Field label="Objetivo principal" points={5}>
-          <ToggleChips options={LEARNING_GOAL_OPTIONS} selected={profile.salary ? [profile.salary] : []} onChange={(v) => update("salary", v[0] ?? "")} single />
+          <ToggleChips options={LEARNING_GOAL_OPTIONS} selected={profile.learningGoal ? [profile.learningGoal] : []} onChange={(v) => update("learningGoal", v[0] ?? "")} single />
         </Field>
       </section>
 

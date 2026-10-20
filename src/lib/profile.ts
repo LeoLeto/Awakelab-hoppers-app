@@ -1,7 +1,18 @@
-// Opciones de "Objetivo principal" en la página Mi perfil.
-// OJO: se guardan en el campo salary y sobrescriben el salario del diagnóstico (bug conocido).
-// La exportación a Excel usa esta lista para distinguir un objetivo de un salario.
+// Opciones de "Objetivo principal" en la página Mi perfil. Se guardan en learningGoal.
+// Hasta octubre de 2026 se guardaban por error en salary, machacando el salario del
+// diagnóstico; normalizeProfile y /api/profile reparan los datos antiguos que aún lo tengan.
 export const LEARNING_GOAL_OPTIONS = ["Certificarme", "Cambiar de carrera", "Ascender en mi empresa", "Ampliar conocimientos"];
+
+export function isLearningGoal(value: unknown): value is string {
+  return typeof value === "string" && LEARNING_GOAL_OPTIONS.includes(value);
+}
+
+// Si salary contiene un objetivo (dato antiguo), lo pasa a learningGoal y vacía salary
+// para que el salario real del diagnóstico vuelva a ocupar su sitio al fusionar.
+export function normalizeProfile<T extends { salary?: string; learningGoal?: string }>(profile: T): T {
+  if (!isLearningGoal(profile.salary)) return profile;
+  return { ...profile, learningGoal: profile.learningGoal || profile.salary, salary: "" };
+}
 
 export interface HoppersProfileData {
   name: string;
@@ -15,6 +26,7 @@ export interface HoppersProfileData {
   yearsExperience: string;
   linkedin: string;
   salary: string;
+  learningGoal: string;
   phone: string;
   city: string;
   bio: string;
@@ -28,7 +40,7 @@ export interface HoppersProfileData {
 
 export const EMPTY_PROFILE: HoppersProfileData = {
   name: "", email: "", country: "", sapModules: [], certifications: "", targetCertifications: "",
-  currentRole: "", targetRole: "", yearsExperience: "", linkedin: "", salary: "",
+  currentRole: "", targetRole: "", yearsExperience: "", linkedin: "", salary: "", learningGoal: "",
   phone: "", city: "", bio: "", education: "", languages: [], availability: "",
   jobPreferences: [], portfolio: "", photo: "",
 };
@@ -39,7 +51,7 @@ export function getProfile(email: string): HoppersProfileData {
   if (typeof window === "undefined") return { ...EMPTY_PROFILE };
   try {
     const stored = localStorage.getItem(PROFILE_KEY(email));
-    return stored ? { ...EMPTY_PROFILE, ...JSON.parse(stored) } : { ...EMPTY_PROFILE };
+    return stored ? normalizeProfile({ ...EMPTY_PROFILE, ...JSON.parse(stored) }) : { ...EMPTY_PROFILE };
   } catch {
     return { ...EMPTY_PROFILE };
   }
@@ -68,7 +80,7 @@ export function buildProfileFromDiagnostic(
   if (typeof r.targetRole === "string") base.targetRole = r.targetRole;
   if (typeof r.yearsExperience === "string") base.yearsExperience = r.yearsExperience;
   if (typeof r.linkedin === "string") base.linkedin = r.linkedin;
-  if (typeof r.salary === "string") base.salary = r.salary;
+  if (typeof r.salary === "string" && !isLearningGoal(r.salary)) base.salary = r.salary;
   return base;
 }
 
@@ -87,7 +99,7 @@ export const COMPLETION_FIELDS: CompletionField[] = [
   { key: "currentRole",    points: 3,  label: "Rol actual",         section: "SAP" },
   { key: "targetRole",     points: 2,  label: "Rol objetivo",       section: "SAP" },
   { key: "linkedin",       points: 5,  label: "LinkedIn",           section: "online" },
-  { key: "salary",         points: 5,  label: "Salario actual",     section: "preferencias" },
+  { key: "learningGoal",   points: 5,  label: "Objetivo principal", section: "preferencias" },
   { key: "phone",          points: 10, label: "Teléfono",           section: "básica" },
   { key: "city",           points: 5,  label: "Ciudad",             section: "básica" },
   { key: "bio",            points: 10, label: "Resumen profesional", section: "sobre_mi" },
@@ -128,7 +140,7 @@ export async function loadProfileFromDB(): Promise<Partial<HoppersProfileData> |
     const res = await fetch("/api/profile");
     if (!res.ok) return null;
     const data = await res.json();
-    return data.profile ?? null;
+    return data.profile ? normalizeProfile(data.profile) : null;
   } catch {
     return null;
   }

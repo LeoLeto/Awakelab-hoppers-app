@@ -2,12 +2,12 @@ import { cookies } from "next/headers";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { verifyToken } from "@/lib/jwt";
-import type { HoppersProfileData } from "@/lib/profile";
+import { isLearningGoal, type HoppersProfileData } from "@/lib/profile";
 
 const PROFILE_FIELDS = [
   "name", "country", "phone", "city", "bio", "education",
   "languages", "availability", "jobPreferences", "portfolio",
-  "photo", "salary", "linkedin", "sapModules", "certifications", "targetCertifications",
+  "photo", "salary", "learningGoal", "linkedin", "sapModules", "certifications", "targetCertifications",
   "currentRole", "targetRole", "yearsExperience",
 ];
 
@@ -47,11 +47,17 @@ export async function POST(request: Request) {
     const allowed = [
       "name", "country", "phone", "city", "bio", "education",
       "languages", "availability", "jobPreferences", "portfolio",
-      "photo", "salary", "linkedin", "sapModules", "certifications", "targetCertifications",
+      "photo", "salary", "learningGoal", "linkedin", "sapModules", "certifications", "targetCertifications",
       "currentRole", "targetRole", "yearsExperience",
     ];
     for (const key of allowed) {
       if (key in body) update[key] = body[key as keyof HoppersProfileData];
+    }
+    // Un cliente con el JS antiguo en caché aún puede mandar el objetivo en salary:
+    // se guarda como objetivo y no se toca el salario.
+    if (isLearningGoal(update.salary)) {
+      update.learningGoal ??= update.salary;
+      delete update.salary;
     }
 
     await connectDB();
